@@ -2,9 +2,11 @@ class FloodWaveDetector():
     def __init__(self) -> None:
         self.__db_credentials_path = self.read_ini()
         self.dataloader = Dataloader(self.__db_credentials_path)
-        self.json_helper = JsonHelper()
-        self.meta = self.dataloader.meta_data.groupby(["river"]).get_group("Tisza").sort_values(by='river_km',
-                                                                                                ascending=False)
+        self.meta = self.dataloader \
+            .meta_data \
+            .groupby(["river"]) \
+            .get_group("Tisza") \
+            .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
         self.gauge_peak_plateau_pairs = {}
         self.gauge_pairs = []
@@ -32,10 +34,8 @@ class FloodWaveDetector():
         result = np.empty(gauge_ts.shape[0], dtype=object)
         peaks = list(argrelextrema(gauge_ts, np.greater_equal)[0])
 
-        for k, dat in enumerate(gauge_ts):
-            data_point = GaugeData()
-            data_point.value = dat
-            result[k] = data_point
+        for idx, value in enumerate(gauge_ts):
+            result[idx] = GaugeData(value=value)
         for k in peaks:
             result[k].is_peak = True
         return result
@@ -44,7 +44,7 @@ class FloodWaveDetector():
     def create_peak_plateau_list(
             self,
             gauge_df: pd.DataFrame,
-            object_array: np.array,
+            gauge_data: np.array,
             reg_number: str
     ) -> list:
         """
@@ -57,8 +57,9 @@ class FloodWaveDetector():
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in object_array])]
-        peak_plateau_df = peak_plateau_df.drop(columns="Date").set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
+        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
+        peak_plateau_df = peak_plateau_df.drop(columns="Date") \
+            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
         peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
 
         # Get peak-plateau list
@@ -107,13 +108,13 @@ class FloodWaveDetector():
                 continue
 
             # Read the data from the actual gauge.
-            actual_gauge_with_index = self.json_helper.read(f'./saved/step1/{actual_gauge}.json')
+            actual_gauge_with_index = JsonHelper.read(f'./saved/step1/{actual_gauge}.json')
             actual_gauge_df = pd.DataFrame(data=actual_gauge_with_index,
                                            columns=['Date', 'Max value'])
             actual_gauge_df['Date'] = pd.to_datetime(actual_gauge_df['Date'])
 
             # Read the data from the next gauge.
-            next_gauge_with_index = self.json_helper.read(f'./saved/step1/{next_gauge}.json')
+            next_gauge_with_index = JsonHelper.read(f'./saved/step1/{next_gauge}.json')
             next_gauge_df = pd.DataFrame(data=next_gauge_with_index,
                                          columns=['Date', 'Max value'])
             next_gauge_df['Date'] = pd.to_datetime(next_gauge_df['Date'])
@@ -131,15 +132,13 @@ class FloodWaveDetector():
                 )
 
                 # Convert datetime to string
-                found_next_dates_str = []
                 if not found_next_dates.empty:
-                    for found_date in found_next_dates['Date']:
-                        found_date = found_date.strftime('%Y-%m-%d')
-                        found_next_dates_str.append(found_date)
+                    found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
                     actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
             # Save to file
-            self.json_helper.write(filepath=f'./saved/step2/{actual_gauge}_{next_gauge}.json', obj=actual_next_pair)
+            JsonHelper.write(filepath=f'./saved/step2/{actual_gauge}_{next_gauge}.json',
+                             obj=actual_next_pair)
 
             # Store result for the all in one dict
             gauge_peak_plateau_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
@@ -147,7 +146,7 @@ class FloodWaveDetector():
 
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
-            self.json_helper.write(filepath='./saved/step2/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
+            JsonHelper.write(filepath='./saved/step2/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
 
     def create_flood_wave(self, next_gauge_date: str,
                           next_idx: int) -> None:
@@ -220,12 +219,12 @@ class FloodWaveDetector():
 
         filename_sort = []
 
-        for fl in filenames:
-            date_str = fl.split(".json")[0]
+        for filename in filenames:
+            date_str = filename.split(".json")[0]
             date_dt = datetime.strptime(date_str, '%Y-%m-%d')
 
             if date_dt >= start and date_dt <= end:
-                filename_sort.append(fl)
+                filename_sort.append(filename)
 
         return filename_sort
 
@@ -245,21 +244,21 @@ class FloodWaveDetector():
         max_array = []
 
         # Read all the files:
-        for file in sorted_filenames:
+        for filename in sorted_filenames:
 
             # Initialize
             flood_dict = {}
 
             # Read a file and load it
-            flood_dict = self.json_helper.read(filepath=f'./saved/step3/{file}')
+            flood_dict = JsonHelper.read(filepath=f'./saved/step3/{filename}')
 
             # Get keys
             keys = flood_dict.keys()
             key_list = list(keys)
 
             # Read every dict of the file
-            for key_o in key_list:
-                local_dict = flood_dict[key_o]
+            for path_key in key_list:
+                local_dict = flood_dict[path_key]
                 new_list = []
                 # Create an array from the values to plot
                 for key, value in iter(local_dict.items()):
@@ -305,12 +304,12 @@ class FloodWaveDetector():
                 # Create keys for dictionary
                 peak_plateau_tuples = self.create_peak_plateau_list(
                     gauge_df=gauge_df,
-                    object_array=object_array,
+                    gauge_data=object_array,
                     reg_number=str(gauge)
                 )
 
                 # Save
-                self.json_helper.write(filepath=f'./saved/step1/{gauge}.json', obj=peak_plateau_tuples)
+                JsonHelper.write(filepath=f'./saved/step1/{gauge}.json', obj=peak_plateau_tuples)
 
                 print(str(gauge) + ".json")
 
@@ -327,8 +326,7 @@ class FloodWaveDetector():
 
         # Read the gauge_peak_plateau_pairs (super dict)
         if self.gauge_peak_plateau_pairs == {}:
-            self.gauge_peak_plateau_pairs = self.json_helper.read(
-                filepath='./saved/step2/gauge_peak_plateau_pairs.json')
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json')
 
         print(self.gauge_peak_plateau_pairs)
 
@@ -409,7 +407,7 @@ class FloodWaveDetector():
                                            next_idx=new_g_p_idx)
 
                 # Save the wave
-                self.json_helper.write(filepath=f'./saved/step3/{actual_date}', obj=self.flood_wave)
+                JsonHelper.write(filepath=f'./saved/step3/{actual_date}', obj=self.flood_wave)
 
     @measure_time
     def run(self):
