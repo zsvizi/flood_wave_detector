@@ -2,8 +2,11 @@ class FloodWaveDetector():
     def __init__(self) -> None:
         self.__db_credentials_path = self.read_ini()
         self.dataloader = Dataloader(self.__db_credentials_path)
-        self.meta = self.dataloader.meta_data.groupby(["river"]).get_group("Tisza").sort_values(by='river_km',
-                                                                                                ascending=False)
+        self.meta = self.dataloader \
+            .meta_data \
+            .groupby(["river"]) \
+            .get_group("Tisza") \
+            .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
         self.gauge_peak_plateau_pairs = {}
         self.gauge_pairs = []
@@ -27,32 +30,21 @@ class FloodWaveDetector():
         os.makedirs('./saved/step3', exist_ok=True)
 
     @measure_time
-    def peak_plateau_search(self, gauge_ts: np.array) -> np.array:
-        """
-        Searching for local maximums in a list.
-        Currently the function allows to find plateaus.
+    def create_object_array(self, gauge_ts: np.array) -> np.array:
+        result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
+        peaks = list(argrelextrema(gauge_ts, np.greater_equal)[0])
 
-        :param np.array gauge_ts: Time series we search the local maximim values in.
-        :return np.array: array of boolean values - True if there is a local max, false if not.
-        """
-
-        # Shift and crop the time series to align the trio of values in the time series
-        past = gauge_ts[0:-2]
-        present = gauge_ts[1:-1]
-        future = gauge_ts[2:]
-
-        # Boolean index array for non-decreasing trend continues with non-increasing trend
-        non_decreasing = (present - past) >= 0
-        non_increasing = (future - present) <= 0
-        peak_plateau = non_decreasing & non_increasing
-
-        return np.append(np.append([False], peak_plateau), [False])
+        for idx, value in enumerate(gauge_ts):
+            result[idx] = GaugeData(value=value)
+        for k in peaks:
+            result[k].is_peak = True
+        return result
 
     @measure_time
     def create_peak_plateau_list(
             self,
             gauge_df: pd.DataFrame,
-            bool_filter: np.array,
+            gauge_data: np.array,
             reg_number: str
     ) -> list:
         """
@@ -65,10 +57,9 @@ class FloodWaveDetector():
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = gauge_df.loc[bool_filter]
-        peak_plateau_df["date"] = peak_plateau_df.index
-        peak_plateau_df.index = peak_plateau_df["date"].dt.strftime('%Y-%m-%d')
-        peak_plateau_df = peak_plateau_df.drop(columns=["date", "Date"])
+        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
+        peak_plateau_df = peak_plateau_df.drop(columns="Date") \
+            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
         peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
 
         # Get peak-plateau list
@@ -113,62 +104,49 @@ class FloodWaveDetector():
         for actual_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
             actual_json_exists = os.path.exists(f'saved/step2/{actual_gauge}_{next_gauge}.json')
 
-            if (not actual_json_exists) or (not big_json_exists):
+            if actual_json_exists and big_json_exists:
+                continue
 
-                # Read the data from the actual gauge.
-                actual_gauge_f = open(f'./saved/step1/{actual_gauge}.json')
-                actual_gauge_with_index = json.load(actual_gauge_f)
-                actual_gauge_f.close()
-                actual_gauge_df = pd.DataFrame(data=actual_gauge_with_index,
-                                               columns=['Date', 'Max value'])
-                actual_gauge_df['Date'] = pd.to_datetime(actual_gauge_df['Date'])
+            # Read the data from the actual gauge.
+            actual_gauge_with_index = JsonHelper.read(f'./saved/step1/{actual_gauge}.json')
+            actual_gauge_df = pd.DataFrame(data=actual_gauge_with_index,
+                                           columns=['Date', 'Max value'])
+            actual_gauge_df['Date'] = pd.to_datetime(actual_gauge_df['Date'])
 
-                # Read the data from the next gauge.
-                next_gauge_f = open(f'./saved/step1/{next_gauge}.json')
-                next_gauge_with_index = json.load(next_gauge_f)
-                next_gauge_f.close()
-                next_gauge_df = pd.DataFrame(data=next_gauge_with_index,
-                                             columns=['Date', 'Max value'])
-                next_gauge_df['Date'] = pd.to_datetime(next_gauge_df['Date'])
+            # Read the data from the next gauge.
+            next_gauge_with_index = JsonHelper.read(f'./saved/step1/{next_gauge}.json')
+            next_gauge_df = pd.DataFrame(data=next_gauge_with_index,
+                                         columns=['Date', 'Max value'])
+            next_gauge_df['Date'] = pd.to_datetime(next_gauge_df['Date'])
 
-                # Create actual_next_pair
-                actual_next_pair = dict()
-                for actual_date in actual_gauge_df['Date']:
+            # Create actual_next_pair
+            actual_next_pair = dict()
+            for actual_date in actual_gauge_df['Date']:
 
-                    # Find next dates for the following gauge
-                    past_date = actual_date - timedelta(days=delay)
-                    found_next_dates = self.filter_for_start_and_length(
-                        gauge_df=next_gauge_df,
-                        min_date=past_date,
-                        window_size=window_size
-                    )
+                # Find next dates for the following gauge
+                past_date = actual_date - timedelta(days=delay)
+                found_next_dates = self.filter_for_start_and_length(
+                    gauge_df=next_gauge_df,
+                    min_date=past_date,
+                    window_size=window_size
+                )
 
-                    # Convert datetime to string
-                    found_next_dates_str = []
-                    if not found_next_dates.empty:
-                        for found_date in found_next_dates['Date']:
-                            found_date = found_date.strftime('%Y-%m-%d')
-                            found_next_dates_str.append(found_date)
-                        actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
+                # Convert datetime to string
+                if not found_next_dates.empty:
+                    found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+                    actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
-                # Save to file
-                file = open(f'./saved/step2/{actual_gauge}_{next_gauge}.json', 'w')
-                json.dump(obj=actual_next_pair,
-                          fp=file,
-                          indent=4)
-                file.close()
+            # Save to file
+            JsonHelper.write(filepath=f'./saved/step2/{actual_gauge}_{next_gauge}.json',
+                             obj=actual_next_pair)
 
-                # Store result for the all in one dict
-                gauge_peak_plateau_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
-                print(f'{actual_gauge}_{next_gauge}.json')
+            # Store result for the all in one dict
+            gauge_peak_plateau_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
+            print(f'{actual_gauge}_{next_gauge}.json')
 
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
-            file_all = open('./saved/step2/gauge_peak_plateau_pairs.json', 'w')
-            json.dump(obj=gauge_peak_plateau_pairs,
-                      fp=file_all,
-                      indent=4)
-            file_all.close()
+            JsonHelper.write(filepath='./saved/step2/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
 
     def create_flood_wave(self, next_gauge_date: str,
                           next_idx: int) -> None:
@@ -218,7 +196,7 @@ class FloodWaveDetector():
         else:
 
             # Update the 'map'. (Add the path to the start date)
-            self.flood_wave['id' + str(self.wave_serial_number)] = self.path
+            self.flood_wave[f'id{self.wave_serial_number}'] = self.path
 
             # Make possible to have more paths
             self.wave_serial_number += 1
@@ -241,12 +219,12 @@ class FloodWaveDetector():
 
         filename_sort = []
 
-        for fl in filenames:
-            date_str = fl.split(".json")[0]
+        for filename in filenames:
+            date_str = filename.split(".json")[0]
             date_dt = datetime.strptime(date_str, '%Y-%m-%d')
 
             if date_dt >= start and date_dt <= end:
-                filename_sort.append(fl)
+                filename_sort.append(filename)
 
         return filename_sort
 
@@ -266,24 +244,21 @@ class FloodWaveDetector():
         max_array = []
 
         # Read all the files:
-        for file in sorted_filenames:
+        for filename in sorted_filenames:
 
             # Initialize
             flood_dict = {}
 
             # Read a file and load it
-            file_path = './saved/step3/' + file
-            file_opened = open(file_path)
-            flood_dict = json.load(file_opened)
-            file_opened.close()
+            flood_dict = JsonHelper.read(filepath=f'./saved/step3/{filename}')
 
             # Get keys
             keys = flood_dict.keys()
             key_list = list(keys)
 
             # Read every dict of the file
-            for key_o in key_list:
-                local_dict = flood_dict[key_o]
+            for path_key in key_list:
+                local_dict = flood_dict[path_key]
                 new_list = []
                 # Create an array from the values to plot
                 for key, value in iter(local_dict.items()):
@@ -324,21 +299,17 @@ class FloodWaveDetector():
                 gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                peak_plateau_bool = self.peak_plateau_search(gauge_ts=gauge_df[str(gauge)].to_numpy())
+                object_array = self.create_object_array(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
                 peak_plateau_tuples = self.create_peak_plateau_list(
                     gauge_df=gauge_df,
-                    bool_filter=peak_plateau_bool,
+                    gauge_data=object_array,
                     reg_number=str(gauge)
                 )
 
                 # Save
-                file = open('./saved/step1/' + str(gauge) + ".json", "w")
-                json.dump(obj=peak_plateau_tuples,
-                          fp=file,
-                          indent=4)
-                file.close()
+                JsonHelper.write(filepath=f'./saved/step1/{gauge}.json', obj=peak_plateau_tuples)
 
                 print(str(gauge) + ".json")
 
@@ -355,9 +326,7 @@ class FloodWaveDetector():
 
         # Read the gauge_peak_plateau_pairs (super dict)
         if self.gauge_peak_plateau_pairs == {}:
-            gauge_peak_plateau_pairs_f = open('./saved/step2/gauge_peak_plateau_pairs.json')
-            self.gauge_peak_plateau_pairs = json.load(gauge_peak_plateau_pairs_f)
-            gauge_peak_plateau_pairs_f.close()
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json')
 
         print(self.gauge_peak_plateau_pairs)
 
@@ -438,11 +407,7 @@ class FloodWaveDetector():
                                            next_idx=new_g_p_idx)
 
                 # Save the wave
-                file = open(f'./saved/step3/{actual_date}', 'w')
-                json.dump(obj=self.flood_wave,
-                          fp=file,
-                          indent=4)
-                file.close()
+                JsonHelper.write(filepath=f'./saved/step3/{actual_date}', obj=self.flood_wave)
 
     @measure_time
     def run(self):
