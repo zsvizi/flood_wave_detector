@@ -31,7 +31,7 @@ class FloodWaveDetector():
 
     @measure_time
     def create_object_array(self, gauge_ts: np.array) -> np.array:
-        result = np.empty(gauge_ts.shape[0], dtype=object)
+        result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         peaks = list(argrelextrema(gauge_ts, np.greater_equal)[0])
 
         for idx, value in enumerate(gauge_ts):
