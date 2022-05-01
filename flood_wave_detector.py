@@ -243,10 +243,10 @@ class FloodWaveDetector():
 
         joined_graph = nx.DiGraph()
         for gauge_pair in self.gauge_pairs:
-            filenames = next(os.walk(f'./trial/saved/new/step3/{gauge_pair}'), (None, None, []))[2]
+            filenames = next(os.walk(f'./saved/step3/{gauge_pair}'), (None, None, []))[2]
             sorted_files = self.sort_wave(filenames=filenames, start=start, end=end)
             for file in sorted_files:
-                data = JsonHelper.read(filepath=f'./trial/saved/new/step3/{gauge_pair}/{file}', log=False)
+                data = JsonHelper.read(filepath=f'./saved/step3/{gauge_pair}/{file}', log=False)
                 H = json_graph.node_link_graph(data)
                 # Read a file and load it
                 joined_graph = nx.compose(joined_graph, H)
