@@ -1,3 +1,7 @@
+from functools import wraps
+from time import time
+
+
 def measure_time(f):
     @wraps(f)
     def wrap(*args, **kw):

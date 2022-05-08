@@ -1,3 +1,7 @@
+from typing import Union
+import json
+
+
 class JsonHelper:
     @staticmethod
     def write(filepath: str, obj: Union[dict, tuple], log: bool = True):
