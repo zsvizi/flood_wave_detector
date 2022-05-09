@@ -16,6 +16,9 @@ from networkx.readwrite import json_graph
 from datetime import datetime
 
 from data_ativizig.dataloader import Dataloader
+from gauge_data import GaugeData
+from json_helper import JsonHelper
+from measure_time import measure_time
 
 
 class FloodWaveDetector():
