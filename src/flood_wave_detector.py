@@ -1,12 +1,8 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
-from functools import wraps
 import itertools
-import json
 import os
 from queue import LifoQueue
-from time import time
-from typing import Union
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -19,6 +15,7 @@ from data_ativizig.dataloader import Dataloader
 from src.gauge_data import GaugeData
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
+
 
 class FloodWaveDetector():
     def __init__(self) -> None:
@@ -40,7 +37,6 @@ class FloodWaveDetector():
         self.branches = LifoQueue()
         self.flood_wave = {}
         
-
     @measure_time
     def read_ini(self) -> os.path:
         dirname = os.path.dirname(os.getcwd())
@@ -48,17 +44,16 @@ class FloodWaveDetector():
     
     @measure_time
     def mkdirs(self):
-        os.makedirs('./saved', exist_ok = True)
-        os.makedirs('./saved/step1', exist_ok = True)
-        os.makedirs('./saved/step2', exist_ok = True)
-        os.makedirs('./saved/step3', exist_ok = True)
-        os.makedirs('./saved/new/step3', exist_ok = True)
+        os.makedirs('./saved', exist_ok=True)
+        os.makedirs('./saved/step1', exist_ok=True)
+        os.makedirs('./saved/step2', exist_ok=True)
+        os.makedirs('./saved/step3', exist_ok=True)
+        os.makedirs('./saved/new/step3', exist_ok=True)
     
     @measure_time
     def create_gauge_data(self, gauge_ts: np.array) -> np.array:
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         peaks = list(argrelextrema(gauge_ts, np.greater_equal)[0])
-        
         
         for idx, value in enumerate(gauge_ts):
             result[idx] = GaugeData(value=value)
@@ -75,7 +70,7 @@ class FloodWaveDetector():
         e = np.r_[gauge_ts[:-1] >= gauge_ts[1:], False]
         peak_bool = b & c & d & e
         peaks = list(np.where(peak_bool)[0])
-        #print(peaks)
+        # print(peaks)
         
         for idx, value in enumerate(gauge_ts):
             result[idx] = GaugeData(value=value)
@@ -83,14 +78,13 @@ class FloodWaveDetector():
             result[k].is_peak = True
         return result
     
-    
     @measure_time
     def create_peak_plateau_list(
         self,
         gauge_df: pd.DataFrame, 
         gauge_data: np.array,
         reg_number: str
-        ) -> list:
+    ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
@@ -110,13 +104,12 @@ class FloodWaveDetector():
         peak_plateau_list = [tuple(x) for x in peak_plateau_tuple]
         return peak_plateau_list
     
-
+    @staticmethod
     def filter_for_start_and_length(
-        self,
         gauge_df: pd.DataFrame, 
         min_date: datetime, 
         window_size: int
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """
         Find possible follow-up dates for the flood wave coming from the previous gauge
 
@@ -230,7 +223,7 @@ class FloodWaveDetector():
                     path_partial[next_gauge] = dat  # update with the new node and the corresponding possible date
                     new_path_key = "path" + str(next_idx + 1) + str(k)
                     self.all_paths[new_path_key] = path_partial 
-                    self.branches.put([dat , next_idx + 1, new_path_key])
+                    self.branches.put([dat, next_idx + 1, new_path_key])
 
             # Update the status of our "place" (path)
             self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
@@ -238,8 +231,8 @@ class FloodWaveDetector():
             self.path[next_gauge] = new_gauge_date
 
             # Keep going, search for the path
-            self.create_flood_wave(next_gauge_date=new_gauge_date, 
-                              next_idx=next_idx + 1)
+            self.create_flood_wave(next_gauge_date=new_gauge_date,
+                                   next_idx=next_idx + 1)
         else:
 
             # Update the 'map'. (Add the path to the start date)
@@ -250,8 +243,8 @@ class FloodWaveDetector():
             
     @measure_time
     def sort_wave(self, filenames: list,
-              start: str = '2006-02-01', 
-              end: str = '2006-06-01') -> list:
+                  start: str = '2006-02-01',
+                  end: str = '2006-06-01') -> list:
         """
         It's hard to visualize waves far from each other. 
         With this method, we can choose a period and check the waves in it.
@@ -270,7 +263,7 @@ class FloodWaveDetector():
             date_str = filename.split(".json")[0]
             date_dt = datetime.strptime(date_str, '%Y-%m-%d')
 
-            if date_dt >= start and date_dt <= end:
+            if start <= date_dt <= end:
                 filename_sort.append(filename)
 
         return filename_sort
@@ -278,7 +271,8 @@ class FloodWaveDetector():
     def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str):
         
         if self.gauge_peak_plateau_pairs == {}:            
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json', log=False)
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
+                                                            log=False)
             
         # first filter
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
@@ -287,7 +281,7 @@ class FloodWaveDetector():
         selected_meta = self.meta[(self.meta['river_km'] >= low_limit)]
         start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         
-        selected_pairs = [x for x in self.gauge_pairs if int(x.split('_')[0]) in start_gauges ]
+        selected_pairs = [x for x in self.gauge_pairs if int(x.split('_')[0]) in start_gauges]
         
         joined_graph = nx.Graph()
         for gauge_pair in selected_pairs:
@@ -299,11 +293,12 @@ class FloodWaveDetector():
                 # Read a file and load it
                 joined_graph = nx.compose(joined_graph, H)
         
-        comp_meta = selected_meta = self.meta[(self.meta['river_km'] >= low_limit) & (self.meta['river_km'] <= up_limit)]
+        comp_meta = selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
+                                              (self.meta['river_km'] <= up_limit)]
         comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         # second filter
         comp = [x for x in self.gauges if x not in comp_gauges]
-        remove =[x for x in joined_graph.nodes if int(x[0]) in comp]
+        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
         print(joined_graph.nodes)
         joined_graph.remove_nodes_from(remove)
         print(joined_graph.nodes)
@@ -318,7 +313,7 @@ class FloodWaveDetector():
         for sub_cc in cc:
             res_start = [int(node[0]) == start_station for node in sub_cc]
             res_end = [int(node[0]) == end_station for node in sub_cc]
-            if ((True not in res_start) or (True not in res_end)):
+            if (True not in res_start) or (True not in res_end):
                 joined_graph.remove_nodes_from(sub_cc)
         total_waves = 0
         for sub_cc in cc:
@@ -329,7 +324,6 @@ class FloodWaveDetector():
                     paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
                     total_waves += len(paths)
         
-        
         return joined_graph, total_waves
     
     def merge_graphs(self, start_station: int, end_station: int, start_date: str, end_date: str,
@@ -338,14 +332,12 @@ class FloodWaveDetector():
         joined_graph = self.filter_graph(start_station=start_station, end_station=end_station,
                                          start_date=start_date, end_date=end_date)[0]
        
-        
-        
-        start = datetime.strptime(start_date,'%Y-%m-%d')
-        end = datetime.strptime(end_date,'%Y-%m-%d')
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d')
     
         positions = dict()
         for node in joined_graph.nodes():
-            x_coord = abs((start - datetime.strptime(node[1],'%Y-%m-%d')).days) - 1
+            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
             y_coord = len(self.gauges) - self.gauges.index(int(node[0]))
             positions[node] = (x_coord, y_coord)
         
@@ -359,24 +351,25 @@ class FloodWaveDetector():
                                  start + timedelta(days=max_x + 1),
                                  freq='d').strftime('%Y-%m-%d').tolist()
         ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment = 'right', fontsize=102)
+        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=102)
         
         min_y = 1
         max_y = len(self.gauges) + 1
         y_labels = [str(gauge) for gauge in self.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment = 'right', fontsize=32)
+        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=32)
         
-        plt.rcParams["figure.figsize"] = (40,10)
+        plt.rcParams["figure.figsize"] = (40, 10)
         nx.draw(joined_graph, pos=positions, node_size=1000)
-        limits=plt.axis('on') # turns on axis
+        limits = plt.axis('on')  # turns on axis
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         plt.savefig('graph_.pdf')
         
     def plot_graph(self, start: str, end: str):
         
         if self.gauge_peak_plateau_pairs == {}:            
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json', log=False)
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
+                                                            log=False)
         
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
 
@@ -390,8 +383,8 @@ class FloodWaveDetector():
                 # Read a file and load it
                 joined_graph = nx.compose(joined_graph, H)
 
-        start = datetime.strptime(start,'%Y-%m-%d')
-        end = datetime.strptime(end,'%Y-%m-%d')
+        start = datetime.strptime(start, '%Y-%m-%d')
+        end = datetime.strptime(end, '%Y-%m-%d')
     
         positions = dict()
         for node in joined_graph.nodes():
@@ -408,17 +401,17 @@ class FloodWaveDetector():
                                  start + timedelta(days=max_x + 1),
                                  freq='d').strftime('%Y-%m-%d').tolist()
         ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment = 'right', fontsize=15)
+        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=15)
         
         min_y = 1
         max_y = len(self.gauges) + 1
         y_labels = [str(gauge) for gauge in self.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment = 'right', fontsize=22)
+        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=22)
         
         plt.rcParams["figure.figsize"] = (30,20)
         nx.draw(joined_graph, pos=positions, node_size=500)
-        limits=plt.axis('on') # turns on axis
+        limits = plt.axis('on') # turns on axis
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         plt.savefig('graph.pdf')
         
@@ -460,7 +453,6 @@ class FloodWaveDetector():
         
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
 
-        
         """
         To understand the code better, here are some description and example:
 
@@ -493,12 +485,12 @@ class FloodWaveDetector():
             All of the waves from the given start point. 
         """
 
-        root_gauge_pair = self.gauge_pairs[0] # Root.
+        root_gauge_pair = self.gauge_pairs[0]  # Root.
         root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[root_gauge_pair]
         for gauge_pair in self.gauge_pairs:
             next_g_p_idx = 1
             root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
-            os.makedirs(f'./saved/step3/{gauge_pair}', exist_ok = True)
+            os.makedirs(f'./saved/step3/{gauge_pair}', exist_ok=True)
             # Search waves starting from the root
             for actual_date in root_gauge_pair_date_dict.keys():
 
@@ -512,7 +504,6 @@ class FloodWaveDetector():
                     self.path = {}
                     self.all_paths = {}
                     self.wave_serial_number = 0
-                    
                     
                     """
                     root_gauge = root_gauge_pair.split('_')[0]
@@ -528,7 +519,7 @@ class FloodWaveDetector():
 
                     # Search for flood wave
                     self.create_flood_wave(next_gauge_date=next_date,
-                                      next_idx=next_g_p_idx)
+                                           next_idx=next_g_p_idx)
 
                     # Go over the missed branches
                     while self.branches.qsize() != 0:
@@ -539,14 +530,13 @@ class FloodWaveDetector():
 
                         # Go back to the branch
                         self.create_flood_wave(next_gauge_date=new_date,
-                                          next_idx=new_g_p_idx)
+                                               next_idx=new_g_p_idx)
 
                     # Save the wave
                     
                     data = json_graph.node_link_data(self.tree_g)
                     JsonHelper.write(filepath=f'./saved/step3/{gauge_pair}/{actual_date}', obj=data)
                     
-        
     @measure_time
     def run(self):
         self.mkdirs()
