@@ -267,65 +267,7 @@ class FloodWaveDetector:
                 filename_sort.append(filename)
 
         return filename_sort
-    
-    def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str):
-        
-        if self.gauge_peak_plateau_pairs == {}:            
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
-                                                            log=False)
-            
-        # first filter
-        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
-        up_limit = self.meta.loc[start_station].river_km
-        low_limit = self.meta.loc[end_station].river_km
-        selected_meta = self.meta[(self.meta['river_km'] >= low_limit)]
-        start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
-        
-        selected_pairs = [x for x in self.gauge_pairs if int(x.split('_')[0]) in start_gauges]
-        
-        joined_graph = nx.Graph()
-        for gauge_pair in selected_pairs:
-            filenames = next(os.walk(f'./saved/step3/{gauge_pair}'), (None, None, []))[2]
-            sorted_files = self.sort_wave(filenames=filenames, start=start_date, end=end_date)
-            for file in sorted_files:
-                data = JsonHelper.read(filepath=f'./saved/step3/{gauge_pair}/{file}', log=False)
-                h = json_graph.node_link_graph(data)
-                # Read a file and load it
-                joined_graph = nx.compose(joined_graph, h)
-        
-        selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
-                                  (self.meta['river_km'] <= up_limit)]
-        comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
-        # second filter
-        comp = [x for x in self.gauges if x not in comp_gauges]
-        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
-        print(joined_graph.nodes)
-        joined_graph.remove_nodes_from(remove)
-        print(joined_graph.nodes)
-        
-        # third filter
-        remove_date = [x for x in joined_graph.nodes if ((x[1] > end_date) or (x[1] < start_date))]
-        joined_graph.remove_nodes_from(remove_date)
-        print(joined_graph.nodes)
-        
-        # fourth filter
-        cc = [list(x) for x in nx.connected_components(joined_graph)]
-        for sub_cc in cc:
-            res_start = [int(node[0]) == start_station for node in sub_cc]
-            res_end = [int(node[0]) == end_station for node in sub_cc]
-            if (True not in res_start) or (True not in res_end):
-                joined_graph.remove_nodes_from(sub_cc)
-        total_waves = 0
-        for sub_cc in cc:
-            start_nodes = [node for node in sub_cc if int(node[0]) == start_station]
-            end_nodes = [node for node in sub_cc if int(node[0]) == end_station]
-            for start in start_nodes:
-                for end in end_nodes:
-                    paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
-                    total_waves += len(paths)
-        
-        return joined_graph, total_waves
-    
+
     @measure_time
     def step_1(self):
         for gauge in self.gauges:
