@@ -25,7 +25,6 @@ class Plotter:
             self.save_merge_graph(joined_graph=joined_graph)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
-        end = datetime.strptime(end_date, '%Y-%m-%d')
 
         positions = self.create_positions(joined_graph=joined_graph, start=start)
 
@@ -33,19 +32,15 @@ class Plotter:
         if span:
             ax.axhspan(vs, ve, color='green', alpha=0.3, label="Window for maximum")
             ax.axvspan(hs, he, color='orange', alpha=0.3, label="Window for maximum")
-        x_labels = self.set_ticks_x_label(ax, positions, start)
+
+        x_labels = self.set_x_axis_ticks(ax, positions, start)
         ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=102)
 
-        min_y = 1
-        max_y = len(self.fwd.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.fwd.gauges[::-1]]
-        ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
+        y_labels = self.set_y_axis_ticks(ax)
         ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=32)
 
-        plt.rcParams["figure.figsize"] = (40, 10)
-        nx.draw(joined_graph, pos=positions, node_size=1000)
-        plt.axis('on')  # turns on axis
-        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        self.format_figure(ax=ax, xsize=40, ysize=10, joined_graph=joined_graph, positions=positions, node_size=1000)
+
         plt.savefig('graph_.pdf')
 
     def plot_graph(self, start_date: str, end_date: str, save: bool):
@@ -65,25 +60,19 @@ class Plotter:
             self.save_plot_graph(joined_graph)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
-        end = datetime.strptime(end_date, '%Y-%m-%d')
 
         positions = self.create_positions(joined_graph, start)
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
-        x_labels = self.set_ticks_x_label(ax, positions, start)
+        x_labels = self.set_x_axis_ticks(ax, positions, start)
         ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=15)
 
-        min_y = 1
-        max_y = len(self.fwd.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.fwd.gauges[::-1]]
-        ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
+        y_labels = self.set_y_axis_ticks(ax)
         ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=22)
 
-        plt.rcParams["figure.figsize"] = (30, 20)
-        nx.draw(joined_graph, pos=positions, node_size=500)
-        limits = plt.axis('on')  # turns on axis
-        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        self.format_figure(ax=ax, xsize=30, ysize=20, joined_graph=joined_graph, positions=positions, node_size=500)
+
         plt.savefig('graph.pdf')
 
     def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str):
@@ -150,7 +139,7 @@ class Plotter:
         JsonHelper.write(filepath=f'./saved/plot_graph.json', obj=joined_graph_save, log=False)
 
     @staticmethod
-    def set_ticks_x_label(ax, positions, start):
+    def set_x_axis_ticks(ax, positions, start):
         min_x = -1
         max_x = max([n[0] for n in positions.values()])
         x_labels = pd.date_range(start - timedelta(days=1),
@@ -158,6 +147,20 @@ class Plotter:
                                  freq='d').strftime('%Y-%m-%d').tolist()
         ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
         return x_labels
+
+    @staticmethod
+    def format_figure(ax, xsize: int, ysize: int, joined_graph: nx.Graph, positions, node_size: int):
+        plt.rcParams["figure.figsize"] = (xsize, ysize)
+        nx.draw(joined_graph, pos=positions, node_size=node_size)
+        plt.axis('on')  # turns on axis
+        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+
+    def set_y_axis_ticks(self, ax):
+        min_y = 1
+        max_y = len(self.fwd.gauges) + 1
+        y_labels = [str(gauge) for gauge in self.fwd.gauges[::-1]]
+        ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
+        return y_labels
 
     def create_positions(self, joined_graph: nx.Graph, start):
         positions = dict()
