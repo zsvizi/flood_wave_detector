@@ -4,7 +4,7 @@ import json
 
 class JsonHelper:
     @staticmethod
-    def write(filepath: str, obj: Union[dict, tuple], log: bool = True):
+    def write(filepath: str, obj: Union[dict, tuple, list], log: bool = True):
         if log:
             print(f'Writing to file: {filepath}')
         with open(filepath, 'w') as file:

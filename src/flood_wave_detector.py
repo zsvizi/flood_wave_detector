@@ -17,7 +17,7 @@ from src.json_helper import JsonHelper
 from src.measure_time import measure_time
 
 
-class FloodWaveDetector():
+class FloodWaveDetector:
     def __init__(self) -> None:
         self.__db_credentials_path = self.read_ini()
         self.dataloader = Dataloader(self.__db_credentials_path)
@@ -89,14 +89,15 @@ class FloodWaveDetector():
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
         :param pd.DataFrame gauge_df: One gauge column, one date column, date index.
-        :param np.array bool_filter: A bool list. There is a local peak/plateau, where it's true.
+        :param np.array gauge_data: Array for local peak/plateau values.
         :param str reg_number: The gauge id.
         :return list: list of tuple of local max values and the date. (date, value) 
         """
 
         # Clean-up dataframe for getting peak-plateau list
         peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
-        peak_plateau_df = peak_plateau_df.set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
+        peak_plateau_df = peak_plateau_df.drop(columns="Date")\
+            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
         peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
 
         # Get peak-plateau list
@@ -424,13 +425,13 @@ class FloodWaveDetector():
                 gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                object_array = self.create_gauge_data_2(gauge_ts=gauge_df[gauge].to_numpy())
+                object_array = self.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
                 peak_plateau_tuples = self.create_peak_plateau_list(
                     gauge_df=gauge_df, 
                     gauge_data=object_array, 
-                    reg_number=gauge
+                    reg_number=str(gauge)
                 )
 
                 # Save
