@@ -332,6 +332,9 @@ class FloodWaveDetector:
         
         joined_graph = self.filter_graph(start_station=start_station, end_station=end_station,
                                          start_date=start_date, end_date=end_date)[0]
+        
+        joined_graph_save = nx.node_link_data(joined_graph)
+        JsonHelper.write(filepath=f'./saved/merge_graphs.json', obj=joined_graph_save, log=False)
        
         start = datetime.strptime(start_date, '%Y-%m-%d')
         end = datetime.strptime(end_date, '%Y-%m-%d')
@@ -383,7 +386,10 @@ class FloodWaveDetector:
                 H = json_graph.node_link_graph(data)
                 # Read a file and load it
                 joined_graph = nx.compose(joined_graph, H)
-
+                
+        joined_graph_save = nx.node_link_data(joined_graph)
+        JsonHelper.write(filepath=f'./saved/plot_graph.json', obj=joined_graph_save, log=False)
+        
         start = datetime.strptime(start, '%Y-%m-%d')
         end = datetime.strptime(end, '%Y-%m-%d')
     
