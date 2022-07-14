@@ -4,7 +4,6 @@ import itertools
 import os
 from queue import LifoQueue
 
-import matplotlib.pyplot as plt
 import networkx as nx
 from networkx.readwrite import json_graph
 import numpy as np
@@ -290,12 +289,12 @@ class FloodWaveDetector:
             sorted_files = self.sort_wave(filenames=filenames, start=start_date, end=end_date)
             for file in sorted_files:
                 data = JsonHelper.read(filepath=f'./saved/step3/{gauge_pair}/{file}', log=False)
-                H = json_graph.node_link_graph(data)
+                h = json_graph.node_link_graph(data)
                 # Read a file and load it
-                joined_graph = nx.compose(joined_graph, H)
+                joined_graph = nx.compose(joined_graph, h)
         
-        comp_meta = selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
-                                              (self.meta['river_km'] <= up_limit)]
+        selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
+                                  (self.meta['river_km'] <= up_limit)]
         comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         # second filter
         comp = [x for x in self.gauges if x not in comp_gauges]
@@ -327,102 +326,7 @@ class FloodWaveDetector:
         
         return joined_graph, total_waves
     
-    def merge_graphs(self, start_station: int, end_station: int, start_date: str, end_date: str,
-                    span: bool, hs: int, he:int, vs,ve):
-        
-        joined_graph = self.filter_graph(start_station=start_station, end_station=end_station,
-                                         start_date=start_date, end_date=end_date)[0]
-        
-        joined_graph_save = nx.node_link_data(joined_graph)
-        JsonHelper.write(filepath=f'./saved/merge_graphs.json', obj=joined_graph_save, log=False)
-       
-        start = datetime.strptime(start_date, '%Y-%m-%d')
-        end = datetime.strptime(end_date, '%Y-%m-%d')
-    
-        positions = dict()
-        for node in joined_graph.nodes():
-            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
-            y_coord = len(self.gauges) - self.gauges.index(int(node[0]))
-            positions[node] = (x_coord, y_coord)
-        
-        fig, ax = plt.subplots()
-        if span:
-            ax.axhspan(vs, ve, color='green', alpha=0.3, label="Window for maximum")
-            #ax.axvspan(hs, he, color='orange', alpha=0.3, label="Window for maximum")
-        min_x = -1
-        max_x = max([n[0] for n in positions.values()])
-        x_labels = pd.date_range(start - timedelta(days=1),
-                                 start + timedelta(days=max_x + 1),
-                                 freq='d').strftime('%Y-%m-%d').tolist()
-        ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=102)
-        
-        min_y = 1
-        max_y = len(self.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.gauges[::-1]]
-        ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=32)
-        
-        plt.rcParams["figure.figsize"] = (40, 10)
-        nx.draw(joined_graph, pos=positions, node_size=1000)
-        limits = plt.axis('on')  # turns on axis
-        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-        plt.savefig('graph_.pdf')
-        
-    def plot_graph(self, start: str, end: str):
-        
-        if self.gauge_peak_plateau_pairs == {}:            
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
-                                                            log=False)
-        
-        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
-
-        joined_graph = nx.DiGraph()
-        for gauge_pair in self.gauge_pairs:
-            filenames = next(os.walk(f'./saved/step3/{gauge_pair}'), (None, None, []))[2]
-            sorted_files = self.sort_wave(filenames=filenames, start=start, end=end)
-            for file in sorted_files:
-                data = JsonHelper.read(filepath=f'./saved/step3/{gauge_pair}/{file}', log=False)
-                H = json_graph.node_link_graph(data)
-                # Read a file and load it
-                joined_graph = nx.compose(joined_graph, H)
-                
-        joined_graph_save = nx.node_link_data(joined_graph)
-        JsonHelper.write(filepath=f'./saved/plot_graph.json', obj=joined_graph_save, log=False)
-        
-        start = datetime.strptime(start, '%Y-%m-%d')
-        end = datetime.strptime(end, '%Y-%m-%d')
-    
-        positions = dict()
-        for node in joined_graph.nodes():
-            x_coord = abs((start - datetime.strptime(node[1],'%Y-%m-%d')).days) - 1
-            y_coord = len(self.gauges) - self.gauges.index(int(node[0]))
-            positions[node] = (x_coord, y_coord)
-        
-        fig, ax = plt.subplots()
-        ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
-        min_x = -1
-        max_x = max([n[0] for n in positions.values()])
-       
-        x_labels = pd.date_range(start - timedelta(days=1),
-                                 start + timedelta(days=max_x + 1),
-                                 freq='d').strftime('%Y-%m-%d').tolist()
-        ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=15)
-        
-        min_y = 1
-        max_y = len(self.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.gauges[::-1]]
-        ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=22)
-        
-        plt.rcParams["figure.figsize"] = (30,20)
-        nx.draw(joined_graph, pos=positions, node_size=500)
-        limits = plt.axis('on') # turns on axis
-        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-        plt.savefig('graph.pdf')
-        
-    @measure_time       
+    @measure_time
     def step_1(self):
         for gauge in self.gauges:
             if not os.path.exists('saved/step1/' + str(gauge) + '.json'):
@@ -528,7 +432,7 @@ class FloodWaveDetector:
                     self.create_flood_wave(next_gauge_date=next_date,
                                            next_idx=next_g_p_idx)
 
-                    # Go over the missed branches
+                    # Go over the missed branches, depth search
                     while self.branches.qsize() != 0:
 
                         # Get info from branches (info about the branch)
