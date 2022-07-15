@@ -20,22 +20,148 @@ class FloodWaveDetector:
     def __init__(self) -> None:
         self.__db_credentials_path = self.read_ini()
         self.dataloader = Dataloader(self.__db_credentials_path)
-        self.meta = self.dataloader\
-                        .meta_data\
+        self.meta = self.dataloader.meta_data\
                         .groupby(["river"])\
                         .get_group("Tisza")\
                         .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
+
         self.gauge_peak_plateau_pairs = {}
         self.gauge_pairs = []
-        
         self.tree_g = nx.DiGraph()
         self.path = {}
         self.all_paths = {}
         self.wave_serial_number = 0
         self.branches = LifoQueue()
         self.flood_wave = {}
-        
+
+    @measure_time
+    def run(self):
+        self.mkdirs()
+        self.find_vertices()
+        self.find_edges()
+        self.build_graph()
+
+    @measure_time
+    def find_vertices(self):
+        for gauge in self.gauges:
+            if not os.path.exists('saved/step1/' + str(gauge) + '.json'):
+                # Get gauge data and drop missing data and make it an array.
+                gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
+
+                # Get local peak/plateau values
+                local_peak_values = self.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
+
+                # Create keys for dictionary
+                peak_plateau_tuples = self.create_peak_plateau_list(
+                    gauge_df=gauge_df,
+                    gauge_data=local_peak_values,
+                    reg_number=str(gauge)
+                )
+
+                # Save
+                JsonHelper.write(filepath=f'./saved/step1/{gauge}.json', obj=peak_plateau_tuples)
+
+    @measure_time
+    def find_edges(self):
+        self.search_flooding_gauge_pairs(delay=0, window_size=3, gauges=self.gauges)
+
+    @measure_time
+    def build_graph(self):
+        """
+        Searching for wave "series". For now, starting from the root ('1514-1515').
+        Trying to find the same waves in different gauges.
+        """
+
+        # Read the gauge_peak_plateau_pairs (super dict)
+        if self.gauge_peak_plateau_pairs == {}:
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json')
+
+        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
+
+        """
+        To understand the code better, here are some description and example:
+
+        branches = ['1951-01-11', 3, 'path30']
+
+            We save the branches to this stucture. It' a . 
+            This means, we can get out first the element , we put in last. 
+            On the above example we can see one element of branches.
+
+
+        path =  {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}
+
+            One path without branches.
+
+
+        all_paths ={'path20': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
+                               '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
+                    'path30': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
+
+            More path from the same start. The last path might be unfinished.
+
+
+        flood_wave = {'id0': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08', 
+                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
+                      'id1': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08'}, 
+                      'id2': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
+                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
+                      'id3': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
+
+            All of the waves from the given start point. 
+        """
+
+        root_gauge_pair = self.gauge_pairs[0]  # Root.
+        root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[root_gauge_pair]
+        for gauge_pair in self.gauge_pairs:
+            next_g_p_idx = 1
+            root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
+            os.makedirs(f'./saved/step3/{gauge_pair}', exist_ok=True)
+            # Search waves starting from the root
+            for actual_date in root_gauge_pair_date_dict.keys():
+
+                self.tree_g = nx.Graph()
+                self.flood_wave = {}
+                # Go over every date with a wave
+                for next_date in root_gauge_pair_date_dict[actual_date]:
+
+                    # Empty and reset variables
+                    next_g_p_idx = 1
+                    self.path = {}
+                    self.all_paths = {}
+                    self.wave_serial_number = 0
+
+                    """
+                    root_gauge = root_gauge_pair.split('_')[0]
+                    root_gauge_next = root_gauge_pair.split('_')[1]
+                    """
+                    root_gauge = gauge_pair.split('_')[0]
+                    root_gauge_next = gauge_pair.split('_')[1]
+
+                    self.tree_g.add_edge(u_of_edge=(root_gauge, actual_date),
+                                         v_of_edge=(root_gauge_next, next_date))
+                    self.path[root_gauge] = actual_date
+                    self.path[root_gauge_next] = next_date
+
+                    # Search for flood wave
+                    self.create_flood_wave(next_gauge_date=next_date,
+                                           next_idx=next_g_p_idx)
+
+                    # Go over the missed branches, depth search
+                    while self.branches.qsize() != 0:
+                        # Get info from branches (info about the branch)
+                        new_date, new_g_p_idx, path_key = self.branches.get()
+                        self.path = self.all_paths[path_key]
+
+                        # Go back to the branch
+                        self.create_flood_wave(next_gauge_date=new_date,
+                                               next_idx=new_g_p_idx)
+
+                    # Save the wave
+
+                    data = json_graph.node_link_data(self.tree_g)
+                    JsonHelper.write(filepath=f'./saved/step3/{gauge_pair}/{actual_date}', obj=data)
+
     @measure_time
     def read_ini(self) -> os.path:
         dirname = os.path.dirname(os.getcwd())
@@ -267,133 +393,3 @@ class FloodWaveDetector:
                 filename_sort.append(filename)
 
         return filename_sort
-
-    @measure_time
-    def step_1(self):
-        for gauge in self.gauges:
-            if not os.path.exists('saved/step1/' + str(gauge) + '.json'):
-
-                # Get gauge data and drop missing data and make it an array.
-                gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
-
-                # Get local peak/plateau values
-                object_array = self.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
-
-                # Create keys for dictionary
-                peak_plateau_tuples = self.create_peak_plateau_list(
-                    gauge_df=gauge_df, 
-                    gauge_data=object_array, 
-                    reg_number=str(gauge)
-                )
-
-                # Save
-                JsonHelper.write(filepath=f'./saved/step1/{gauge}.json', obj=peak_plateau_tuples)
-    
-    @measure_time
-    def step_2(self):
-        self.search_flooding_gauge_pairs(delay=0, window_size=3, gauges=self.gauges)
-    
-    @measure_time
-    def step_3(self):
-        """
-        Searching for wave "series". For now, starting from the root ('1514-1515'). 
-        Trying to find the same waves in different gauges.
-        """
-
-        # Read the gauge_peak_plateau_pairs (super dict)
-        if self.gauge_peak_plateau_pairs == {}:            
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json')
-        
-        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
-
-        """
-        To understand the code better, here are some description and example:
-
-        branches = ['1951-01-11', 3, 'path30']
-
-            We save the branches to this stucture. It' a . 
-            This means, we can get out first the element , we put in last. 
-            On the above example we can see one element of branches.
-
-
-        path =  {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}
-
-            One path without branches.
-
-
-        all_paths ={'path20': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
-                               '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                    'path30': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
-
-            More path from the same start. The last path might be unfinished.
-
-
-        flood_wave = {'id0': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08', 
-                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                      'id1': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08'}, 
-                      'id2': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
-                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                      'id3': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
-
-            All of the waves from the given start point. 
-        """
-
-        root_gauge_pair = self.gauge_pairs[0]  # Root.
-        root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[root_gauge_pair]
-        for gauge_pair in self.gauge_pairs:
-            next_g_p_idx = 1
-            root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
-            os.makedirs(f'./saved/step3/{gauge_pair}', exist_ok=True)
-            # Search waves starting from the root
-            for actual_date in root_gauge_pair_date_dict.keys():
-
-                self.tree_g = nx.Graph()   
-                self.flood_wave = {}
-                # Go over every date with a wave
-                for next_date in root_gauge_pair_date_dict[actual_date]:
-
-                    # Empty and reset variables
-                    next_g_p_idx = 1
-                    self.path = {}
-                    self.all_paths = {}
-                    self.wave_serial_number = 0
-                    
-                    """
-                    root_gauge = root_gauge_pair.split('_')[0]
-                    root_gauge_next = root_gauge_pair.split('_')[1]
-                    """
-                    root_gauge = gauge_pair.split('_')[0]
-                    root_gauge_next = gauge_pair.split('_')[1]
-
-                    self.tree_g.add_edge(u_of_edge=(root_gauge, actual_date),
-                                         v_of_edge=(root_gauge_next, next_date))
-                    self.path[root_gauge] = actual_date
-                    self.path[root_gauge_next] = next_date
-
-                    # Search for flood wave
-                    self.create_flood_wave(next_gauge_date=next_date,
-                                           next_idx=next_g_p_idx)
-
-                    # Go over the missed branches, depth search
-                    while self.branches.qsize() != 0:
-
-                        # Get info from branches (info about the branch)
-                        new_date, new_g_p_idx, path_key = self.branches.get()
-                        self.path = self.all_paths[path_key]
-
-                        # Go back to the branch
-                        self.create_flood_wave(next_gauge_date=new_date,
-                                               next_idx=new_g_p_idx)
-
-                    # Save the wave
-                    
-                    data = json_graph.node_link_data(self.tree_g)
-                    JsonHelper.write(filepath=f'./saved/step3/{gauge_pair}/{actual_date}', obj=data)
-                    
-    @measure_time
-    def run(self):
-        self.mkdirs()
-        self.step_1()
-        self.step_2()
-        self.step_3()
-        
