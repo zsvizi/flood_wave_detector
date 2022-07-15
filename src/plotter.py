@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -75,7 +76,7 @@ class Plotter:
         plt.savefig('graph.pdf')
 
     def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str)\
-            -> tuple[nx.Graph, int]:
+            -> Tuple[nx.Graph, int]:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
             self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
