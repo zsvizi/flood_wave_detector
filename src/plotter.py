@@ -46,7 +46,7 @@ class Plotter:
     def plot_graph(self, start_date: str, end_date: str, save: bool = False) -> None:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
-            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
+            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
                                                                 log=False)
 
         self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
@@ -79,7 +79,7 @@ class Plotter:
             -> Tuple[nx.Graph, int]:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
-            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
+            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
                                                                 log=False)
 
         self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
@@ -158,10 +158,10 @@ class Plotter:
         return positions
 
     def compose_graph(self, joined_graph: nx.Graph, gauge_pair, start_date: str, end_date: str) -> nx.Graph:
-        filenames = next(os.walk(f'./saved/step3/{gauge_pair}'), (None, None, []))[2]
+        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
         sorted_files = self.fwd.sort_wave(filenames=filenames, start=start_date, end=end_date)
         for file in sorted_files:
-            data = JsonHelper.read(filepath=f'./saved/step3/{gauge_pair}/{file}', log=False)
+            data = JsonHelper.read(filepath=f'./saved/build_graph/{gauge_pair}/{file}', log=False)
             h = json_graph.node_link_graph(data)
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph

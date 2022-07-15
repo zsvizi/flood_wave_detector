@@ -276,22 +276,22 @@ class FloodWaveDetector:
         """
         
         gauge_peak_plateau_pairs = {}
-        big_json_exists = os.path.exists('./saved/step2/gauge_peak_plateau_pairs.json')
+        big_json_exists = os.path.exists('./saved/find_edges/gauge_peak_plateau_pairs.json')
 
         for actual_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
-            actual_json_exists = os.path.exists(f'saved/step2/{actual_gauge}_{next_gauge}.json')
+            actual_json_exists = os.path.exists(f'saved/find_edges/{actual_gauge}_{next_gauge}.json')
             
             if actual_json_exists and big_json_exists:
                 continue
 
             # Read the data from the actual gauge. 
-            actual_gauge_with_index = JsonHelper.read(f'./saved/step1/{actual_gauge}.json')
+            actual_gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{actual_gauge}.json')
             actual_gauge_df = pd.DataFrame(data=actual_gauge_with_index, 
                                            columns=['Date', 'Max value'])
             actual_gauge_df['Date'] = pd.to_datetime(actual_gauge_df['Date'])
 
             # Read the data from the next gauge. 
-            next_gauge_with_index = JsonHelper.read(f'./saved/step1/{next_gauge}.json')
+            next_gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{next_gauge}.json')
             next_gauge_df = pd.DataFrame(data=next_gauge_with_index, 
                                          columns=['Date', 'Max value'])
             next_gauge_df['Date'] = pd.to_datetime(next_gauge_df['Date'])
@@ -313,7 +313,7 @@ class FloodWaveDetector:
                     actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
             # Save to file
-            JsonHelper.write(filepath=f'./saved/step2/{actual_gauge}_{next_gauge}.json',
+            JsonHelper.write(filepath=f'./saved/find_edges/{actual_gauge}_{next_gauge}.json',
                              obj=actual_next_pair)
 
             # Store result for the all in one dict
@@ -321,7 +321,7 @@ class FloodWaveDetector:
 
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
-            JsonHelper.write(filepath='./saved/step2/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
+            JsonHelper.write(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
     
     def create_flood_wave(self,
                           next_gauge_date: str, next_idx: int) -> None:
