@@ -8,7 +8,6 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import numpy as np
 import pandas as pd
-from scipy.signal import argrelextrema
 
 from data_ativizig.dataloader import Dataloader
 from src.gauge_data import GaugeData
@@ -190,17 +189,6 @@ class FloodWaveDetector:
         os.makedirs('./saved/new/build_graph', exist_ok=True)
     
     @measure_time
-    def create_gauge_data(self, gauge_ts: np.array) -> np.array:
-        result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
-        peaks = list(argrelextrema(gauge_ts, np.greater_equal)[0])
-        
-        for idx, value in enumerate(gauge_ts):
-            result[idx] = GaugeData(value=value)
-        for k in peaks:
-            result[k].is_peak = True
-        return result
-    
-    @measure_time
     def create_gauge_data_2(self, gauge_ts: np.array) -> np.array:
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
@@ -234,16 +222,28 @@ class FloodWaveDetector:
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
-        peak_plateau_df = peak_plateau_df.drop(columns="Date")\
-            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
-        peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
+        peak_plateau_df = self.clean_dataframe_for_getting_peak_plateau_list(gauge_data=gauge_data,
+                                                                             gauge_df=gauge_df,
+                                                                             reg_number=reg_number)
 
         # Get peak-plateau list
+        return self.get_peak_plateau_list(peak_plateau_df)
+
+    @staticmethod
+    def get_peak_plateau_list(peak_plateau_df: pd.DataFrame) -> list:
         peak_plateau_tuple = peak_plateau_df.to_records(index=True)
         peak_plateau_list = [tuple(x) for x in peak_plateau_tuple]
         return peak_plateau_list
-    
+
+    @staticmethod
+    def clean_dataframe_for_getting_peak_plateau_list(gauge_data: np.array, gauge_df: pd.DataFrame, reg_number: str)\
+            -> pd.DataFrame:
+        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
+        peak_plateau_df = peak_plateau_df.drop(columns="Date") \
+            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
+        peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
+        return peak_plateau_df
+
     @staticmethod
     def filter_for_start_and_length(
         gauge_df: pd.DataFrame, 
