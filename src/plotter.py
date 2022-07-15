@@ -33,11 +33,10 @@ class Plotter:
             ax.axhspan(vs, ve, color='green', alpha=0.3, label="Window for maximum")
             ax.axvspan(hs, he, color='orange', alpha=0.3, label="Window for maximum")
 
-        x_labels = self.set_x_axis_ticks(ax, positions, start)
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=102)
+        self.set_x_axis_ticks(ax=ax, positions=positions, start=start, rotation=20,
+                              horizontalalignment='right', fontsize=102)
 
-        y_labels = self.set_y_axis_ticks(ax)
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=32)
+        self.set_y_axis_ticks(ax=ax, rotation=20, horizontalalignment='right', fontsize=32)
 
         self.format_figure(ax=ax, xsize=40, ysize=10, joined_graph=joined_graph, positions=positions, node_size=1000)
 
@@ -65,11 +64,10 @@ class Plotter:
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
-        x_labels = self.set_x_axis_ticks(ax, positions, start)
-        ax.set_xticklabels(x_labels, rotation=20, horizontalalignment='right', fontsize=15)
+        self.set_x_axis_ticks(ax=ax, positions=positions, start=start, rotation=20,
+                              horizontalalignment='right', fontsize=15)
 
-        y_labels = self.set_y_axis_ticks(ax)
-        ax.set_yticklabels(y_labels, rotation=20, horizontalalignment='right', fontsize=22)
+        self.set_y_axis_ticks(ax=ax, rotation=20, horizontalalignment='right', fontsize=22)
 
         self.format_figure(ax=ax, xsize=30, ysize=20, joined_graph=joined_graph, positions=positions, node_size=500)
 
@@ -139,14 +137,14 @@ class Plotter:
         JsonHelper.write(filepath=f'./saved/plot_graph.json', obj=joined_graph_save, log=False)
 
     @staticmethod
-    def set_x_axis_ticks(ax, positions, start):
+    def set_x_axis_ticks(ax, positions, start, rotation: int, horizontalalignment: str, fontsize: int):
         min_x = -1
         max_x = max([n[0] for n in positions.values()])
         x_labels = pd.date_range(start - timedelta(days=1),
                                  start + timedelta(days=max_x + 1),
                                  freq='d').strftime('%Y-%m-%d').tolist()
         ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
-        return x_labels
+        ax.set_xticklabels(x_labels, rotation=rotation, horizontalalignment=horizontalalignment, fontsize=fontsize)
 
     @staticmethod
     def format_figure(ax, xsize: int, ysize: int, joined_graph: nx.Graph, positions, node_size: int):
@@ -155,12 +153,12 @@ class Plotter:
         plt.axis('on')  # turns on axis
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
 
-    def set_y_axis_ticks(self, ax):
+    def set_y_axis_ticks(self, ax, rotation: int, horizontalalignment: str, fontsize: int):
         min_y = 1
         max_y = len(self.fwd.gauges) + 1
         y_labels = [str(gauge) for gauge in self.fwd.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
-        return y_labels
+        ax.set_yticklabels(y_labels, rotation=rotation, horizontalalignment=horizontalalignment, fontsize=fontsize)
 
     def create_positions(self, joined_graph: nx.Graph, start):
         positions = dict()
