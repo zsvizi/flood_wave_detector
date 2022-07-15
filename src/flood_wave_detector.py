@@ -353,6 +353,7 @@ class FloodWaveDetector:
 
         # See if we continue the wave
         can_path_be_continued = next_gauge_date in next_gauge_pair_date_dict.keys()
+
         if can_path_be_continued and next_idx < max_index_value:
 
             # Get new data values
@@ -365,18 +366,13 @@ class FloodWaveDetector:
 
                 # Save the informations about the branches in a LiFoQueue (branches) so we can come back later.
                 for k, dat in enumerate(new_date_value[1:]):
-                    path_partial = deepcopy(self.path)  # copy result up to now
-                    self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
-                                         v_of_edge=(next_gauge, dat))
-                    path_partial[next_gauge] = dat  # update with the new node and the corresponding possible date
-                    new_path_key = "path" + str(next_idx + 1) + str(k)
-                    self.all_paths[new_path_key] = path_partial 
-                    self.branches.put([dat, next_idx + 1, new_path_key])
+                    self.save_info_about_branches(current_gauge=current_gauge, dat=dat, k=k,
+                                                  next_gauge=next_gauge, next_gauge_date=next_gauge_date,
+                                                  next_idx=next_idx)
 
             # Update the status of our "place" (path)
-            self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
-                                 v_of_edge=(next_gauge, new_gauge_date))
-            self.path[next_gauge] = new_gauge_date
+            self.update_path_status(current_gauge=current_gauge, new_gauge_date=new_gauge_date,
+                                    next_gauge=next_gauge, next_gauge_date=next_gauge_date)
 
             # Keep going, search for the path
             self.create_flood_wave(next_gauge_date=new_gauge_date,
@@ -388,7 +384,23 @@ class FloodWaveDetector:
 
             # Make possible to have more paths
             self.wave_serial_number += 1
-            
+
+    def update_path_status(self, current_gauge: str, new_gauge_date: str,
+                           next_gauge: str, next_gauge_date: str) -> None:
+        self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
+                             v_of_edge=(next_gauge, new_gauge_date))
+        self.path[next_gauge] = new_gauge_date
+
+    def save_info_about_branches(self, current_gauge: str, dat, k: int, next_gauge: str,
+                                 next_gauge_date: str, next_idx: int) -> None:
+        path_partial = deepcopy(self.path)  # copy result up to now
+        self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
+                             v_of_edge=(next_gauge, dat))
+        path_partial[next_gauge] = dat  # update with the new node and the corresponding possible date
+        new_path_key = "path" + str(next_idx + 1) + str(k)
+        self.all_paths[new_path_key] = path_partial
+        self.branches.put([dat, next_idx + 1, new_path_key])
+
     @measure_time
     def sort_wave(self, filenames: list,
                   start: str = '2006-02-01',
