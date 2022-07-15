@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import os
-from typing import Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -20,7 +19,7 @@ class Plotter:
                      span: bool, hs: int, he: int, vs: int, ve: int, save: bool = False) -> None:
 
         joined_graph = self.filter_graph(start_station=start_station, end_station=end_station,
-                                         start_date=start_date, end_date=end_date)[0]
+                                         start_date=start_date, end_date=end_date)
 
         if save:
             self.save_merge_graph(joined_graph=joined_graph)
@@ -46,7 +45,8 @@ class Plotter:
     def plot_graph(self, start_date: str, end_date: str, save: bool = False) -> None:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
-            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs'
+                                                                         '.json',
                                                                 log=False)
 
         self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
@@ -76,10 +76,11 @@ class Plotter:
         plt.savefig('graph.pdf')
 
     def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str)\
-            -> Tuple[nx.Graph, int]:
+            -> nx.Graph:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
-            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs'
+                                                                         '.json',
                                                                 log=False)
 
         self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
@@ -109,10 +110,7 @@ class Plotter:
                                                                   start_station=start_station, end_station=end_station,
                                                                   joined_graph=joined_graph)
 
-        total_waves = self.count_waves(connected_components=connected_components, joined_graph=joined_graph,
-                                       start_station=start_station, end_station=end_station)
-
-        return joined_graph, total_waves
+        return joined_graph
 
     @staticmethod
     def save_merge_graph(joined_graph: nx.Graph) -> None:
