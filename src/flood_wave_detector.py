@@ -285,27 +285,18 @@ class FloodWaveDetector:
                 continue
 
             # Read the data from the actual gauge. 
-            actual_gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{actual_gauge}.json')
-            actual_gauge_df = pd.DataFrame(data=actual_gauge_with_index, 
-                                           columns=['Date', 'Max value'])
-            actual_gauge_df['Date'] = pd.to_datetime(actual_gauge_df['Date'])
+            actual_gauge_df = self.read_data_from_gauge(gauge=actual_gauge)
 
             # Read the data from the next gauge. 
-            next_gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{next_gauge}.json')
-            next_gauge_df = pd.DataFrame(data=next_gauge_with_index, 
-                                         columns=['Date', 'Max value'])
-            next_gauge_df['Date'] = pd.to_datetime(next_gauge_df['Date'])
+            next_gauge_df = self.read_data_from_gauge(gauge=next_gauge)
 
             # Create actual_next_pair
             actual_next_pair = dict()
             for actual_date in actual_gauge_df['Date']:
 
                 # Find next dates for the following gauge
-                past_date = actual_date - timedelta(days=delay)
-                found_next_dates = self.filter_for_start_and_length(
-                    gauge_df=next_gauge_df, 
-                    min_date=past_date, 
-                    window_size=window_size)
+                found_next_dates = self.find_dates_for_next_gauge(actual_date=actual_date, delay=delay,
+                                                                  next_gauge_df=next_gauge_df, window_size=window_size)
 
                 # Convert datetime to string
                 if not found_next_dates.empty:
@@ -322,7 +313,24 @@ class FloodWaveDetector:
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
             JsonHelper.write(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
-    
+
+    def find_dates_for_next_gauge(self, actual_date: datetime, delay: int, next_gauge_df: pd.DataFrame,
+                                  window_size: int) -> pd.DataFrame:
+        past_date = actual_date - timedelta(days=delay)
+        found_next_dates = self.filter_for_start_and_length(
+            gauge_df=next_gauge_df,
+            min_date=past_date,
+            window_size=window_size)
+        return found_next_dates
+
+    @staticmethod
+    def read_data_from_gauge(gauge: str) -> pd.DataFrame:
+        gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{gauge}.json')
+        gauge_df = pd.DataFrame(data=gauge_with_index,
+                                columns=['Date', 'Max value'])
+        gauge_df['Date'] = pd.to_datetime(gauge_df['Date'])
+        return gauge_df
+
     def create_flood_wave(self,
                           next_gauge_date: str, next_idx: int) -> None:
         """
