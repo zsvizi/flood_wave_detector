@@ -79,12 +79,12 @@ class Plotter:
             self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/step2/gauge_peak_plateau_pairs.json',
                                                                 log=False)
 
-        # first filter
         self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
         up_limit = self.fwd.meta.loc[start_station].river_km
         low_limit = self.fwd.meta.loc[end_station].river_km
-        selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit)]
-        start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
+
+        # first filter
+        start_gauges = self.select_start_gauges(low_limit=low_limit)
 
         selected_pairs = [x for x in self.fwd.gauge_pairs if int(x.split('_')[0]) in start_gauges]
 
@@ -93,36 +93,21 @@ class Plotter:
             joined_graph = self.compose_graph(end_date=end_date, gauge_pair=gauge_pair,
                                               joined_graph=joined_graph, start_date=start_date)
 
-        selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit) &
-                                      (self.fwd.meta['river_km'] <= up_limit)]
-        comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         # second filter
-        comp = [x for x in self.fwd.gauges if x not in comp_gauges]
-        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
-        print(joined_graph.nodes)
-        joined_graph.remove_nodes_from(remove)
-        print(joined_graph.nodes)
+        self.remove_nodes_with_improper_km_data(joined_graph=joined_graph, low_limit=low_limit, up_limit=up_limit)
 
         # third filter
-        remove_date = [x for x in joined_graph.nodes if ((x[1] > end_date) or (x[1] < start_date))]
-        joined_graph.remove_nodes_from(remove_date)
-        print(joined_graph.nodes)
+        self.date_filter(joined_graph=joined_graph, start_date=start_date, end_date=end_date)
 
         # fourth filter
-        cc = [list(x) for x in nx.connected_components(joined_graph)]
-        for sub_cc in cc:
-            res_start = [int(node[0]) == start_station for node in sub_cc]
-            res_end = [int(node[0]) == end_station for node in sub_cc]
-            if (True not in res_start) or (True not in res_end):
-                joined_graph.remove_nodes_from(sub_cc)
-        total_waves = 0
-        for sub_cc in cc:
-            start_nodes = [node for node in sub_cc if int(node[0]) == start_station]
-            end_nodes = [node for node in sub_cc if int(node[0]) == end_station]
-            for start in start_nodes:
-                for end in end_nodes:
-                    paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
-                    total_waves += len(paths)
+        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+
+        self.remove_components_not_including_start_or_end_station(connected_components=connected_components,
+                                                                  start_station=start_station, end_station=end_station,
+                                                                  joined_graph=joined_graph)
+
+        total_waves = self.count_waves(connected_components=connected_components, joined_graph=joined_graph,
+                                       start_station=start_station, end_station=end_station)
 
         return joined_graph, total_waves
 
@@ -177,3 +162,46 @@ class Plotter:
             # Read a file and load it
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
+
+    @staticmethod
+    def remove_components_not_including_start_or_end_station(connected_components, start_station: int, end_station: int,
+                                                             joined_graph: nx.Graph):
+        for sub_connected_component in connected_components:
+            res_start = [int(node[0]) == start_station for node in sub_connected_component]
+            res_end = [int(node[0]) == end_station for node in sub_connected_component]
+            if (True not in res_start) or (True not in res_end):
+                joined_graph.remove_nodes_from(sub_connected_component)
+
+    @staticmethod
+    def count_waves(connected_components, joined_graph: nx.Graph, start_station: int, end_station: int):
+        total_waves = 0
+        for sub_connected_component in connected_components:
+            start_nodes = [node for node in sub_connected_component if int(node[0]) == start_station]
+            end_nodes = [node for node in sub_connected_component if int(node[0]) == end_station]
+            for start in start_nodes:
+                for end in end_nodes:
+                    paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
+                    total_waves += len(paths)
+        return total_waves
+
+    @staticmethod
+    def date_filter(end_date, joined_graph, start_date):
+        remove_date = [x for x in joined_graph.nodes if ((x[1] > end_date) or (x[1] < start_date))]
+        joined_graph.remove_nodes_from(remove_date)
+        # print(joined_graph.nodes)
+
+    def remove_nodes_with_improper_km_data(self, joined_graph, low_limit, up_limit):
+        selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit) &
+                                      (self.fwd.meta['river_km'] <= up_limit)]
+        comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
+        # second filter
+        comp = [x for x in self.fwd.gauges if x not in comp_gauges]
+        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
+        # print(joined_graph.nodes)
+        joined_graph.remove_nodes_from(remove)
+        # print(joined_graph.nodes)
+
+    def select_start_gauges(self, low_limit):
+        selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit)]
+        start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
+        return start_gauges
