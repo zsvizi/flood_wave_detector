@@ -175,6 +175,79 @@ class FloodWaveDetector:
         self.tree_g = nx.Graph()
         self.flood_wave = {}
 
+    def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str)\
+            -> nx.Graph:
+
+        if self.gauge_peak_plateau_pairs == {}:
+            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                                                            log=False)
+
+        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
+        up_limit = self.meta.loc[start_station].river_km
+        low_limit = self.meta.loc[end_station].river_km
+
+        # first filter
+        start_gauges = self.select_start_gauges(low_limit=low_limit)
+
+        selected_pairs = [x for x in self.gauge_pairs if int(x.split('_')[0]) in start_gauges]
+
+        joined_graph = nx.Graph()
+        for gauge_pair in selected_pairs:
+            joined_graph = self.compose_graph(end_date=end_date, gauge_pair=gauge_pair,
+                                              joined_graph=joined_graph, start_date=start_date)
+
+        # second filter
+        self.remove_nodes_with_improper_km_data(joined_graph=joined_graph, low_limit=low_limit, up_limit=up_limit)
+
+        # third filter
+        self.date_filter(joined_graph=joined_graph, start_date=start_date, end_date=end_date)
+
+        # fourth filter
+        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+
+        self.remove_components_not_including_start_or_end_station(connected_components=connected_components,
+                                                                  start_station=start_station, end_station=end_station,
+                                                                  joined_graph=joined_graph)
+
+        return joined_graph
+
+    def select_start_gauges(self, low_limit: int) -> list:
+        selected_meta = self.meta[(self.meta['river_km'] >= low_limit)]
+        start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
+        return start_gauges
+
+    def compose_graph(self, joined_graph: nx.Graph, gauge_pair, start_date: str, end_date: str) -> nx.Graph:
+        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
+        sorted_files = self.sort_wave(filenames=filenames, start=start_date, end=end_date)
+        for file in sorted_files:
+            data = JsonHelper.read(filepath=f'./saved/build_graph/{gauge_pair}/{file}', log=False)
+            h = json_graph.node_link_graph(data)
+            joined_graph = nx.compose(joined_graph, h)
+        return joined_graph
+
+    def remove_nodes_with_improper_km_data(self, joined_graph: nx.Graph, low_limit: int, up_limit: int) -> None:
+        selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
+                                  (self.meta['river_km'] <= up_limit)]
+
+        comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
+        comp = [x for x in self.gauges if x not in comp_gauges]
+        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
+        joined_graph.remove_nodes_from(remove)
+
+    @staticmethod
+    def date_filter(joined_graph: nx.Graph, end_date: str, start_date: str) -> None:
+        remove_date = [x for x in joined_graph.nodes if ((x[1] > end_date) or (x[1] < start_date))]
+        joined_graph.remove_nodes_from(remove_date)
+
+    @staticmethod
+    def remove_components_not_including_start_or_end_station(connected_components, start_station: int, end_station: int,
+                                                             joined_graph: nx.Graph) -> None:
+        for sub_connected_component in connected_components:
+            res_start = [int(node[0]) == start_station for node in sub_connected_component]
+            res_end = [int(node[0]) == end_station for node in sub_connected_component]
+            if (True not in res_start) or (True not in res_end):
+                joined_graph.remove_nodes_from(sub_connected_component)
+
     @measure_time
     def read_ini(self) -> os.path:
         dirname = os.path.dirname(os.getcwd())
@@ -299,9 +372,8 @@ class FloodWaveDetector:
                                                                   next_gauge_df=next_gauge_df, window_size=window_size)
 
                 # Convert datetime to string
-                if not found_next_dates.empty:
-                    found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
-                    actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
+                self.convert_datetime_to_str(actual_date=actual_date, actual_next_pair=actual_next_pair,
+                                             found_next_dates=found_next_dates)
 
             # Save to file
             JsonHelper.write(filepath=f'./saved/find_edges/{actual_gauge}_{next_gauge}.json',
@@ -313,6 +385,12 @@ class FloodWaveDetector:
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
             JsonHelper.write(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
+
+    @staticmethod
+    def convert_datetime_to_str(actual_date, actual_next_pair, found_next_dates):
+        if not found_next_dates.empty:
+            found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+            actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
     def find_dates_for_next_gauge(self, actual_date: datetime, delay: int, next_gauge_df: pd.DataFrame,
                                   window_size: int) -> pd.DataFrame:
@@ -345,11 +423,8 @@ class FloodWaveDetector:
         """
 
         # other variables
-        max_index_value = len(self.gauge_peak_plateau_pairs.keys()) - 1
-        next_gauge_pair = self.gauge_pairs[next_idx]
-        current_gauge = next_gauge_pair.split('_')[0]
-        next_gauge = next_gauge_pair.split('_')[1]
-        next_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[next_gauge_pair]
+        current_gauge, max_index_value, next_gauge, next_gauge_pair_date_dict = self.define_necessary_variables(
+            next_idx=next_idx)
 
         # See if we continue the wave
         can_path_be_continued = next_gauge_date in next_gauge_pair_date_dict.keys()
@@ -384,6 +459,14 @@ class FloodWaveDetector:
 
             # Make possible to have more paths
             self.wave_serial_number += 1
+
+    def define_necessary_variables(self, next_idx):
+        max_index_value = len(self.gauge_peak_plateau_pairs.keys()) - 1
+        next_gauge_pair = self.gauge_pairs[next_idx]
+        current_gauge = next_gauge_pair.split('_')[0]
+        next_gauge = next_gauge_pair.split('_')[1]
+        next_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[next_gauge_pair]
+        return current_gauge, max_index_value, next_gauge, next_gauge_pair_date_dict
 
     def update_path_status(self, current_gauge: str, new_gauge_date: str,
                            next_gauge: str, next_gauge_date: str) -> None:
@@ -427,3 +510,15 @@ class FloodWaveDetector:
                 filename_sort.append(filename)
 
         return filename_sort
+
+    @staticmethod
+    def count_waves(connected_components, joined_graph: nx.Graph, start_station: int, end_station: int) -> int:
+        total_waves = 0
+        for sub_connected_component in connected_components:
+            start_nodes = [node for node in sub_connected_component if int(node[0]) == start_station]
+            end_nodes = [node for node in sub_connected_component if int(node[0]) == end_station]
+            for start in start_nodes:
+                for end in end_nodes:
+                    paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
+                    total_waves += len(paths)
+        return total_waves
