@@ -171,10 +171,7 @@ class FloodWaveDetector:
         self.date_filter(joined_graph=joined_graph, start_date=start_date, end_date=end_date)
 
         # fourth filter
-        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
-
-        self.remove_components_not_including_start_or_end_station(connected_components=connected_components,
-                                                                  start_station=start_station, end_station=end_station,
+        self.remove_components_not_including_start_or_end_station(start_station=start_station, end_station=end_station,
                                                                   joined_graph=joined_graph)
 
         return joined_graph
@@ -208,8 +205,11 @@ class FloodWaveDetector:
         joined_graph.remove_nodes_from(remove_date)
 
     @staticmethod
-    def remove_components_not_including_start_or_end_station(connected_components, start_station: int, end_station: int,
+    def remove_components_not_including_start_or_end_station(start_station: int, end_station: int,
                                                              joined_graph: nx.Graph) -> None:
+
+        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+
         for sub_connected_component in connected_components:
             res_start = [int(node[0]) == start_station for node in sub_connected_component]
             res_end = [int(node[0]) == end_station for node in sub_connected_component]
@@ -480,7 +480,10 @@ class FloodWaveDetector:
         return filename_sort
 
     @staticmethod
-    def count_waves(connected_components, joined_graph: nx.Graph, start_station: int, end_station: int) -> int:
+    def count_waves(joined_graph: nx.Graph, start_station: int, end_station: int) -> int:
+
+        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+
         total_waves = 0
         for sub_connected_component in connected_components:
             start_nodes = [node for node in sub_connected_component if int(node[0]) == start_station]
