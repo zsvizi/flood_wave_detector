@@ -23,8 +23,8 @@ class FloodWaveDetector:
                         .groupby(["river"])\
                         .get_group("Tisza")\
                         .sort_values(by='river_km', ascending=False)
-        self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
 
+        self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
         self.gauge_peak_plateau_pairs = {}
         self.gauge_pairs = []
         self.tree_g = nx.DiGraph()
@@ -77,38 +77,6 @@ class FloodWaveDetector:
             self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json')
 
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
-
-        """
-        To understand the code better, here are some description and example:
-
-        branches = ['1951-01-11', 3, 'path30']
-
-            We save the branches to this stucture. It' a . 
-            This means, we can get out first the element , we put in last. 
-            On the above example we can see one element of branches.
-
-
-        path =  {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}
-
-            One path without branches.
-
-
-        all_paths ={'path20': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
-                               '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                    'path30': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
-
-            More path from the same start. The last path might be unfinished.
-
-
-        flood_wave = {'id0': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08', 
-                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                      'id1': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-08'}, 
-                      'id2': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09', 
-                              '1520': '1951-01-09', '1521': '1951-01-09', '1719': '1951-01-10'}, 
-                      'id3': {'1514': '1951-01-07', '1515': '1951-01-08', '1516': '1951-01-08', '1518': '1951-01-09'}}
-
-            All of the waves from the given start point. 
-        """
 
         for gauge_pair in self.gauge_pairs:
 
