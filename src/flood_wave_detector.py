@@ -391,8 +391,11 @@ class FloodWaveDetector:
         """
 
         # other variables
-        current_gauge, max_index_value, next_gauge, next_gauge_pair_date_dict = self.define_necessary_variables(
-            next_idx=next_idx)
+        max_index_value = len(self.gauge_peak_plateau_pairs.keys()) - 1
+        next_gauge_pair = self.gauge_pairs[next_idx]
+        current_gauge = next_gauge_pair.split('_')[0]
+        next_gauge = next_gauge_pair.split('_')[1]
+        next_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[next_gauge_pair]
 
         # See if we continue the wave
         can_path_be_continued = next_gauge_date in next_gauge_pair_date_dict.keys()
@@ -427,14 +430,6 @@ class FloodWaveDetector:
 
             # Make possible to have more paths
             self.wave_serial_number += 1
-
-    def define_necessary_variables(self, next_idx):
-        max_index_value = len(self.gauge_peak_plateau_pairs.keys()) - 1
-        next_gauge_pair = self.gauge_pairs[next_idx]
-        current_gauge = next_gauge_pair.split('_')[0]
-        next_gauge = next_gauge_pair.split('_')[1]
-        next_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[next_gauge_pair]
-        return current_gauge, max_index_value, next_gauge, next_gauge_pair_date_dict
 
     def update_path_status(self, current_gauge: str, new_gauge_date: str,
                            next_gauge: str, next_gauge_date: str) -> None:
