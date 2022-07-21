@@ -59,11 +59,18 @@ class FloodWaveDetector:
                 )
 
                 # Save
-                JsonHelper.write(filepath=f'./saved/find_vertices/{gauge}.json', obj=peak_plateau_tuples)
+                JsonHelper.write(
+                    filepath=f'./saved/find_vertices/{gauge}.json',
+                    obj=peak_plateau_tuples
+                )
 
     @measure_time
     def find_edges(self) -> None:
-        self.search_flooding_gauge_pairs(delay=0, window_size=3, gauges=self.gauges)
+        self.search_flooding_gauge_pairs(
+            delay=0,
+            window_size=3,
+            gauges=self.gauges
+        )
 
     @measure_time
     def build_graph(self) -> None:
@@ -74,7 +81,9 @@ class FloodWaveDetector:
 
         # Read the gauge_peak_plateau_pairs (super dict)
         if self.gauge_peak_plateau_pairs == {}:
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json')
+            self.gauge_peak_plateau_pairs = JsonHelper.read(
+                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json'
+            )
 
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
 
@@ -98,15 +107,23 @@ class FloodWaveDetector:
                     root_gauge = gauge_pair.split('_')[0]
                     root_gauge_next = gauge_pair.split('_')[1]
 
-                    self.tree_g.add_edge(u_of_edge=(root_gauge, actual_date),
-                                         v_of_edge=(root_gauge_next, next_date))
+                    self.tree_g.add_edge(
+                        u_of_edge=(root_gauge, actual_date),
+                        v_of_edge=(root_gauge_next, next_date)
+                    )
 
-                    self.add_to_path(actual_date=actual_date, next_date=next_date,
-                                     root_gauge=root_gauge, root_gauge_next=root_gauge_next)
+                    self.add_to_path(
+                        actual_date=actual_date,
+                        next_date=next_date,
+                        root_gauge=root_gauge,
+                        root_gauge_next=root_gauge_next
+                    )
 
                     # Search for flood wave
-                    self.create_flood_wave(next_gauge_date=next_date,
-                                           next_idx=next_g_p_idx)
+                    self.create_flood_wave(
+                        next_gauge_date=next_date,
+                        next_idx=next_g_p_idx
+                    )
 
                     # Go over the missed branches, depth search
                     self.depth_first_search()
@@ -114,9 +131,18 @@ class FloodWaveDetector:
                     # Save the wave
 
                     data = json_graph.node_link_data(self.tree_g)
-                    JsonHelper.write(filepath=f'./saved/build_graph/{gauge_pair}/{actual_date}', obj=data)
+                    JsonHelper.write(
+                        filepath=f'./saved/build_graph/{gauge_pair}/{actual_date}',
+                        obj=data
+                    )
 
-    def add_to_path(self, actual_date: str, next_date: str, root_gauge, root_gauge_next) -> None:
+    def add_to_path(
+            self,
+            actual_date: str,
+            next_date: str,
+            root_gauge,
+            root_gauge_next
+    ) -> None:
         self.path[root_gauge] = actual_date
         self.path[root_gauge_next] = next_date
 
@@ -127,8 +153,10 @@ class FloodWaveDetector:
             self.path = self.all_paths[path_key]
 
             # Go back to the branch
-            self.create_flood_wave(next_gauge_date=new_date,
-                                   next_idx=new_g_p_idx)
+            self.create_flood_wave(
+                next_gauge_date=new_date,
+                next_idx=new_g_p_idx
+            )
 
     def reset_gauge_pair_index_and_serial_number(self) -> int:
         next_g_p_idx = 1
@@ -143,12 +171,19 @@ class FloodWaveDetector:
         self.tree_g = nx.Graph()
         self.flood_wave = {}
 
-    def filter_graph(self, start_station: int, end_station: int, start_date: str, end_date: str)\
-            -> nx.Graph:
+    def filter_graph(
+            self,
+            start_station: int,
+            end_station: int,
+            start_date: str,
+            end_date: str
+    ) -> nx.Graph:
 
         if self.gauge_peak_plateau_pairs == {}:
-            self.gauge_peak_plateau_pairs = JsonHelper.read(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
-                                                            log=False)
+            self.gauge_peak_plateau_pairs = JsonHelper.read(
+                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                log=False
+            )
 
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
         up_limit = self.meta.loc[start_station].river_km
@@ -157,62 +192,134 @@ class FloodWaveDetector:
         # first filter
         start_gauges = self.select_start_gauges(low_limit=low_limit)
 
-        selected_pairs = [x for x in self.gauge_pairs if int(x.split('_')[0]) in start_gauges]
+        selected_pairs = [
+            x
+            for x in self.gauge_pairs
+            if int(x.split('_')[0]) in start_gauges
+        ]
 
         joined_graph = nx.Graph()
         for gauge_pair in selected_pairs:
-            joined_graph = self.compose_graph(end_date=end_date, gauge_pair=gauge_pair,
-                                              joined_graph=joined_graph, start_date=start_date)
+            joined_graph = self.compose_graph(
+                end_date=end_date,
+                gauge_pair=gauge_pair,
+                joined_graph=joined_graph,
+                start_date=start_date
+            )
 
         # second filter
-        self.remove_nodes_with_improper_km_data(joined_graph=joined_graph, low_limit=low_limit, up_limit=up_limit)
+        self.remove_nodes_with_improper_km_data(
+            joined_graph=joined_graph,
+            low_limit=low_limit,
+            up_limit=up_limit
+        )
 
         # third filter
-        self.date_filter(joined_graph=joined_graph, start_date=start_date, end_date=end_date)
+        self.date_filter(
+            joined_graph=joined_graph,
+            start_date=start_date,
+            end_date=end_date
+        )
 
         # fourth filter
-        self.remove_components_not_including_start_or_end_station(start_station=start_station, end_station=end_station,
-                                                                  joined_graph=joined_graph)
+        self.remove_components_not_including_start_or_end_station(
+            start_station=start_station,
+            end_station=end_station,
+            joined_graph=joined_graph
+        )
 
         return joined_graph
 
-    def select_start_gauges(self, low_limit: int) -> list:
+    def select_start_gauges(
+            self,
+            low_limit: int
+    ) -> list:
+
         selected_meta = self.meta[(self.meta['river_km'] >= low_limit)]
         start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         return start_gauges
 
-    def compose_graph(self, joined_graph: nx.Graph, gauge_pair, start_date: str, end_date: str) -> nx.Graph:
+    def compose_graph(
+            self,
+            joined_graph: nx.Graph,
+            gauge_pair,
+            start_date: str,
+            end_date: str
+    ) -> nx.Graph:
+
         filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
-        sorted_files = self.sort_wave(filenames=filenames, start=start_date, end=end_date)
+        sorted_files = self.sort_wave(
+            filenames=filenames,
+            start=start_date,
+            end=end_date
+        )
         for file in sorted_files:
-            data = JsonHelper.read(filepath=f'./saved/build_graph/{gauge_pair}/{file}', log=False)
+            data = JsonHelper.read(
+                filepath=f'./saved/build_graph/{gauge_pair}/{file}',
+                log=False
+            )
             h = json_graph.node_link_graph(data)
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
 
-    def remove_nodes_with_improper_km_data(self, joined_graph: nx.Graph, low_limit: int, up_limit: int) -> None:
+    def remove_nodes_with_improper_km_data(
+            self,
+            joined_graph: nx.Graph,
+            low_limit: int,
+            up_limit: int
+    ) -> None:
+
         selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
                                   (self.meta['river_km'] <= up_limit)]
 
         comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
-        comp = [x for x in self.gauges if x not in comp_gauges]
-        remove = [x for x in joined_graph.nodes if int(x[0]) in comp]
+        comp = [
+            x
+            for x in self.gauges
+            if x not in comp_gauges
+        ]
+        remove = [
+            x
+            for x in joined_graph.nodes
+            if int(x[0]) in comp
+        ]
         joined_graph.remove_nodes_from(remove)
 
     @staticmethod
-    def date_filter(joined_graph: nx.Graph, end_date: str, start_date: str) -> None:
-        remove_date = [x for x in joined_graph.nodes if ((x[1] > end_date) or (x[1] < start_date))]
+    def date_filter(
+            joined_graph: nx.Graph,
+            end_date: str,
+            start_date: str
+    ) -> None:
+
+        remove_date = [
+            x
+            for x in joined_graph.nodes
+            if ((x[1] > end_date) or (x[1] < start_date))
+        ]
         joined_graph.remove_nodes_from(remove_date)
 
     @staticmethod
-    def remove_components_not_including_start_or_end_station(start_station: int, end_station: int,
-                                                             joined_graph: nx.Graph) -> None:
+    def remove_components_not_including_start_or_end_station(
+            start_station: int,
+            end_station: int,
+            joined_graph: nx.Graph
+    ) -> None:
 
-        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+        connected_components = [
+            list(x)
+            for x in nx.connected_components(joined_graph)
+        ]
 
         for sub_connected_component in connected_components:
-            res_start = [int(node[0]) == start_station for node in sub_connected_component]
-            res_end = [int(node[0]) == end_station for node in sub_connected_component]
+            res_start = [
+                int(node[0]) == start_station
+                for node in sub_connected_component
+            ]
+            res_end = [
+                int(node[0]) == end_station
+                for node in sub_connected_component
+            ]
             if (True not in res_start) or (True not in res_end):
                 joined_graph.remove_nodes_from(sub_connected_component)
 
@@ -263,9 +370,11 @@ class FloodWaveDetector:
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = self.clean_dataframe_for_getting_peak_plateau_list(gauge_data=gauge_data,
-                                                                             gauge_df=gauge_df,
-                                                                             reg_number=reg_number)
+        peak_plateau_df = self.clean_dataframe_for_getting_peak_plateau_list(
+            gauge_data=gauge_data,
+            gauge_df=gauge_df,
+            reg_number=reg_number
+        )
 
         # Get peak-plateau list
         return self.get_peak_plateau_list(peak_plateau_df)
@@ -273,12 +382,19 @@ class FloodWaveDetector:
     @staticmethod
     def get_peak_plateau_list(peak_plateau_df: pd.DataFrame) -> list:
         peak_plateau_tuple = peak_plateau_df.to_records(index=True)
-        peak_plateau_list = [tuple(x) for x in peak_plateau_tuple]
+        peak_plateau_list = [
+            tuple(x)
+            for x in peak_plateau_tuple
+        ]
         return peak_plateau_list
 
     @staticmethod
-    def clean_dataframe_for_getting_peak_plateau_list(gauge_data: np.array, gauge_df: pd.DataFrame, reg_number: str)\
-            -> pd.DataFrame:
+    def clean_dataframe_for_getting_peak_plateau_list(
+            gauge_data: np.array,
+            gauge_df: pd.DataFrame,
+            reg_number: str
+    ) -> pd.DataFrame:
+
         peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
         peak_plateau_df = peak_plateau_df.drop(columns="Date") \
             .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
@@ -306,7 +422,12 @@ class FloodWaveDetector:
         return found_next_dates
     
     @measure_time
-    def search_flooding_gauge_pairs(self, delay: int, window_size: int, gauges: list) -> None:
+    def search_flooding_gauge_pairs(
+            self,
+            delay: int,
+            window_size: int,
+            gauges: list
+    ) -> None:
         """
         Creates the wave-pairs for gauges next to each other. 
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
@@ -336,37 +457,61 @@ class FloodWaveDetector:
             for actual_date in actual_gauge_df['Date']:
 
                 # Find next dates for the following gauge
-                found_next_dates = self.find_dates_for_next_gauge(actual_date=actual_date, delay=delay,
-                                                                  next_gauge_df=next_gauge_df, window_size=window_size)
+                found_next_dates = self.find_dates_for_next_gauge(
+                    actual_date=actual_date,
+                    delay=delay,
+                    next_gauge_df=next_gauge_df,
+                    window_size=window_size
+                )
 
                 # Convert datetime to string
-                self.convert_datetime_to_str(actual_date=actual_date, actual_next_pair=actual_next_pair,
-                                             found_next_dates=found_next_dates)
+                self.convert_datetime_to_str(
+                    actual_date=actual_date,
+                    actual_next_pair=actual_next_pair,
+                    found_next_dates=found_next_dates
+                )
 
             # Save to file
-            JsonHelper.write(filepath=f'./saved/find_edges/{actual_gauge}_{next_gauge}.json',
-                             obj=actual_next_pair)
+            JsonHelper.write(
+                filepath=f'./saved/find_edges/{actual_gauge}_{next_gauge}.json',
+                obj=actual_next_pair
+            )
 
             # Store result for the all in one dict
             gauge_peak_plateau_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
 
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
-            JsonHelper.write(filepath='./saved/find_edges/gauge_peak_plateau_pairs.json', obj=gauge_peak_plateau_pairs)
+            JsonHelper.write(
+                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                obj=gauge_peak_plateau_pairs
+            )
 
     @staticmethod
-    def convert_datetime_to_str(actual_date, actual_next_pair, found_next_dates):
+    def convert_datetime_to_str(
+            actual_date,
+            actual_next_pair,
+            found_next_dates
+    ):
+
         if not found_next_dates.empty:
             found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
             actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
-    def find_dates_for_next_gauge(self, actual_date: datetime, delay: int, next_gauge_df: pd.DataFrame,
-                                  window_size: int) -> pd.DataFrame:
+    def find_dates_for_next_gauge(
+            self,
+            actual_date: datetime,
+            delay: int,
+            next_gauge_df: pd.DataFrame,
+            window_size: int
+    ) -> pd.DataFrame:
+
         past_date = actual_date - timedelta(days=delay)
         found_next_dates = self.filter_for_start_and_length(
             gauge_df=next_gauge_df,
             min_date=past_date,
-            window_size=window_size)
+            window_size=window_size
+        )
         return found_next_dates
 
     @staticmethod
@@ -377,8 +522,11 @@ class FloodWaveDetector:
         gauge_df['Date'] = pd.to_datetime(gauge_df['Date'])
         return gauge_df
 
-    def create_flood_wave(self,
-                          next_gauge_date: str, next_idx: int) -> None:
+    def create_flood_wave(
+            self,
+            next_gauge_date: str,
+            next_idx: int
+    ) -> None:
         """
         Recursive function walking along the paths in the rooted tree representing the flood wave
         We assume that global variable path contains the complete path up to the current state 
@@ -412,17 +560,28 @@ class FloodWaveDetector:
 
                 # Save the informations about the branches in a LiFoQueue (branches) so we can come back later.
                 for k, dat in enumerate(new_date_value[1:]):
-                    self.save_info_about_branches(current_gauge=current_gauge, dat=dat, k=k,
-                                                  next_gauge=next_gauge, next_gauge_date=next_gauge_date,
-                                                  next_idx=next_idx)
+                    self.save_info_about_branches(
+                        current_gauge=current_gauge,
+                        dat=dat,
+                        k=k,
+                        next_gauge=next_gauge,
+                        next_gauge_date=next_gauge_date,
+                        next_idx=next_idx
+                    )
 
             # Update the status of our "place" (path)
-            self.update_path_status(current_gauge=current_gauge, new_gauge_date=new_gauge_date,
-                                    next_gauge=next_gauge, next_gauge_date=next_gauge_date)
+            self.update_path_status(
+                current_gauge=current_gauge,
+                new_gauge_date=new_gauge_date,
+                next_gauge=next_gauge,
+                next_gauge_date=next_gauge_date
+            )
 
             # Keep going, search for the path
-            self.create_flood_wave(next_gauge_date=new_gauge_date,
-                                   next_idx=next_idx + 1)
+            self.create_flood_wave(
+                next_gauge_date=new_gauge_date,
+                next_idx=next_idx + 1
+            )
         else:
 
             # Update the 'map'. (Add the path to the start date)
@@ -431,26 +590,47 @@ class FloodWaveDetector:
             # Make possible to have more paths
             self.wave_serial_number += 1
 
-    def update_path_status(self, current_gauge: str, new_gauge_date: str,
-                           next_gauge: str, next_gauge_date: str) -> None:
-        self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
-                             v_of_edge=(next_gauge, new_gauge_date))
+    def update_path_status(
+            self,
+            current_gauge: str,
+            new_gauge_date: str,
+            next_gauge: str,
+            next_gauge_date: str
+    ) -> None:
+
+        self.tree_g.add_edge(
+            u_of_edge=(current_gauge, next_gauge_date),
+            v_of_edge=(next_gauge, new_gauge_date)
+        )
         self.path[next_gauge] = new_gauge_date
 
-    def save_info_about_branches(self, current_gauge: str, dat, k: int, next_gauge: str,
-                                 next_gauge_date: str, next_idx: int) -> None:
+    def save_info_about_branches(
+            self,
+            current_gauge: str,
+            dat,
+            k: int,
+            next_gauge: str,
+            next_gauge_date: str,
+            next_idx: int
+    ) -> None:
+
         path_partial = deepcopy(self.path)  # copy result up to now
-        self.tree_g.add_edge(u_of_edge=(current_gauge, next_gauge_date),
-                             v_of_edge=(next_gauge, dat))
+        self.tree_g.add_edge(
+            u_of_edge=(current_gauge, next_gauge_date),
+            v_of_edge=(next_gauge, dat)
+        )
         path_partial[next_gauge] = dat  # update with the new node and the corresponding possible date
         new_path_key = "path" + str(next_idx + 1) + str(k)
         self.all_paths[new_path_key] = path_partial
         self.branches.put([dat, next_idx + 1, new_path_key])
 
     @measure_time
-    def sort_wave(self, filenames: list,
-                  start: str = '2006-02-01',
-                  end: str = '2006-06-01') -> list:
+    def sort_wave(
+            self,
+            filenames: list,
+            start: str = '2006-02-01',
+            end: str = '2006-06-01'
+    ) -> list:
         """
         It's hard to visualize waves far from each other. 
         With this method, we can choose a period and check the waves in it.
@@ -475,16 +655,34 @@ class FloodWaveDetector:
         return filename_sort
 
     @staticmethod
-    def count_waves(joined_graph: nx.Graph, start_station: int, end_station: int) -> int:
+    def count_waves(
+            joined_graph: nx.Graph,
+            start_station: int,
+            end_station: int
+    ) -> int:
 
-        connected_components = [list(x) for x in nx.connected_components(joined_graph)]
+        connected_components = [
+            list(x)
+            for x in nx.connected_components(joined_graph)
+        ]
 
         total_waves = 0
         for sub_connected_component in connected_components:
-            start_nodes = [node for node in sub_connected_component if int(node[0]) == start_station]
-            end_nodes = [node for node in sub_connected_component if int(node[0]) == end_station]
+            start_nodes = [
+                node
+                for node in sub_connected_component
+                if int(node[0]) == start_station
+            ]
+            end_nodes = [
+                node
+                for node in sub_connected_component
+                if int(node[0]) == end_station
+            ]
+
             for start in start_nodes:
                 for end in end_nodes:
-                    paths = [list(x) for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
+                    paths = [
+                        list(x)
+                        for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
                     total_waves += len(paths)
         return total_waves
