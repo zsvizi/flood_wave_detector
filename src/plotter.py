@@ -200,7 +200,8 @@ class Plotter:
             xsize: int,
             ysize: int,
             joined_graph: nx.Graph,
-            positions, node_size: int
+            positions: dict,
+            node_size: int
     ) -> None:
 
         plt.rcParams["figure.figsize"] = (xsize, ysize)

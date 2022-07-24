@@ -11,7 +11,7 @@ from src.measure_time import measure_time
 
 
 class Analysis:
-    def __init__(self, fwd: FloodWaveDetector):
+    def __init__(self, fwd: FloodWaveDetector) -> None:
         self.fwd = fwd
 
     def filter_graph(
@@ -210,10 +210,10 @@ class Analysis:
 
     @staticmethod
     def convert_datetime_to_str(
-            actual_date,
-            actual_next_pair,
-            found_next_dates
-    ):
+            actual_date: datetime,
+            actual_next_pair: dict,
+            found_next_dates: pd.DataFrame
+    ) -> None:
 
         if not found_next_dates.empty:
             found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()

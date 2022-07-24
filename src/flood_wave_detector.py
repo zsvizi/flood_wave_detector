@@ -138,8 +138,8 @@ class FloodWaveDetector:
             self,
             actual_date: str,
             next_date: str,
-            root_gauge,
-            root_gauge_next
+            root_gauge: str,
+            root_gauge_next: str
     ) -> None:
         self.path[root_gauge] = actual_date
         self.path[root_gauge_next] = next_date
@@ -172,7 +172,7 @@ class FloodWaveDetector:
     def compose_graph(
             self,
             joined_graph: nx.Graph,
-            gauge_pair,
+            gauge_pair: str,
             start_date: str,
             end_date: str
     ) -> nx.Graph:
@@ -356,7 +356,7 @@ class FloodWaveDetector:
     def save_info_about_branches(
             self,
             current_gauge: str,
-            dat,
+            dat: str,
             k: int,
             next_gauge: str,
             next_gauge_date: str,
