@@ -27,7 +27,7 @@ class Plotter:
             save: bool = False
     ) -> None:
 
-        joined_graph = self.fwd.filter_graph(
+        joined_graph = self.fwd.analysis.filter_graph(
             start_station=start_station,
             end_station=end_station,
             start_date=start_date,
