@@ -58,14 +58,14 @@ class Analysis:
         )
 
         # third filter
-        self.date_filter(
+        Analysis.date_filter(
             joined_graph=joined_graph,
             start_date=start_date,
             end_date=end_date
         )
 
         # fourth filter
-        self.remove_components_not_including_start_or_end_station(
+        Analysis.remove_components_not_including_start_or_end_station(
             start_station=start_station,
             end_station=end_station,
             joined_graph=joined_graph
@@ -177,14 +177,14 @@ class Analysis:
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = self.clean_dataframe_for_getting_peak_plateau_list(
+        peak_plateau_df = Analysis.clean_dataframe_for_getting_peak_plateau_list(
             gauge_data=gauge_data,
             gauge_df=gauge_df,
             reg_number=reg_number
         )
 
         # Get peak-plateau list
-        return self.get_peak_plateau_list(peak_plateau_df)
+        return Analysis.get_peak_plateau_list(peak_plateau_df)
 
     @staticmethod
     def get_peak_plateau_list(peak_plateau_df: pd.DataFrame) -> list:
@@ -219,8 +219,8 @@ class Analysis:
             found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
             actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
+    @staticmethod
     def find_dates_for_next_gauge(
-            self,
             actual_date: datetime,
             delay: int,
             next_gauge_df: pd.DataFrame,
@@ -228,7 +228,7 @@ class Analysis:
     ) -> pd.DataFrame:
 
         past_date = actual_date - timedelta(days=delay)
-        found_next_dates = self.filter_for_start_and_length(
+        found_next_dates = Analysis.filter_for_start_and_length(
             gauge_df=next_gauge_df,
             min_date=past_date,
             window_size=window_size

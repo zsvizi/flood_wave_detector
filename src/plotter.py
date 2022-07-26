@@ -35,7 +35,7 @@ class Plotter:
         )
 
         if save:
-            self.save_merge_graph(joined_graph=joined_graph)
+            Plotter.save_merge_graph(joined_graph=joined_graph)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
@@ -46,7 +46,7 @@ class Plotter:
             ax.axhspan(vs, ve, color='green', alpha=0.3, label="Window for maximum")
             ax.axvspan(hs, he, color='orange', alpha=0.3, label="Window for maximum")
 
-        self.set_x_axis_ticks(
+        Plotter.set_x_axis_ticks(
             ax=ax,
             positions=positions,
             start=start,
@@ -62,7 +62,7 @@ class Plotter:
             fontsize=32
         )
 
-        self.format_figure(
+        Plotter.format_figure(
             ax=ax,
             xsize=40,
             ysize=10,
@@ -98,7 +98,7 @@ class Plotter:
             )
 
         if save:
-            self.save_plot_graph(joined_graph)
+            Plotter.save_plot_graph(joined_graph)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
@@ -107,7 +107,7 @@ class Plotter:
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
 
-        self.set_x_axis_ticks(
+        Plotter.set_x_axis_ticks(
             ax=ax,
             positions=positions,
             start=start,
@@ -123,7 +123,7 @@ class Plotter:
             fontsize=22
         )
 
-        self.format_figure(
+        Plotter.format_figure(
             ax=ax,
             xsize=30,
             ysize=20,
