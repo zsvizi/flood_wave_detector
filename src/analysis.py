@@ -140,8 +140,9 @@ class Analysis:
             if (True not in res_start) or (True not in res_end):
                 joined_graph.remove_nodes_from(sub_connected_component)
 
+    @staticmethod
     @measure_time
-    def create_gauge_data_2(self, gauge_ts: np.array) -> np.array:
+    def create_gauge_data_2(gauge_ts: np.array) -> np.array:
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
         c = np.r_[False, gauge_ts[1:] > gauge_ts[:-1]]
@@ -157,8 +158,9 @@ class Analysis:
             result[k].is_peak = True
         return result
 
+    @staticmethod
     @measure_time
-    def create_peak_plateau_list(self,
+    def create_peak_plateau_list(
                                  gauge_df: pd.DataFrame,
                                  gauge_data: np.array,
                                  reg_number: str
@@ -259,8 +261,9 @@ class Analysis:
         gauge_df['Date'] = pd.to_datetime(gauge_df['Date'])
         return gauge_df
 
+    @staticmethod
     @measure_time
-    def sort_wave(self,
+    def sort_wave(
                   filenames: list,
                   start: str = '2006-02-01',
                   end: str = '2006-06-01'

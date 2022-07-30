@@ -248,8 +248,9 @@ class FloodWaveDetector:
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
     
+    @staticmethod
     @measure_time
-    def mkdirs(self) -> None:
+    def mkdirs() -> None:
         os.makedirs('./saved', exist_ok=True)
         os.makedirs('./saved/find_vertices', exist_ok=True)
         os.makedirs('./saved/find_edges', exist_ok=True)
