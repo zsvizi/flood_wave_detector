@@ -5,13 +5,13 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from src.flood_wave_detector import FloodWaveDetector
+from src.flood_wave_handler import FloodWaveHandler
 from src.json_helper import JsonHelper
 
 
 class Plotter:
-    def __init__(self, fwd: FloodWaveDetector) -> None:
-        self.fwd = fwd
+    def __init__(self, handler: FloodWaveHandler) -> None:
+        self.handler = handler
 
     def merge_graphs(self,
                      start_station: int,
@@ -26,7 +26,7 @@ class Plotter:
                      save: bool = False
                      ) -> None:
 
-        joined_graph = self.fwd.analysis.filter_graph(
+        joined_graph = self.handler.filter_graph(
             start_station=start_station,
             end_station=end_station,
             start_date=start_date,
@@ -78,17 +78,16 @@ class Plotter:
                    save: bool = False
                    ) -> None:
 
-        if self.fwd.gauge_peak_plateau_pairs == {}:
-            self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(
+        gauge_peak_plateau_pairs = JsonHelper.read(
                 filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
                 log=False
             )
 
-        self.fwd.gauge_pairs = list(self.fwd.gauge_peak_plateau_pairs.keys())
+        self.handler.gauge_pairs = list(gauge_peak_plateau_pairs.keys())
 
         joined_graph = nx.DiGraph()
-        for gauge_pair in self.fwd.gauge_pairs:
-            joined_graph = self.fwd.compose_graph(
+        for gauge_pair in self.handler.gauge_pairs:
+            joined_graph = self.handler.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
@@ -181,8 +180,8 @@ class Plotter:
                          ) -> None:
 
         min_y = 1
-        max_y = len(self.fwd.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.fwd.gauges[::-1]]
+        max_y = len(self.handler.gauges) + 1
+        y_labels = [str(gauge) for gauge in self.handler.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,
@@ -214,6 +213,6 @@ class Plotter:
         positions = dict()
         for node in joined_graph.nodes():
             x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
-            y_coord = len(self.fwd.gauges) - self.fwd.gauges.index(int(node[0]))
+            y_coord = len(self.handler.gauges) - self.handler.gauges.index(int(node[0]))
             positions[node] = (x_coord, y_coord)
         return positions

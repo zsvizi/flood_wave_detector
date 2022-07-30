@@ -6,14 +6,13 @@ from queue import LifoQueue
 import networkx as nx
 
 from data_ativizig.dataloader import Dataloader
+from src.flood_wave_handler import FloodWaveHandler
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
 
 
 class FloodWaveDetector:
     def __init__(self) -> None:
-        from src.analysis import Analysis
-        self.analysis = Analysis(self)
         self.__db_credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.ini')
         self.dataloader = Dataloader(self.__db_credentials_path)
         self.meta = self.dataloader.meta_data\
@@ -30,6 +29,7 @@ class FloodWaveDetector:
         self.wave_serial_number = 0
         self.branches = LifoQueue()
         self.flood_wave = {}
+        self.handler = FloodWaveHandler()
 
     @measure_time
     def run(self) -> None:
@@ -46,10 +46,10 @@ class FloodWaveDetector:
                 gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                local_peak_values = self.analysis.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
+                local_peak_values = self.handler.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
-                peak_plateau_tuples = self.analysis.create_peak_plateau_list(
+                peak_plateau_tuples = self.handler.create_peak_plateau_list(
                     gauge_df=gauge_df,
                     gauge_data=local_peak_values,
                     reg_number=str(gauge)
@@ -86,16 +86,16 @@ class FloodWaveDetector:
                 continue
 
             # Read the data from the actual gauge.
-            actual_gauge_df = self.analysis.read_data_from_gauge(gauge=actual_gauge)
+            actual_gauge_df = self.handler.read_data_from_gauge(gauge=actual_gauge)
 
             # Read the data from the next gauge.
-            next_gauge_df = self.analysis.read_data_from_gauge(gauge=next_gauge)
+            next_gauge_df = self.handler.read_data_from_gauge(gauge=next_gauge)
 
             # Create actual_next_pair
             actual_next_pair = dict()
             for actual_date in actual_gauge_df['Date']:
                 # Find next dates for the following gauge
-                found_next_dates = self.analysis.find_dates_for_next_gauge(
+                found_next_dates = self.handler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     delay=delay,
                     next_gauge_df=next_gauge_df,
@@ -103,7 +103,7 @@ class FloodWaveDetector:
                 )
 
                 # Convert datetime to string
-                self.analysis.convert_datetime_to_str(
+                self.handler.convert_datetime_to_str(
                     actual_date=actual_date,
                     actual_next_pair=actual_next_pair,
                     found_next_dates=found_next_dates
@@ -226,28 +226,6 @@ class FloodWaveDetector:
         self.tree_g = nx.Graph()
         self.flood_wave = {}
 
-    def compose_graph(self,
-                      joined_graph: nx.Graph,
-                      gauge_pair: str,
-                      start_date: str,
-                      end_date: str
-                      ) -> nx.Graph:
-
-        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
-        sorted_files = self.analysis.sort_wave(
-            filenames=filenames,
-            start=start_date,
-            end=end_date
-        )
-        for file in sorted_files:
-            data = JsonHelper.read(
-                filepath=f'./saved/build_graph/{gauge_pair}/{file}',
-                log=False
-            )
-            h = nx.readwrite.json_graph.node_link_graph(data)
-            joined_graph = nx.compose(joined_graph, h)
-        return joined_graph
-    
     @staticmethod
     @measure_time
     def mkdirs() -> None:
