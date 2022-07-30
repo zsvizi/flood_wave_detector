@@ -14,10 +14,8 @@ class Plotter:
         self.handler = handler
 
     def merge_graphs(self,
-                     start_station: int,
-                     end_station: int,
+                     joined_graph: nx.Graph,
                      start_date: str,
-                     end_date: str,
                      span: bool,
                      hs: int,
                      he: int,
@@ -25,13 +23,6 @@ class Plotter:
                      ve: int,
                      save: bool = False
                      ) -> None:
-
-        joined_graph = self.handler.filter_graph(
-            start_station=start_station,
-            end_station=end_station,
-            start_date=start_date,
-            end_date=end_date
-        )
 
         if save:
             Plotter.save_merge_graph(joined_graph=joined_graph)
