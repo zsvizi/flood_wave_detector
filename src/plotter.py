@@ -64,8 +64,8 @@ class Plotter:
         plt.savefig('graph_.pdf')
 
     def plot_graph(self,
+                   directed_graph: nx.DiGraph,
                    start_date: str,
-                   end_date: str,
                    save: bool = False
                    ) -> None:
 
@@ -76,21 +76,12 @@ class Plotter:
 
         self.handler.gauge_pairs = list(gauge_peak_plateau_pairs.keys())
 
-        joined_graph = nx.DiGraph()
-        for gauge_pair in self.handler.gauge_pairs:
-            joined_graph = self.handler.compose_graph(
-                end_date=end_date,
-                gauge_pair=gauge_pair,
-                joined_graph=joined_graph,
-                start_date=start_date
-            )
-
         if save:
-            Plotter.save_plot_graph(joined_graph)
+            Plotter.save_plot_graph(directed_graph)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
-        positions = self.create_positions(joined_graph=joined_graph, start=start)
+        positions = self.create_positions(joined_graph=directed_graph, start=start)
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
@@ -122,6 +113,21 @@ class Plotter:
 
         plt.savefig('graph.pdf')
 
+    def create_directed_graph(self,
+                              start_date: str,
+                              end_date: str
+                              ) -> nx.DiGraph:
+
+        joined_graph = nx.DiGraph()
+        for gauge_pair in self.handler.gauge_pairs:
+            joined_graph = self.handler.compose_graph(
+                end_date=end_date,
+                gauge_pair=gauge_pair,
+                joined_graph=joined_graph,
+                start_date=start_date
+            )
+        return joined_graph
+
     @staticmethod
     def save_merge_graph(joined_graph: nx.Graph) -> None:
         joined_graph_save = nx.node_link_data(joined_graph)
@@ -132,7 +138,7 @@ class Plotter:
         )
 
     @staticmethod
-    def save_plot_graph(joined_graph: nx.Graph) -> None:
+    def save_plot_graph(joined_graph: nx.DiGraph) -> None:
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
             filepath=f'./saved/plot_graph.json',
