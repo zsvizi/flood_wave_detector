@@ -14,7 +14,7 @@ class FloodWaveDetector:
     def __init__(self) -> None:
         from src.analysis import Analysis
         self.analysis = Analysis(self)
-        self.__db_credentials_path = self.read_ini()
+        self.__db_credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.ini')
         self.dataloader = Dataloader(self.__db_credentials_path)
         self.meta = self.dataloader.meta_data\
                         .groupby(["river"])\
@@ -247,11 +247,6 @@ class FloodWaveDetector:
             h = nx.readwrite.json_graph.node_link_graph(data)
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
-
-    @measure_time
-    def read_ini(self) -> os.path:
-        dirname = os.path.dirname(os.getcwd())
-        return os.path.join(dirname, 'database.ini')
     
     @measure_time
     def mkdirs(self) -> None:
