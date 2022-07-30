@@ -14,13 +14,12 @@ class Analysis:
     def __init__(self, fwd: FloodWaveDetector) -> None:
         self.fwd = fwd
 
-    def filter_graph(
-            self,
-            start_station: int,
-            end_station: int,
-            start_date: str,
-            end_date: str
-    ) -> nx.Graph:
+    def filter_graph(self,
+                     start_station: int,
+                     end_station: int,
+                     start_date: str,
+                     end_date: str
+                     ) -> nx.Graph:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
             self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(
@@ -73,21 +72,19 @@ class Analysis:
 
         return joined_graph
 
-    def select_start_gauges(
-            self,
-            low_limit: int
-    ) -> list:
+    def select_start_gauges(self,
+                            low_limit: int
+                            ) -> list:
 
         selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit)]
         start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         return start_gauges
 
-    def remove_nodes_with_improper_km_data(
-            self,
-            joined_graph: nx.Graph,
-            low_limit: int,
-            up_limit: int
-    ) -> None:
+    def remove_nodes_with_improper_km_data(self,
+                                           joined_graph: nx.Graph,
+                                           low_limit: int,
+                                           up_limit: int
+                                           ) -> None:
 
         selected_meta = self.fwd.meta[(self.fwd.meta['river_km'] >= low_limit) &
                                       (self.fwd.meta['river_km'] <= up_limit)]
@@ -161,12 +158,11 @@ class Analysis:
         return result
 
     @measure_time
-    def create_peak_plateau_list(
-            self,
-            gauge_df: pd.DataFrame,
-            gauge_data: np.array,
-            reg_number: str
-    ) -> list:
+    def create_peak_plateau_list(self,
+                                 gauge_df: pd.DataFrame,
+                                 gauge_data: np.array,
+                                 reg_number: str
+                                 ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
@@ -264,12 +260,11 @@ class Analysis:
         return gauge_df
 
     @measure_time
-    def sort_wave(
-            self,
-            filenames: list,
-            start: str = '2006-02-01',
-            end: str = '2006-06-01'
-    ) -> list:
+    def sort_wave(self,
+                  filenames: list,
+                  start: str = '2006-02-01',
+                  end: str = '2006-06-01'
+                  ) -> list:
         """
         It's hard to visualize waves far from each other.
         With this method, we can choose a period and check the waves in it.

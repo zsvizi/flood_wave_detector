@@ -4,7 +4,6 @@ import os
 from queue import LifoQueue
 
 import networkx as nx
-from networkx.readwrite import json_graph
 
 from data_ativizig.dataloader import Dataloader
 from src.json_helper import JsonHelper
@@ -36,7 +35,7 @@ class FloodWaveDetector:
     def run(self) -> None:
         self.mkdirs()
         self.find_vertices()
-        self.find_edges()
+        self.find_edges(delay=0, window_size=3, gauges=self.gauges)
         self.build_graph()
 
     @measure_time
@@ -63,183 +62,38 @@ class FloodWaveDetector:
                 )
 
     @measure_time
-    def find_edges(self) -> None:
-        self.search_flooding_gauge_pairs(
-            delay=0,
-            window_size=3,
-            gauges=self.gauges
-        )
-
-    @measure_time
-    def build_graph(self) -> None:
+    def find_edges(self,
+                   delay: int,
+                   window_size: int,
+                   gauges: list
+                   ) -> None:
         """
-        Searching for wave "series". For now, starting from the root ('1514-1515').
-        Trying to find the same waves in different gauges.
-        """
-
-        # Read the gauge_peak_plateau_pairs (super dict)
-        if self.gauge_peak_plateau_pairs == {}:
-            self.gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json'
-            )
-
-        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
-
-        for gauge_pair in self.gauge_pairs:
-
-            root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
-
-            os.makedirs(f'./saved/build_graph/{gauge_pair}', exist_ok=True)
-
-            # Search waves starting from the root
-            for actual_date in root_gauge_pair_date_dict.keys():
-
-                self.reset_tree_and_flood_wave()
-                # Go over every date with a wave
-                for next_date in root_gauge_pair_date_dict[actual_date]:
-
-                    # Empty and reset variables
-                    self.reset_path()
-                    next_g_p_idx = self.reset_gauge_pair_index_and_serial_number()
-
-                    root_gauge = gauge_pair.split('_')[0]
-                    root_gauge_next = gauge_pair.split('_')[1]
-
-                    self.tree_g.add_edge(
-                        u_of_edge=(root_gauge, actual_date),
-                        v_of_edge=(root_gauge_next, next_date)
-                    )
-
-                    self.add_to_path(
-                        actual_date=actual_date,
-                        next_date=next_date,
-                        root_gauge=root_gauge,
-                        root_gauge_next=root_gauge_next
-                    )
-
-                    # Search for flood wave
-                    self.create_flood_wave(
-                        next_gauge_date=next_date,
-                        next_idx=next_g_p_idx
-                    )
-
-                    # Go over the missed branches, depth search
-                    self.depth_first_search()
-
-                    # Save the wave
-
-                    data = json_graph.node_link_data(self.tree_g)
-                    JsonHelper.write(
-                        filepath=f'./saved/build_graph/{gauge_pair}/{actual_date}',
-                        obj=data
-                    )
-
-    def add_to_path(
-            self,
-            actual_date: str,
-            next_date: str,
-            root_gauge: str,
-            root_gauge_next: str
-    ) -> None:
-        self.path[root_gauge] = actual_date
-        self.path[root_gauge_next] = next_date
-
-    def depth_first_search(self) -> None:
-        while self.branches.qsize() != 0:
-            # Get info from branches (info about the branch)
-            new_date, new_g_p_idx, path_key = self.branches.get()
-            self.path = self.all_paths[path_key]
-
-            # Go back to the branch
-            self.create_flood_wave(
-                next_gauge_date=new_date,
-                next_idx=new_g_p_idx
-            )
-
-    def reset_gauge_pair_index_and_serial_number(self) -> int:
-        next_g_p_idx = 1
-        self.wave_serial_number = 0
-        return next_g_p_idx
-
-    def reset_path(self) -> None:
-        self.path = {}
-        self.all_paths = {}
-
-    def reset_tree_and_flood_wave(self) -> None:
-        self.tree_g = nx.Graph()
-        self.flood_wave = {}
-
-    def compose_graph(
-            self,
-            joined_graph: nx.Graph,
-            gauge_pair: str,
-            start_date: str,
-            end_date: str
-    ) -> nx.Graph:
-
-        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
-        sorted_files = self.analysis.sort_wave(
-            filenames=filenames,
-            start=start_date,
-            end=end_date
-        )
-        for file in sorted_files:
-            data = JsonHelper.read(
-                filepath=f'./saved/build_graph/{gauge_pair}/{file}',
-                log=False
-            )
-            h = json_graph.node_link_graph(data)
-            joined_graph = nx.compose(joined_graph, h)
-        return joined_graph
-
-    @measure_time
-    def read_ini(self) -> os.path:
-        dirname = os.path.dirname(os.getcwd())
-        return os.path.join(dirname, 'database.ini')
-    
-    @measure_time
-    def mkdirs(self) -> None:
-        os.makedirs('./saved', exist_ok=True)
-        os.makedirs('./saved/find_vertices', exist_ok=True)
-        os.makedirs('./saved/find_edges', exist_ok=True)
-        os.makedirs('./saved/build_graph', exist_ok=True)
-        os.makedirs('./saved/new/build_graph', exist_ok=True)
-
-    @measure_time
-    def search_flooding_gauge_pairs(
-            self,
-            delay: int,
-            window_size: int,
-            gauges: list
-    ) -> None:
-        """
-        Creates the wave-pairs for gauges next to each other. 
+        Creates the wave-pairs for gauges next to each other.
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
 
         :param int delay: Minimum delay (days) between two gauges.
         :param int window_size: Size of the interval (days) we allow a delay.
         :param list gauges: The id list of the gauges (in order).
         """
-        
+
         gauge_peak_plateau_pairs = {}
         big_json_exists = os.path.exists('./saved/find_edges/gauge_peak_plateau_pairs.json')
 
         for actual_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
             actual_json_exists = os.path.exists(f'saved/find_edges/{actual_gauge}_{next_gauge}.json')
-            
+
             if actual_json_exists and big_json_exists:
                 continue
 
-            # Read the data from the actual gauge. 
+            # Read the data from the actual gauge.
             actual_gauge_df = self.analysis.read_data_from_gauge(gauge=actual_gauge)
 
-            # Read the data from the next gauge. 
+            # Read the data from the next gauge.
             next_gauge_df = self.analysis.read_data_from_gauge(gauge=next_gauge)
 
             # Create actual_next_pair
             actual_next_pair = dict()
             for actual_date in actual_gauge_df['Date']:
-
                 # Find next dates for the following gauge
                 found_next_dates = self.analysis.find_dates_for_next_gauge(
                     actual_date=actual_date,
@@ -271,11 +125,146 @@ class FloodWaveDetector:
                 obj=gauge_peak_plateau_pairs
             )
 
-    def create_flood_wave(
-            self,
-            next_gauge_date: str,
-            next_idx: int
-    ) -> None:
+    @measure_time
+    def build_graph(self) -> None:
+        """
+        Searching for wave "series". For now, starting from the root ('1514-1515').
+        Trying to find the same waves in different gauges.
+        """
+
+        # Read the gauge_peak_plateau_pairs (super dict)
+        if self.gauge_peak_plateau_pairs == {}:
+            self.gauge_peak_plateau_pairs = JsonHelper.read(
+                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json'
+            )
+
+        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
+
+        for gauge_pair in self.gauge_pairs:
+
+            root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
+
+            os.makedirs(f'./saved/build_graph/{gauge_pair}', exist_ok=True)
+
+            # Search waves starting from the root
+            for actual_date in root_gauge_pair_date_dict.keys():
+
+                self.reset_tree_and_flood_wave()
+                # Go over every date with a wave
+                for next_date in root_gauge_pair_date_dict[actual_date]:
+
+                    # Empty and reset variables
+                    next_g_p_idx = self.reset_gauge_pair_index_and_serial_number()
+
+                    self.add_to_graph(actual_date=actual_date,
+                                      gauge_pair=gauge_pair,
+                                      next_date=next_date)
+
+                    # Search for flood wave
+                    self.create_flood_wave(
+                        next_gauge_date=next_date,
+                        next_idx=next_g_p_idx
+                    )
+
+                    # Go over the missed branches, depth search
+                    self.depth_first_search()
+
+                    # Save the wave
+
+                    data = nx.readwrite.json_graph.node_link_data(self.tree_g)
+                    JsonHelper.write(
+                        filepath=f'./saved/build_graph/{gauge_pair}/{actual_date}',
+                        obj=data
+                    )
+
+    def add_to_graph(self, actual_date, gauge_pair, next_date):
+        self.reset_path()
+        root_gauge = gauge_pair.split('_')[0]
+        root_gauge_next = gauge_pair.split('_')[1]
+        self.tree_g.add_edge(
+            u_of_edge=(root_gauge, actual_date),
+            v_of_edge=(root_gauge_next, next_date)
+        )
+        self.add_to_path(
+            actual_date=actual_date,
+            next_date=next_date,
+            root_gauge=root_gauge,
+            root_gauge_next=root_gauge_next
+        )
+
+    def add_to_path(self,
+                    actual_date: str,
+                    next_date: str,
+                    root_gauge: str,
+                    root_gauge_next: str
+                    ) -> None:
+        self.path[root_gauge] = actual_date
+        self.path[root_gauge_next] = next_date
+
+    def depth_first_search(self) -> None:
+        while self.branches.qsize() != 0:
+            # Get info from branches (info about the branch)
+            new_date, new_g_p_idx, path_key = self.branches.get()
+            self.path = self.all_paths[path_key]
+
+            # Go back to the branch
+            self.create_flood_wave(
+                next_gauge_date=new_date,
+                next_idx=new_g_p_idx
+            )
+
+    def reset_gauge_pair_index_and_serial_number(self) -> int:
+        next_g_p_idx = 1
+        self.wave_serial_number = 0
+        return next_g_p_idx
+
+    def reset_path(self) -> None:
+        self.path = {}
+        self.all_paths = {}
+
+    def reset_tree_and_flood_wave(self) -> None:
+        self.tree_g = nx.Graph()
+        self.flood_wave = {}
+
+    def compose_graph(self,
+                      joined_graph: nx.Graph,
+                      gauge_pair: str,
+                      start_date: str,
+                      end_date: str
+                      ) -> nx.Graph:
+
+        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
+        sorted_files = self.analysis.sort_wave(
+            filenames=filenames,
+            start=start_date,
+            end=end_date
+        )
+        for file in sorted_files:
+            data = JsonHelper.read(
+                filepath=f'./saved/build_graph/{gauge_pair}/{file}',
+                log=False
+            )
+            h = nx.readwrite.json_graph.node_link_graph(data)
+            joined_graph = nx.compose(joined_graph, h)
+        return joined_graph
+
+    @measure_time
+    def read_ini(self) -> os.path:
+        dirname = os.path.dirname(os.getcwd())
+        return os.path.join(dirname, 'database.ini')
+    
+    @measure_time
+    def mkdirs(self) -> None:
+        os.makedirs('./saved', exist_ok=True)
+        os.makedirs('./saved/find_vertices', exist_ok=True)
+        os.makedirs('./saved/find_edges', exist_ok=True)
+        os.makedirs('./saved/build_graph', exist_ok=True)
+        os.makedirs('./saved/new/build_graph', exist_ok=True)
+
+    def create_flood_wave(self,
+                          next_gauge_date: str,
+                          next_idx: int
+                          ) -> None:
         """
         Recursive function walking along the paths in the rooted tree representing the flood wave
         We assume that global variable path contains the complete path up to the current state 
@@ -339,13 +328,12 @@ class FloodWaveDetector:
             # Make possible to have more paths
             self.wave_serial_number += 1
 
-    def update_path_status(
-            self,
-            current_gauge: str,
-            new_gauge_date: str,
-            next_gauge: str,
-            next_gauge_date: str
-    ) -> None:
+    def update_path_status(self,
+                           current_gauge: str,
+                           new_gauge_date: str,
+                           next_gauge: str,
+                           next_gauge_date: str
+                           ) -> None:
 
         self.tree_g.add_edge(
             u_of_edge=(current_gauge, next_gauge_date),
@@ -353,15 +341,14 @@ class FloodWaveDetector:
         )
         self.path[next_gauge] = new_gauge_date
 
-    def save_info_about_branches(
-            self,
-            current_gauge: str,
-            dat: str,
-            k: int,
-            next_gauge: str,
-            next_gauge_date: str,
-            next_idx: int
-    ) -> None:
+    def save_info_about_branches(self,
+                                 current_gauge: str,
+                                 dat: str,
+                                 k: int,
+                                 next_gauge: str,
+                                 next_gauge_date: str,
+                                 next_idx: int
+                                 ) -> None:
 
         path_partial = deepcopy(self.path)  # copy result up to now
         self.tree_g.add_edge(

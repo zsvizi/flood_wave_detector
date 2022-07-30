@@ -13,19 +13,18 @@ class Plotter:
     def __init__(self, fwd: FloodWaveDetector) -> None:
         self.fwd = fwd
 
-    def merge_graphs(
-            self,
-            start_station: int,
-            end_station: int,
-            start_date: str,
-            end_date: str,
-            span: bool,
-            hs: int,
-            he: int,
-            vs: int,
-            ve: int,
-            save: bool = False
-    ) -> None:
+    def merge_graphs(self,
+                     start_station: int,
+                     end_station: int,
+                     start_date: str,
+                     end_date: str,
+                     span: bool,
+                     hs: int,
+                     he: int,
+                     vs: int,
+                     ve: int,
+                     save: bool = False
+                     ) -> None:
 
         joined_graph = self.fwd.analysis.filter_graph(
             start_station=start_station,
@@ -73,12 +72,11 @@ class Plotter:
 
         plt.savefig('graph_.pdf')
 
-    def plot_graph(
-            self,
-            start_date: str,
-            end_date: str,
-            save: bool = False
-    ) -> None:
+    def plot_graph(self,
+                   start_date: str,
+                   end_date: str,
+                   save: bool = False
+                   ) -> None:
 
         if self.fwd.gauge_peak_plateau_pairs == {}:
             self.fwd.gauge_peak_plateau_pairs = JsonHelper.read(
@@ -175,13 +173,12 @@ class Plotter:
             fontsize=fontsize
         )
 
-    def set_y_axis_ticks(
-            self,
-            ax: plt.axis,
-            rotation: int,
-            horizontalalignment: str,
-            fontsize: int
-    ) -> None:
+    def set_y_axis_ticks(self,
+                         ax: plt.axis,
+                         rotation: int,
+                         horizontalalignment: str,
+                         fontsize: int
+                         ) -> None:
 
         min_y = 1
         max_y = len(self.fwd.gauges) + 1
@@ -209,11 +206,10 @@ class Plotter:
         plt.axis('on')  # turns on axis
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
 
-    def create_positions(
-            self,
-            joined_graph: nx.Graph,
-            start: datetime.strptime
-    ) -> dict:
+    def create_positions(self,
+                         joined_graph: nx.Graph,
+                         start: datetime.strptime
+                         ) -> dict:
 
         positions = dict()
         for node in joined_graph.nodes():
