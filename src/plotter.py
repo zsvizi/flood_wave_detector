@@ -106,7 +106,7 @@ class Plotter:
             ax=ax,
             xsize=30,
             ysize=20,
-            joined_graph=joined_graph,
+            joined_graph=directed_graph,
             positions=positions,
             node_size=500
         )
