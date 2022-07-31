@@ -177,14 +177,22 @@ class FloodWaveDetector:
                         obj=data
                     )
 
-    def add_to_graph(self, actual_date, gauge_pair, next_date):
+    def add_to_graph(self,
+                     actual_date: str,
+                     gauge_pair: str,
+                     next_date: str
+                     ) -> None:
+
         self.reset_path()
+
         root_gauge = gauge_pair.split('_')[0]
         root_gauge_next = gauge_pair.split('_')[1]
+
         self.tree_g.add_edge(
             u_of_edge=(root_gauge, actual_date),
             v_of_edge=(root_gauge_next, next_date)
         )
+
         self.add_to_path(
             actual_date=actual_date,
             next_date=next_date,
