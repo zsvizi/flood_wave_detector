@@ -29,7 +29,7 @@ class Plotter:
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
-        positions = self.create_positions(joined_graph=joined_graph, start=start)
+        positions = self.handler.create_positions(joined_graph=joined_graph, start=start)
 
         fig, ax = plt.subplots()
         if span:
@@ -81,7 +81,7 @@ class Plotter:
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
-        positions = self.create_positions(joined_graph=directed_graph, start=start)
+        positions = self.handler.create_positions(joined_graph=directed_graph, start=start)
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
@@ -112,21 +112,6 @@ class Plotter:
         )
 
         plt.savefig('graph.pdf')
-
-    def create_directed_graph(self,
-                              start_date: str,
-                              end_date: str
-                              ) -> nx.DiGraph:
-
-        joined_graph = nx.DiGraph()
-        for gauge_pair in self.handler.gauge_pairs:
-            joined_graph = self.handler.compose_graph(
-                end_date=end_date,
-                gauge_pair=gauge_pair,
-                joined_graph=joined_graph,
-                start_date=start_date
-            )
-        return joined_graph
 
     @staticmethod
     def save_merge_graph(joined_graph: nx.Graph) -> None:
@@ -201,15 +186,3 @@ class Plotter:
         nx.draw(joined_graph, pos=positions, node_size=node_size)
         plt.axis('on')  # turns on axis
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-
-    def create_positions(self,
-                         joined_graph: nx.Graph,
-                         start: datetime.strptime
-                         ) -> dict:
-
-        positions = dict()
-        for node in joined_graph.nodes():
-            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
-            y_coord = len(self.handler.gauges) - self.handler.gauges.index(int(node[0]))
-            positions[node] = (x_coord, y_coord)
-        return positions

@@ -319,3 +319,30 @@ class FloodWaveHandler:
             h = nx.readwrite.json_graph.node_link_graph(data)
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
+
+    def create_positions(self,
+                         joined_graph: nx.Graph,
+                         start: datetime.strptime
+                         ) -> dict:
+
+        positions = dict()
+        for node in joined_graph.nodes():
+            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
+            y_coord = len(self.gauges) - self.gauges.index(int(node[0]))
+            positions[node] = (x_coord, y_coord)
+        return positions
+
+    def create_directed_graph(self,
+                              start_date: str,
+                              end_date: str
+                              ) -> nx.DiGraph:
+
+        joined_graph = nx.DiGraph()
+        for gauge_pair in self.gauge_pairs:
+            joined_graph = self.compose_graph(
+                end_date=end_date,
+                gauge_pair=gauge_pair,
+                joined_graph=joined_graph,
+                start_date=start_date
+            )
+        return joined_graph
