@@ -143,7 +143,7 @@ class FloodWaveHandler:
                 log=False
             )
 
-        self.gauge_pairs = list(gauge_peak_plateau_pairs.keys())
+        self.gauges = list(gauge_peak_plateau_pairs.keys())
         up_limit = self.meta.loc[start_station].river_km
         low_limit = self.meta.loc[end_station].river_km
 
@@ -298,7 +298,8 @@ class FloodWaveHandler:
 
         return found_next_dates
 
-    def compose_graph(self,
+    @staticmethod
+    def compose_graph(
                       joined_graph: nx.Graph,
                       gauge_pair: str,
                       start_date: str,
@@ -306,7 +307,7 @@ class FloodWaveHandler:
                       ) -> nx.Graph:
 
         filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
-        sorted_files = self.sort_wave(
+        sorted_files = FloodWaveHandler.sort_wave(
             filenames=filenames,
             start=start_date,
             end=end_date
@@ -320,26 +321,30 @@ class FloodWaveHandler:
             joined_graph = nx.compose(joined_graph, h)
         return joined_graph
 
-    def create_positions(self,
+    @staticmethod
+    def create_positions(
                          joined_graph: nx.Graph,
-                         start: datetime.strptime
+                         start: datetime.strptime,
+                         gauges: list
                          ) -> dict:
 
         positions = dict()
         for node in joined_graph.nodes():
             x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
-            y_coord = len(self.gauges) - self.gauges.index(int(node[0]))
+            y_coord = len(gauges) - gauges.index(int(node[0]))
             positions[node] = (x_coord, y_coord)
         return positions
 
-    def create_directed_graph(self,
+    @staticmethod
+    def create_directed_graph(
                               start_date: str,
-                              end_date: str
+                              end_date: str,
+                              gauge_pairs: list,
                               ) -> nx.DiGraph:
 
         joined_graph = nx.DiGraph()
-        for gauge_pair in self.gauge_pairs:
-            joined_graph = self.compose_graph(
+        for gauge_pair in gauge_pairs:
+            joined_graph = FloodWaveHandler.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
