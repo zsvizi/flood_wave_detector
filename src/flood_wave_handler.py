@@ -130,7 +130,7 @@ class FloodWaveHandler:
                      end_station: int,
                      start_date: str,
                      end_date: str,
-                     gauge_pairs: list,
+                     gauges: list,
                      meta: Union[pd.DataFrameataframe, None, pd.Series]
                      ) -> nx.Graph:
 
@@ -139,7 +139,7 @@ class FloodWaveHandler:
                 log=False
             )
 
-        gauges = list(gauge_peak_plateau_pairs.keys())
+        gauge_pairs = list(gauge_peak_plateau_pairs.keys())
         up_limit = meta.loc[start_station].river_km
         low_limit = meta.loc[end_station].river_km
 
