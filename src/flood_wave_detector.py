@@ -29,7 +29,6 @@ class FloodWaveDetector:
         self.wave_serial_number = 0
         self.branches = LifoQueue()
         self.flood_wave = {}
-        self.handler = FloodWaveHandler()
 
     @measure_time
     def run(self) -> None:
@@ -46,10 +45,10 @@ class FloodWaveDetector:
                 gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                local_peak_values = self.handler.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
+                local_peak_values = FloodWaveHandler.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
-                peak_plateau_tuples = self.handler.create_peak_plateau_list(
+                peak_plateau_tuples = FloodWaveHandler.create_peak_plateau_list(
                     gauge_df=gauge_df,
                     gauge_data=local_peak_values,
                     reg_number=str(gauge)
@@ -86,16 +85,16 @@ class FloodWaveDetector:
                 continue
 
             # Read the data from the actual gauge.
-            actual_gauge_df = self.handler.read_data_from_gauge(gauge=actual_gauge)
+            actual_gauge_df = FloodWaveHandler.read_data_from_gauge(gauge=actual_gauge)
 
             # Read the data from the next gauge.
-            next_gauge_df = self.handler.read_data_from_gauge(gauge=next_gauge)
+            next_gauge_df = FloodWaveHandler.read_data_from_gauge(gauge=next_gauge)
 
             # Create actual_next_pair
             actual_next_pair = dict()
             for actual_date in actual_gauge_df['Date']:
                 # Find next dates for the following gauge
-                found_next_dates = self.handler.find_dates_for_next_gauge(
+                found_next_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     delay=delay,
                     next_gauge_df=next_gauge_df,
@@ -103,7 +102,7 @@ class FloodWaveDetector:
                 )
 
                 # Convert datetime to string
-                self.handler.convert_datetime_to_str(
+                FloodWaveHandler.convert_datetime_to_str(
                     actual_date=actual_date,
                     actual_next_pair=actual_next_pair,
                     found_next_dates=found_next_dates

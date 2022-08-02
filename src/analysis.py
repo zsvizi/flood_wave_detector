@@ -1,11 +1,9 @@
 import networkx as nx
 
-from src.flood_wave_handler import FloodWaveHandler
-
 
 class Analysis:
-    def __init__(self, handler: FloodWaveHandler) -> None:
-        self.handler = handler
+    def __init__(self) -> None:
+        pass
 
     @staticmethod
     def count_waves(
