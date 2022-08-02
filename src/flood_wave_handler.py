@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 import os
+from typing import Union
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from data_ativizig.dataloader import Dataloader
 from src.gauge_data import GaugeData
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
@@ -13,14 +13,7 @@ from src.measure_time import measure_time
 
 class FloodWaveHandler:
     def __init__(self):
-        self.__db_credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.ini')
-        self.dataloader = Dataloader(self.__db_credentials_path)
-        self.meta = self.dataloader.meta_data \
-            .groupby(["river"]) \
-            .get_group("Tisza") \
-            .sort_values(by='river_km', ascending=False)
-        self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
-        self.gauge_pairs = []
+        pass
 
     @staticmethod
     @measure_time
@@ -131,11 +124,14 @@ class FloodWaveHandler:
 
         return filename_sort
 
-    def filter_graph(self,
+    @staticmethod
+    def filter_graph(
                      start_station: int,
                      end_station: int,
                      start_date: str,
-                     end_date: str
+                     end_date: str,
+                     gauge_pairs: list,
+                     meta: Union[pd.DataFrameataframe, None, pd.Series]
                      ) -> nx.Graph:
 
         gauge_peak_plateau_pairs = JsonHelper.read(
@@ -143,22 +139,22 @@ class FloodWaveHandler:
                 log=False
             )
 
-        self.gauges = list(gauge_peak_plateau_pairs.keys())
-        up_limit = self.meta.loc[start_station].river_km
-        low_limit = self.meta.loc[end_station].river_km
+        gauges = list(gauge_peak_plateau_pairs.keys())
+        up_limit = meta.loc[start_station].river_km
+        low_limit = meta.loc[end_station].river_km
 
         # first filter
-        start_gauges = self.select_start_gauges(low_limit=low_limit)
+        start_gauges = FloodWaveHandler.select_start_gauges(low_limit=low_limit, meta=meta)
 
         selected_pairs = [
             x
-            for x in self.gauge_pairs
+            for x in gauge_pairs
             if int(x.split('_')[0]) in start_gauges
         ]
 
         joined_graph = nx.Graph()
         for gauge_pair in selected_pairs:
-            joined_graph = self.compose_graph(
+            joined_graph = FloodWaveHandler.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
@@ -166,10 +162,12 @@ class FloodWaveHandler:
             )
 
         # second filter
-        self.remove_nodes_with_improper_km_data(
+        FloodWaveHandler.remove_nodes_with_improper_km_data(
             joined_graph=joined_graph,
             low_limit=low_limit,
-            up_limit=up_limit
+            up_limit=up_limit,
+            gauges=gauges,
+            meta=meta
         )
 
         # third filter
@@ -188,27 +186,32 @@ class FloodWaveHandler:
 
         return joined_graph
 
-    def select_start_gauges(self,
-                            low_limit: int
+    @staticmethod
+    def select_start_gauges(
+                            low_limit: int,
+                            meta: Union[pd.DataFrame, None, pd.Series]
                             ) -> list:
 
-        selected_meta = self.meta[(self.meta['river_km'] >= low_limit)]
+        selected_meta = meta[(meta['river_km'] >= low_limit)]
         start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         return start_gauges
 
-    def remove_nodes_with_improper_km_data(self,
+    @staticmethod
+    def remove_nodes_with_improper_km_data(
                                            joined_graph: nx.Graph,
                                            low_limit: int,
-                                           up_limit: int
+                                           up_limit: int,
+                                           meta: Union[pd.DataFrame, None, pd.Series],
+                                           gauges: list
                                            ) -> None:
 
-        selected_meta = self.meta[(self.meta['river_km'] >= low_limit) &
-                                  (self.meta['river_km'] <= up_limit)]
+        selected_meta = meta[(meta['river_km'] >= low_limit) &
+                             (meta['river_km'] <= up_limit)]
 
         comp_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
         comp = [
             x
-            for x in self.gauges
+            for x in gauges
             if x not in comp_gauges
         ]
         remove = [
