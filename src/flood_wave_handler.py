@@ -131,7 +131,7 @@ class FloodWaveHandler:
                      start_date: str,
                      end_date: str,
                      gauges: list,
-                     meta: Union[pd.DataFrameataframe, None, pd.Series]
+                     meta: Union[pd.DataFrame, None, pd.Series]
                      ) -> nx.Graph:
 
         gauge_peak_plateau_pairs = JsonHelper.read(
