@@ -65,7 +65,7 @@ class Plotter:
             node_size=1000
         )
 
-        plt.savefig('graph_.pdf')
+        plt.savefig(os.path.join(PROJECT_PATH, 'generated', 'graph_.pdf'))
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
@@ -116,7 +116,7 @@ class Plotter:
             node_size=500
         )
 
-        plt.savefig('graph.pdf')
+        plt.savefig(os.path.join(PROJECT_PATH, 'generated', 'graph.pdf'))
 
     @staticmethod
     def save_merge_graph(joined_graph: nx.Graph) -> None:
