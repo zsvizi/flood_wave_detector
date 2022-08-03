@@ -2,8 +2,6 @@ import networkx as nx
 
 
 class Analysis:
-    def __init__(self) -> None:
-        pass
 
     @staticmethod
     def count_waves(

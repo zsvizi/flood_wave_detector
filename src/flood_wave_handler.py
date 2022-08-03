@@ -13,8 +13,6 @@ from src.measure_time import measure_time
 
 
 class FloodWaveHandler:
-    def __init__(self):
-        pass
 
     @staticmethod
     @measure_time

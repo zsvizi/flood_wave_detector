@@ -12,4 +12,3 @@ class FloodWaveData:
             .get_group("Tisza") \
             .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
-        self.gauge_pairs = []
