@@ -6,6 +6,7 @@ from queue import LifoQueue
 import networkx as nx
 
 from data_ativizig.dataloader import Dataloader
+from src import PROJECT_PATH
 from src.flood_wave_handler import FloodWaveHandler
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
@@ -40,7 +41,7 @@ class FloodWaveDetector:
     @measure_time
     def find_vertices(self) -> None:
         for gauge in self.gauges:
-            if not os.path.exists('saved/find_vertices/' + str(gauge) + '.json'):
+            if not os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
                 gauge_df = self.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
@@ -56,7 +57,7 @@ class FloodWaveDetector:
 
                 # Save
                 JsonHelper.write(
-                    filepath=f'./saved/find_vertices/{gauge}.json',
+                    filepath=os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'),
                     obj=peak_plateau_tuples
                 )
 
@@ -76,10 +77,12 @@ class FloodWaveDetector:
         """
 
         gauge_peak_plateau_pairs = {}
-        big_json_exists = os.path.exists('./saved/find_edges/gauge_peak_plateau_pairs.json')
+        big_json_exists = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
+                                                      'gauge_peak_plateau_pairs.json'))
 
         for actual_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
-            actual_json_exists = os.path.exists(f'saved/find_edges/{actual_gauge}_{next_gauge}.json')
+            actual_json_exists = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
+                                                             f'{actual_gauge}_{next_gauge}.json'))
 
             if actual_json_exists and big_json_exists:
                 continue
@@ -110,7 +113,7 @@ class FloodWaveDetector:
 
             # Save to file
             JsonHelper.write(
-                filepath=f'./saved/find_edges/{actual_gauge}_{next_gauge}.json',
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', f'{actual_gauge}_{next_gauge}.json'),
                 obj=actual_next_pair
             )
 
@@ -120,7 +123,7 @@ class FloodWaveDetector:
         # Save to file
         if not gauge_peak_plateau_pairs == {}:
             JsonHelper.write(
-                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
                 obj=gauge_peak_plateau_pairs
             )
 
@@ -134,7 +137,7 @@ class FloodWaveDetector:
         # Read the gauge_peak_plateau_pairs (super dict)
         if self.gauge_peak_plateau_pairs == {}:
             self.gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json'
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json')
             )
 
         self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
@@ -143,7 +146,7 @@ class FloodWaveDetector:
 
             root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
 
-            os.makedirs(f'./saved/build_graph/{gauge_pair}', exist_ok=True)
+            os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}'), exist_ok=True)
 
             # Search waves starting from the root
             for actual_date in root_gauge_pair_date_dict.keys():
@@ -172,7 +175,7 @@ class FloodWaveDetector:
 
                     data = nx.readwrite.json_graph.node_link_data(self.tree_g)
                     JsonHelper.write(
-                        filepath=f'./saved/build_graph/{gauge_pair}/{actual_date}',
+                        filepath=os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}/{actual_date}'),
                         obj=data
                     )
 
@@ -236,11 +239,11 @@ class FloodWaveDetector:
     @staticmethod
     @measure_time
     def mkdirs() -> None:
-        os.makedirs('./saved', exist_ok=True)
-        os.makedirs('./saved/find_vertices', exist_ok=True)
-        os.makedirs('./saved/find_edges', exist_ok=True)
-        os.makedirs('./saved/build_graph', exist_ok=True)
-        os.makedirs('./saved/new/build_graph', exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, 'generated'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'find_vertices'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'find_edges'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'build_graph'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'new', 'build_graph'), exist_ok=True)
 
     def create_flood_wave(self,
                           next_gauge_date: str,

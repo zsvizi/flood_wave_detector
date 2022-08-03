@@ -6,6 +6,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from src import PROJECT_PATH
 from src.gauge_data import GaugeData
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
@@ -61,7 +62,7 @@ class FloodWaveHandler:
 
     @staticmethod
     def read_data_from_gauge(gauge: str) -> pd.DataFrame:
-        gauge_with_index = JsonHelper.read(f'./saved/find_vertices/{gauge}.json')
+        gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'))
         gauge_df = pd.DataFrame(data=gauge_with_index,
                                 columns=['Date', 'Max value'])
         gauge_df['Date'] = pd.to_datetime(gauge_df['Date'])
@@ -135,7 +136,7 @@ class FloodWaveHandler:
                      ) -> nx.Graph:
 
         gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
                 log=False
             )
 
@@ -309,7 +310,8 @@ class FloodWaveHandler:
                       end_date: str
                       ) -> nx.Graph:
 
-        filenames = next(os.walk(f'./saved/build_graph/{gauge_pair}'), (None, None, []))[2]
+        filenames = next(os.walk(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}')),
+                         (None, None, []))[2]
         sorted_files = FloodWaveHandler.sort_wave(
             filenames=filenames,
             start=start_date,
@@ -317,7 +319,7 @@ class FloodWaveHandler:
         )
         for file in sorted_files:
             data = JsonHelper.read(
-                filepath=f'./saved/build_graph/{gauge_pair}/{file}',
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}', f'{file}'),
                 log=False
             )
             h = nx.readwrite.json_graph.node_link_graph(data)

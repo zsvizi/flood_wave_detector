@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
+import os
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
 
+from src import PROJECT_PATH
 from src.flood_wave_data import FloodWaveData
 from src.flood_wave_handler import FloodWaveHandler
 from src.json_helper import JsonHelper
@@ -72,7 +74,7 @@ class Plotter:
                    ) -> None:
 
         gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath='./saved/find_edges/gauge_peak_plateau_pairs.json',
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
                 log=False
             )
 
@@ -120,7 +122,7 @@ class Plotter:
     def save_merge_graph(joined_graph: nx.Graph) -> None:
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
-            filepath=f'./saved/merge_graphs.json',
+            filepath=os.path.join(PROJECT_PATH, 'generated', 'merge_graphs.json'),
             obj=joined_graph_save,
             log=False
         )
@@ -129,7 +131,7 @@ class Plotter:
     def save_plot_graph(joined_graph: nx.DiGraph) -> None:
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
-            filepath=f'./saved/plot_graph.json',
+            filepath=os.path.join(PROJECT_PATH, 'generated', 'plot_graph.json'),
             obj=joined_graph_save,
             log=False
         )
