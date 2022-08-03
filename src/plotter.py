@@ -13,8 +13,8 @@ from src.json_helper import JsonHelper
 
 
 class Plotter:
-    def __init__(self, fwd_data: FloodWaveData) -> None:
-        self.fwd_data = fwd_data
+    def __init__(self) -> None:
+        self.data = FloodWaveData()
 
     def merge_graphs(self,
                      joined_graph: nx.Graph,
@@ -33,7 +33,7 @@ class Plotter:
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
         positions = FloodWaveHandler.create_positions(joined_graph=joined_graph, start=start,
-                                                      gauges=self.fwd_data.gauges)
+                                                      gauges=self.data.gauges)
 
         fig, ax = plt.subplots()
         if span:
@@ -86,7 +86,7 @@ class Plotter:
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
         positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
-                                                      gauges=self.fwd_data.gauges)
+                                                      gauges=self.data.gauges)
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
@@ -167,8 +167,8 @@ class Plotter:
                          ) -> None:
 
         min_y = 1
-        max_y = len(self.fwd_data.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.fwd_data.gauges[::-1]]
+        max_y = len(self.data.gauges) + 1
+        y_labels = [str(gauge) for gauge in self.data.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,

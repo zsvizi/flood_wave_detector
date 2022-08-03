@@ -15,50 +15,6 @@ from src.measure_time import measure_time
 class FloodWaveHandler:
 
     @staticmethod
-    @measure_time
-    def create_gauge_data_2(gauge_ts: np.array) -> np.array:
-        result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
-        b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
-        c = np.r_[False, gauge_ts[1:] > gauge_ts[:-1]]
-        d = np.r_[gauge_ts[:-2] >= gauge_ts[2:], False, False]
-        e = np.r_[gauge_ts[:-1] >= gauge_ts[1:], False]
-        peak_bool = b & c & d & e
-        peaks = list(np.where(peak_bool)[0])
-        # print(peaks)
-
-        for idx, value in enumerate(gauge_ts):
-            result[idx] = GaugeData(value=value)
-        for k in peaks:
-            result[k].is_peak = True
-        return result
-
-    @staticmethod
-    @measure_time
-    def create_peak_plateau_list(
-                                 gauge_df: pd.DataFrame,
-                                 gauge_data: np.array,
-                                 reg_number: str
-                                 ) -> list:
-        """
-        Returns with the list of found (date, peak/plateau value) tuples for a single gauge
-
-        :param pd.DataFrame gauge_df: One gauge column, one date column, date index.
-        :param np.array gauge_data: Array for local peak/plateau values.
-        :param str reg_number: The gauge id.
-        :return list: list of tuple of local max values and the date. (date, value)
-        """
-
-        # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = FloodWaveHandler.clean_dataframe_for_getting_peak_plateau_list(
-            gauge_data=gauge_data,
-            gauge_df=gauge_df,
-            reg_number=reg_number
-        )
-
-        # Get peak-plateau list
-        return FloodWaveHandler.get_peak_plateau_list(peak_plateau_df)
-
-    @staticmethod
     def read_data_from_gauge(gauge: str) -> pd.DataFrame:
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'))
         gauge_df = pd.DataFrame(data=gauge_with_index,
