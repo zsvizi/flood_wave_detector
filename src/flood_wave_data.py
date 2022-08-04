@@ -1,7 +1,4 @@
 import os
-from queue import LifoQueue
-
-import networkx as nx
 
 from data_ativizig.dataloader import Dataloader
 
@@ -15,11 +12,3 @@ class FloodWaveData:
             .get_group("Tisza") \
             .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
-        self.gauge_peak_plateau_pairs = {}
-        self.gauge_pairs = []
-        self.tree_g = nx.DiGraph()
-        self.path = {}
-        self.all_paths = {}
-        self.wave_serial_number = 0
-        self.branches = LifoQueue()
-        self.flood_wave = {}

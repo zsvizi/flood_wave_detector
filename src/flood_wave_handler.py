@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.gauge_data import GaugeData
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
 
