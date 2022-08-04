@@ -10,6 +10,7 @@ from src import PROJECT_PATH
 from src.flood_wave_data import FloodWaveData
 from src.flood_wave_handler import FloodWaveHandler
 from src.gauge_data import GaugeData
+from src.graph_builder import GraphBuilder
 from src.json_helper import JsonHelper
 from src.measure_time import measure_time
 
@@ -17,13 +18,14 @@ from src.measure_time import measure_time
 class FloodWaveDetector:
     def __init__(self) -> None:
         self.data = FloodWaveData()
+        self.builder = GraphBuilder()
 
     @measure_time
     def run(self) -> None:
         self.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
-        self.build_graph()
+        self.builder.build_graph()
 
     @measure_time
     def find_vertices(self) -> None:
