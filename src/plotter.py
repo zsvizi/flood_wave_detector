@@ -73,13 +73,6 @@ class Plotter:
                    save: bool = False
                    ) -> None:
 
-        gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
-                log=False
-            )
-
-        FloodWaveHandler.gauge_pairs = list(gauge_peak_plateau_pairs.keys())
-
         if save:
             Plotter.save_plot_graph(directed_graph)
 
