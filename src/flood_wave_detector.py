@@ -63,7 +63,7 @@ class FloodWaveDetector:
         :param list gauges: The id list of the gauges (in order).
         """
 
-        gauge_peak_plateau_pairs = {}
+        vertex_pairs = {}
         big_json_exists = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
                                                       'gauge_peak_plateau_pairs.json'))
 
@@ -105,13 +105,13 @@ class FloodWaveDetector:
             )
 
             # Store result for the all in one dict
-            gauge_peak_plateau_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
+            vertex_pairs[f'{actual_gauge}_{next_gauge}'] = actual_next_pair
 
         # Save to file
-        if not gauge_peak_plateau_pairs == {}:
+        if not vertex_pairs == {}:
             JsonHelper.write(
                 filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
-                obj=gauge_peak_plateau_pairs
+                obj=vertex_pairs
             )
 
     @staticmethod

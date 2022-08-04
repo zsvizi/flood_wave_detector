@@ -11,7 +11,7 @@ from src.measure_time import measure_time
 
 class GraphBuilder:
     def __init__(self) -> None:
-        self.gauge_peak_plateau_pairs = {}
+        self.vertex_pairs = {}
         self.gauge_pairs = []
         self.tree_g = nx.DiGraph()
         self.path = {}
@@ -28,25 +28,24 @@ class GraphBuilder:
         """
 
         # Read the gauge_peak_plateau_pairs (super dict)
-        if self.gauge_peak_plateau_pairs == {}:
-            self.gauge_peak_plateau_pairs = JsonHelper.read(
+        self.vertex_pairs = JsonHelper.read(
                 filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json')
             )
 
-        self.gauge_pairs = list(self.gauge_peak_plateau_pairs.keys())
+        self.gauge_pairs = list(self.vertex_pairs.keys())
 
         for gauge_pair in self.gauge_pairs:
 
-            root_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[gauge_pair]
+            gauge_pair_dates_dict = self.vertex_pairs[gauge_pair]
 
             os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}'), exist_ok=True)
 
             # Search waves starting from the root
-            for actual_date in root_gauge_pair_date_dict.keys():
+            for actual_date in gauge_pair_dates_dict.keys():
 
                 self.reset_tree_and_flood_wave()
                 # Go over every date with a wave
-                for next_date in root_gauge_pair_date_dict[actual_date]:
+                for next_date in gauge_pair_dates_dict[actual_date]:
                     # Empty and reset variables
                     next_g_p_idx = self.reset_gauge_pair_index_and_serial_number()
 
@@ -99,11 +98,11 @@ class GraphBuilder:
         """
 
         # other variables
-        max_index_value = len(self.gauge_peak_plateau_pairs.keys()) - 1
+        max_index_value = len(self.vertex_pairs.keys()) - 1
         next_gauge_pair = self.gauge_pairs[next_idx]
         current_gauge = next_gauge_pair.split('_')[0]
         next_gauge = next_gauge_pair.split('_')[1]
-        next_gauge_pair_date_dict = self.gauge_peak_plateau_pairs[next_gauge_pair]
+        next_gauge_pair_date_dict = self.vertex_pairs[next_gauge_pair]
 
         # See if we continue the wave
         can_path_be_continued = next_gauge_date in next_gauge_pair_date_dict.keys()
