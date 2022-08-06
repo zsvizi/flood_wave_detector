@@ -248,11 +248,11 @@ class GraphBuilder:
         We store information in a LiFoQueue (Last in First out)
 
         :param current_gauge: ID of the current station that we are at
-        :param dat: the date of the branch (date of first node on the new branch)
-        :param k: index of the branch (earlier implementations allowed more than one)
+        :param dat: The date of the branch (date of first node on the new branch)
+        :param k: Index of the branch (earlier implementations allowed more than one)
         :param next_gauge: ID of the subsequent station
-        :param next_gauge_date:
-        :param next_idx:
+        :param next_gauge_date: The date of the branching
+        :param next_idx: The index of the previous path
         :return:
         """
         # TODO: Variable renaming
