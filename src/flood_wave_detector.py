@@ -14,12 +14,21 @@ from src.measure_time import measure_time
 
 
 class FloodWaveDetector:
+    """This is the class responsible for finding the flood waves.
+
+    It has all the necessary functions to find the flood waves and also has a run function which executes all the
+    necessary methods in order.
+    """
     def __init__(self) -> None:
         self.data = FloodWaveData()
         self.builder = GraphBuilder()
 
     @measure_time
     def run(self) -> None:
+        """
+        Executes the steps needed to find all the flood waves.
+        :return:
+        """
         self.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
@@ -27,6 +36,11 @@ class FloodWaveDetector:
 
     @measure_time
     def find_vertices(self) -> None:
+        """
+        Creates a dictionary containing all the possible vertices for each station.
+        The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
+        :return:
+        """
         for gauge in self.data.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
@@ -57,10 +71,11 @@ class FloodWaveDetector:
         """
         Creates the wave-pairs for gauges next to each other.
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
+        The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
 
-        :param int delay: Minimum delay (days) between two gauges.
-        :param int window_size: Size of the interval (days) we allow a delay.
-        :param list gauges: The id list of the gauges (in order).
+        :param int delay: Minimum delay (days) between two gauges
+        :param int window_size: Size of the interval (days) we allow a delay
+        :param list gauges: The id list of the gauges (in order)
         """
 
         vertex_pairs = {}
@@ -117,6 +132,14 @@ class FloodWaveDetector:
     @staticmethod
     @measure_time
     def mkdirs() -> None:
+        """
+        Creates the 'PROJECT_PATH/generated' folder and the following 4 sub folders:
+        'PROJECT_PATH/generated/find_vertices'
+        'PROJECT_PATH/generated/find_edges'
+        'PROJECT_PATH/generated/build_graph'
+        'PROJECT_PATH/generated/new/build_graph'
+        :return:
+        """
         os.makedirs(os.path.join(PROJECT_PATH, 'generated'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'find_vertices'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'find_edges'), exist_ok=True)
@@ -126,6 +149,13 @@ class FloodWaveDetector:
     @staticmethod
     @measure_time
     def create_gauge_data_2(gauge_ts: np.array) -> np.array:
+        """
+        Finds and flags all the values from the time series which have the highest value in a 5-day centered
+        time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
+        :param gauge_ts: the time series of a station
+        :return: a numpy array containing the time series with the values flagged whether they are a peak or not
+        """
+        # TODO: refactor this function so it is possible to set window size and also not as ugly as the current version.
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
         c = np.r_[False, gauge_ts[1:] > gauge_ts[:-1]]
@@ -151,9 +181,9 @@ class FloodWaveDetector:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
-        :param pd.DataFrame gauge_df: One gauge column, one date column, date index.
+        :param pd.DataFrame gauge_df: One gauge column, one date column, date index
         :param np.array gauge_data: Array for local peak/plateau values.
-        :param str reg_number: The gauge id.
+        :param str reg_number: The gauge id
         :return list: list of tuple of local max values and the date. (date, value)
         """
 

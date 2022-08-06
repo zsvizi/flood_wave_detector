@@ -2,13 +2,26 @@ import networkx as nx
 
 
 class Analysis:
+    """This is an analysis class for flood waves.
 
+    Any method that does calculation or information extraction on the already existing flood wave graph structure
+    belongs here.
+    """
     @staticmethod
     def count_waves(
             joined_graph: nx.Graph,
             start_station: int,
             end_station: int
     ) -> int:
+        """
+        Returns the number of flood waves which impacted the start_station and reached the end_station as well.
+        If there were branching(s), then all the branches that reach the end_station will be counted.
+
+        :param joined_graph: The full composed graph of the desired time interval.
+        :param start_station: The ID of the desired start station.
+        :param end_station: The ID of the desired end station.
+        :return:
+        """
 
         connected_components = [
             list(x)
