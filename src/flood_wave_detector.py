@@ -16,14 +16,14 @@ from src.measure_time import measure_time
 class FloodWaveDetector:
     def __init__(self) -> None:
         self.data = FloodWaveData()
-        self.builder = GraphBuilder()
 
     @measure_time
     def run(self) -> None:
         self.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
-        self.builder.build_graph()
+        builder = GraphBuilder()
+        builder.build_graph()
 
     @measure_time
     def find_vertices(self) -> None:
