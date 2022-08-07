@@ -21,6 +21,7 @@ class FloodWaveDetector:
     """
     def __init__(self) -> None:
         self.data = FloodWaveData()
+        self.builder = GraphBuilder()
 
     @measure_time
     def run(self) -> None:
@@ -31,8 +32,7 @@ class FloodWaveDetector:
         self.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
-        builder = GraphBuilder()
-        builder.build_graph()
+        self.builder.build_graph()
 
     @measure_time
     def find_vertices(self) -> None:
