@@ -13,65 +13,26 @@ from src.json_helper import JsonHelper
 
 
 class Plotter:
+    """This class is responsible for our plotting needs.
+
+    All the functions related to creating figures are located here.
+    """
     def __init__(self) -> None:
         self.data = FloodWaveData()
-
-    def merge_graphs(self,
-                     joined_graph: nx.Graph,
-                     start_date: str,
-                     span: bool,
-                     hs: int,
-                     he: int,
-                     vs: int,
-                     ve: int,
-                     save: bool = False
-                     ) -> None:
-
-        if save:
-            Plotter.save_merge_graph(joined_graph=joined_graph)
-
-        start = datetime.strptime(start_date, '%Y-%m-%d')
-
-        positions = FloodWaveHandler.create_positions(joined_graph=joined_graph, start=start,
-                                                      gauges=self.data.gauges)
-
-        fig, ax = plt.subplots()
-        if span:
-            ax.axhspan(vs, ve, color='green', alpha=0.3, label="Window for maximum")
-            ax.axvspan(hs, he, color='orange', alpha=0.3, label="Window for maximum")
-
-        Plotter.set_x_axis_ticks(
-            ax=ax,
-            positions=positions,
-            start=start,
-            rotation=20,
-            horizontalalignment='right',
-            fontsize=102
-        )
-
-        self.set_y_axis_ticks(
-            ax=ax,
-            rotation=20,
-            horizontalalignment='right',
-            fontsize=32
-        )
-
-        Plotter.format_figure(
-            ax=ax,
-            xsize=40,
-            ysize=10,
-            joined_graph=joined_graph,
-            positions=positions,
-            node_size=1000
-        )
-
-        plt.savefig(os.path.join(PROJECT_PATH, 'generated', 'graph_.pdf'))
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
                    start_date: str,
                    save: bool = False
                    ) -> None:
+        """
+        Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
+
+        :param directed_graph: A graph to be plotted
+        :param start_date: start date for the figure
+        :param save: Boolean whether to save the graph or not
+        :return:
+        """
 
         if save:
             Plotter.save_plot_graph(directed_graph)
@@ -82,7 +43,7 @@ class Plotter:
                                                       gauges=self.data.gauges)
 
         fig, ax = plt.subplots()
-        ax.axhspan(4, 9, color='green', alpha=0.3, label="Window for maximum")
+        ax.axhspan(4, 9, color='green', alpha=0.3, label="")
 
         Plotter.set_x_axis_ticks(
             ax=ax,
@@ -112,16 +73,13 @@ class Plotter:
         plt.savefig(os.path.join(PROJECT_PATH, 'generated', 'graph.pdf'))
 
     @staticmethod
-    def save_merge_graph(joined_graph: nx.Graph) -> None:
-        joined_graph_save = nx.node_link_data(joined_graph)
-        JsonHelper.write(
-            filepath=os.path.join(PROJECT_PATH, 'generated', 'merge_graphs.json'),
-            obj=joined_graph_save,
-            log=False
-        )
-
-    @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph) -> None:
+        """
+        Saving the graph on the figure
+
+        :param joined_graph: The graph to be saved
+        :return:
+        """
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
             filepath=os.path.join(PROJECT_PATH, 'generated', 'plot_graph.json'),
@@ -138,6 +96,17 @@ class Plotter:
             horizontalalignment: str,
             fontsize: int
     ) -> None:
+        """
+        Creating and setting the ticks and labels for the x-axis
+
+        :param ax: A figure to set the x-axis ticks and labels for
+        :param positions: Coordinates for the vertices
+        :param start: Start date of the figure
+        :param rotation: Degree of rotation of the labels
+        :param horizontalalignment: Keyword for alignment
+        :param fontsize: Font size value
+        :return:
+        """
 
         min_x = -1
         max_x = max([n[0] for n in positions.values()])
@@ -158,6 +127,15 @@ class Plotter:
                          horizontalalignment: str,
                          fontsize: int
                          ) -> None:
+        """
+        Creating and setting the ticks and labels for the y-axis
+
+        :param ax: A figure to set the y-axis ticks and labels for
+        :param rotation: Degree of rotation of the labels
+        :param horizontalalignment: Keyword for alignment
+        :param fontsize: Font size value
+        :return:
+        """
 
         min_y = 1
         max_y = len(self.data.gauges) + 1
@@ -179,6 +157,17 @@ class Plotter:
             positions: dict,
             node_size: int
     ) -> None:
+        """
+        Formats figure as desired
+
+        :param ax: A figure to format
+        :param xsize: Vertical size
+        :param ysize: Horizontal size
+        :param joined_graph: A graph to plot
+        :param positions: Coordinates for the graph
+        :param node_size: Size of the vertices
+        :return:
+        """
 
         plt.rcParams["figure.figsize"] = (xsize, ysize)
         nx.draw(joined_graph, pos=positions, node_size=node_size)

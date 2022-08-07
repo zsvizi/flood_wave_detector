@@ -12,9 +12,20 @@ from src.measure_time import measure_time
 
 
 class FloodWaveHandler:
+    """This is a helper class for FloodWaveDetector.
+
+    It contains functions which shrink the FloodWaveDetector class.
+    e.g.: file reading, file sorting, date conversion, graph filtering, etc...
+    """
 
     @staticmethod
     def read_data_from_gauge(gauge: str) -> pd.DataFrame:
+        """
+        Reads the generated vertex file of the station with the given ID
+
+        :param gauge: the ID of the desired station
+        :return: A Dataframe with the peak value and date
+        """
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'))
         gauge_df = pd.DataFrame(data=gauge_with_index,
                                 columns=['Date', 'Max value'])
@@ -28,6 +39,15 @@ class FloodWaveHandler:
             next_gauge_df: pd.DataFrame,
             window_size: int
     ) -> pd.DataFrame:
+        """
+        Searches for continuation of a flood wave.
+
+        :param actual_date: The date of the last peak
+        :param delay: The allowed delay backwards for the next peak to be considered continuing
+        :param next_gauge_df: The time series of the subsequent station in a DataFrame
+        :param window_size: The allowed window size in which we consider continuation
+        :return: A DataFrame containing the found dates
+        """
 
         past_date = actual_date - timedelta(days=delay)
         found_next_dates = FloodWaveHandler.filter_for_start_and_length(
@@ -43,6 +63,14 @@ class FloodWaveHandler:
             actual_next_pair: dict,
             found_next_dates: pd.DataFrame
     ) -> None:
+        """
+        Converts the date(s) to our desired format string. Then the list of converted strings is stored in a dictionary
+
+        :param actual_date: The date to be converted
+        :param actual_next_pair: A dictionary to store the converted list of strings
+        :param found_next_dates: A DataFrame containing the found dates to be converted
+        :return:
+        """
 
         if not found_next_dates.empty:
             found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
@@ -87,6 +115,18 @@ class FloodWaveHandler:
                      gauges: list,
                      meta: Union[pd.DataFrame, None, pd.Series]
                      ) -> nx.Graph:
+        """
+        Filters out the full composed graph. The parts in between the desired station and in the desired time
+        interval stays if they contain a shortest path between the endpoints.
+
+        :param start_station: The ID of the desired starting station
+        :param end_station: The ID of the desired end station
+        :param start_date: The first possible starting date for the node to be kept
+        :param end_date: The last possible starting date for the node to be kept
+        :param gauges: The list of stations
+        :param meta: A metadata table
+        :return: The filtered graph
+        """
 
         gauge_peak_plateau_pairs = JsonHelper.read(
                 filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
@@ -145,6 +185,13 @@ class FloodWaveHandler:
                             low_limit: int,
                             meta: Union[pd.DataFrame, None, pd.Series]
                             ) -> list:
+        """
+        Selects the possible starting stations for the desired flood waves, the rest is not kept.
+
+        :param low_limit: The river kilometre limit which tells the where the lowest possible starting station should be
+        :param meta: A metadata table
+        :return: List of possible starting stations
+        """
 
         selected_meta = meta[(meta['river_km'] >= low_limit)]
         start_gauges = selected_meta.dropna(subset=['h_table']).index.tolist()
@@ -158,6 +205,16 @@ class FloodWaveHandler:
                                            meta: Union[pd.DataFrame, None, pd.Series],
                                            gauges: list
                                            ) -> None:
+        """
+        Filters out vertices which are outside the river kilometre boundaries from a given graph
+
+        :param joined_graph: A graph to filter out
+        :param low_limit: The lower river kilometre limit
+        :param up_limit: The upper river kilometre limit
+        :param meta: A metadata table
+        :param gauges: List of stations to remove from
+        :return:
+        """
 
         selected_meta = meta[(meta['river_km'] >= low_limit) &
                              (meta['river_km'] <= up_limit)]
@@ -181,6 +238,14 @@ class FloodWaveHandler:
             end_date: str,
             start_date: str
     ) -> None:
+        """
+        Filters out all the vertices with dates outside the desired interval from a given graph.
+
+        :param joined_graph: A graph to filter out
+        :param end_date: The last possible starting date for the node to be kept
+        :param start_date: The first possible starting date for the node to be kept
+        :return:
+        """
 
         remove_date = [
             x
@@ -195,6 +260,15 @@ class FloodWaveHandler:
             end_station: int,
             joined_graph: nx.Graph
     ) -> None:
+        """
+        Filters out all the connected components from a graph which aren't contain a shortest path from the starting
+        station to the end station.
+
+        :param start_station: The ID of the desired station as a starting point
+        :param end_station: The ID of the desired station as ending point
+        :param joined_graph: A graph to filter out
+        :return:
+        """
 
         connected_components = [
             list(x)
@@ -215,6 +289,12 @@ class FloodWaveHandler:
 
     @staticmethod
     def get_peak_plateau_list(peak_plateau_df: pd.DataFrame) -> list:
+        """
+        Creates a list containing (date, value) tuples.
+        :param peak_plateau_df: single column DataFrame which to convert
+        :return: Tuple list
+        """
+        # TODO: Renaming suggestion: get_peak_tuples / get_peak_list
         peak_plateau_tuple = peak_plateau_df.to_records(index=True)
         peak_plateau_list = [
             tuple(x)
@@ -228,6 +308,14 @@ class FloodWaveHandler:
             gauge_df: pd.DataFrame,
             reg_number: str
     ) -> pd.DataFrame:
+        """
+        Creates a dataframe containing a given station's peaks with the desired date format and data type
+
+        :param gauge_data: The flagged time series of the desired station in a numpy array
+        :param gauge_df: The time series of the desired station in a DataFrame
+        :param reg_number: The ID of the desired station
+        :return: A DataFrame containing the given station's peaks with date index
+        """
 
         peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
         peak_plateau_df = peak_plateau_df.drop(columns="Date") \
@@ -262,6 +350,15 @@ class FloodWaveHandler:
                       start_date: str,
                       end_date: str
                       ) -> nx.Graph:
+        """
+        Combines graphs that are saved out individually with one that is given into one undirected graph
+
+        :param joined_graph: A graph to combine with the ones that are read from the files
+        :param gauge_pair: This gauge pair indicates the starting node of the graph
+        :param start_date: The first possible starting date for the graphs to be read
+        :param end_date: The last possible starting date for the graphs to be read
+        :return:
+        """
 
         filenames = next(os.walk(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}')),
                          (None, None, []))[2]
@@ -285,6 +382,14 @@ class FloodWaveHandler:
                          start: datetime.strptime,
                          gauges: list
                          ) -> dict:
+        """
+        Creates coordinates for a given graph in order to be able to plot it on a grid
+
+        :param joined_graph: The graph which to give coordinates for
+        :param start: Starting date of the plot
+        :param gauges: The list of stations
+        :return: A dictionary containing 'node: (x, y)' pairs
+        """
 
         positions = dict()
         for node in joined_graph.nodes():
@@ -299,6 +404,14 @@ class FloodWaveHandler:
                               end_date: str,
                               gauge_pairs: list,
                               ) -> nx.DiGraph:
+        """
+        Creates a directed graph by composing directed graphs
+
+        :param start_date: The date of the first possible starting vertex
+        :param end_date: The date of the last possible starting vertex
+        :param gauge_pairs: The list of gauge pairs which should be included in the graph
+        :return:
+        """
 
         joined_graph = nx.DiGraph()
         for gauge_pair in gauge_pairs:
