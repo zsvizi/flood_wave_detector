@@ -1,6 +1,7 @@
 /venv
 /.idea
 /notebooks
-/saved
 /__pycache__
-/database.ini
+*.ini
+/generated
+/src/__pycache__
