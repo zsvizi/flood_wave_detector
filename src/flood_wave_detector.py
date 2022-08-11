@@ -47,7 +47,7 @@ class FloodWaveDetector:
                 gauge_df = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                local_peak_values = self.create_gauge_data_2(gauge_ts=gauge_df[str(gauge)].to_numpy())
+                local_peak_values = self.create_gauge_data(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
                 peak_plateau_tuples = self.create_peak_plateau_list(
