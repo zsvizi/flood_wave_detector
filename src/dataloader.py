@@ -35,18 +35,16 @@ class CombinedDataloader:
         raw_data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'data_pre_1951.csv'), index_col=[0])[: -1]
         reg_name_pairs = self.meta['station_name'].to_dict()
         reg_name_pairs = dict((v, k) for k, v in reg_name_pairs.items())
-        print(reg_name_pairs)
-        pre_data = raw_data.rename(columns=reg_name_pairs)
-        print(pre_data.columns)
+        pre_data = raw_data.rename(columns=reg_name_pairs).reindex(pd.to_datetime(raw_data.index))
         return pre_data
 
     def get_daily_time_series(self, reg_number_list: list, threshold: Union[None, int] = None):
         pro_data = self.db.get_daily_time_series(reg_number_list=reg_number_list, threshold=threshold)
-        for reg_number in reg_number_list:
-            if reg_number in self.pre_data:
-                pass
-            else:
-                pass
+        pre_reg_list = [reg for reg in reg_number_list if reg in self.pre_data]
+        pre_data = self.pre_data[pre_reg_list]
+        print(pro_data.index)
+        print(pre_data.index)
+        print(pd.concat([pre_data, pro_data], join='outer'))
         pass
 
     def get_metadata(self):
@@ -64,7 +62,6 @@ class CombinedDataloader:
 
 
 def filter_by_threshold(df, thresh):
-
     full_dates = df.index
     null_groups = df[df[df.columns[-1]].isnull()].groupby((~df[df.columns[-1]].isnull()).cumsum())
     for k, v in null_groups:
