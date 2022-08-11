@@ -148,7 +148,7 @@ class FloodWaveDetector:
 
     @staticmethod
     @measure_time
-    def create_gauge_data_2(gauge_ts: np.array) -> np.array:
+    def create_gauge_data(gauge_ts: np.array) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
