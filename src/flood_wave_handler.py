@@ -129,7 +129,7 @@ class FloodWaveHandler:
         """
 
         gauge_peak_plateau_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json'),
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'vertex_pairs.json'),
                 log=False
             )
 
