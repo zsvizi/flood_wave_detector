@@ -19,7 +19,7 @@ class FloodWaveHandler:
     """
 
     @staticmethod
-    def read_data_from_gauge(gauge: str) -> pd.DataFrame:
+    def read_vertex_file(gauge: str) -> pd.DataFrame:
         """
         Reads the generated vertex file of the station with the given ID
 
@@ -60,21 +60,21 @@ class FloodWaveHandler:
     @staticmethod
     def convert_datetime_to_str(
             actual_date: datetime,
-            actual_next_pair: dict,
-            found_next_dates: pd.DataFrame
+            gauge_pair: dict,
+            next_gauge_dates: pd.DataFrame
     ) -> None:
         """
         Converts the date(s) to our desired format string. Then the list of converted strings is stored in a dictionary
 
         :param actual_date: The date to be converted
-        :param actual_next_pair: A dictionary to store the converted list of strings
-        :param found_next_dates: A DataFrame containing the found dates to be converted
+        :param gauge_pair: A dictionary to store the converted list of strings
+        :param next_gauge_dates: A DataFrame containing the found dates to be converted
         :return:
         """
 
-        if not found_next_dates.empty:
-            found_next_dates_str = found_next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
-            actual_next_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
+        if not next_gauge_dates.empty:
+            found_next_dates_str = next_gauge_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+            gauge_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
     @staticmethod
     @measure_time
@@ -288,7 +288,7 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_plateau_list(peak_plateau_df: pd.DataFrame) -> list:
+    def get_peak_list(peak_plateau_df: pd.DataFrame) -> list:
         """
         Creates a list containing (date, value) tuples.
         :param peak_plateau_df: single column DataFrame which to convert
@@ -304,20 +304,20 @@ class FloodWaveHandler:
 
     @staticmethod
     def clean_dataframe_for_getting_peak_plateau_list(
-            gauge_data: np.array,
+            local_peak_values: np.array,
             gauge_df: pd.DataFrame,
             reg_number: str
     ) -> pd.DataFrame:
         """
         Creates a dataframe containing a given station's peaks with the desired date format and data type
 
-        :param gauge_data: The flagged time series of the desired station in a numpy array
+        :param local_peak_values: The flagged time series of the desired station in a numpy array
         :param gauge_df: The time series of the desired station in a DataFrame
         :param reg_number: The ID of the desired station
         :return: A DataFrame containing the given station's peaks with date index
         """
 
-        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in gauge_data])]
+        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in local_peak_values])]
         peak_plateau_df = peak_plateau_df.drop(columns="Date") \
             .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
         peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
