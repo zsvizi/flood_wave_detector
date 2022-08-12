@@ -51,7 +51,7 @@ class FloodWaveDetector:
                 local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_df[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
-                potential_vertices = FloodWaveDetector.find_potential_vertices(
+                potential_vertices = FloodWaveDetector.find_local_maxima(
                     gauge_df=gauge_df,
                     local_peak_values=local_peak_values,
                     reg_number=str(gauge)
@@ -174,11 +174,11 @@ class FloodWaveDetector:
 
     @staticmethod
     @measure_time
-    def find_potential_vertices(
-                                 gauge_df: pd.DataFrame,
-                                 local_peak_values: np.array,
-                                 reg_number: str
-                                 ) -> list:
+    def find_local_maxima(
+            gauge_df: pd.DataFrame,
+            local_peak_values: np.array,
+            reg_number: str
+            ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
