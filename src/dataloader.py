@@ -42,9 +42,10 @@ class CombinedDataloader:
         pro_data = self.db.get_daily_time_series(reg_number_list=reg_number_list, threshold=threshold)
         pre_reg_list = [reg for reg in reg_number_list if reg in self.pre_data]
         pre_data = self.pre_data[pre_reg_list]
-        print(pro_data.index)
-        print(pre_data.index)
-        print(pd.concat([pre_data, pro_data], join='outer'))
+        pre_data.columns = pre_data.columns.astype(str)
+        print(pro_data.columns)
+        print(pre_data.columns)
+        print(pd.concat([pre_data, pro_data]))
         pass
 
     def get_metadata(self):
