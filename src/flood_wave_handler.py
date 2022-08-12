@@ -27,16 +27,16 @@ class FloodWaveHandler:
         :return: A Dataframe with the peak value and date
         """
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'))
-        gauge_df = pd.DataFrame(data=gauge_with_index,
-                                columns=['Date', 'Max value'])
-        gauge_df['Date'] = pd.to_datetime(gauge_df['Date'])
-        return gauge_df
+        gauge_peaks = pd.DataFrame(data=gauge_with_index,
+                                   columns=['Date', 'Max value'])
+        gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
+        return gauge_peaks
 
     @staticmethod
     def find_dates_for_next_gauge(
             actual_date: datetime,
             delay: int,
-            next_gauge_df: pd.DataFrame,
+            next_gauge_potential_vertices: pd.DataFrame,
             window_size: int
     ) -> pd.DataFrame:
         """
@@ -44,18 +44,18 @@ class FloodWaveHandler:
 
         :param actual_date: The date of the last peak
         :param delay: The allowed delay backwards for the next peak to be considered continuing
-        :param next_gauge_df: The time series of the subsequent station in a DataFrame
+        :param next_gauge_potential_vertices: The time series of the subsequent station in a DataFrame
         :param window_size: The allowed window size in which we consider continuation
         :return: A DataFrame containing the found dates
         """
 
         past_date = actual_date - timedelta(days=delay)
-        found_next_dates = FloodWaveHandler.filter_for_start_and_length(
-            gauge_df=next_gauge_df,
+        dates = FloodWaveHandler.filter_for_start_and_length(
+            potential_vertices=next_gauge_potential_vertices,
             min_date=past_date,
             window_size=window_size
         )
-        return found_next_dates
+        return dates
 
     @staticmethod
     def convert_datetime_to_str(
@@ -128,12 +128,12 @@ class FloodWaveHandler:
         :return: The filtered graph
         """
 
-        gauge_peak_plateau_pairs = JsonHelper.read(
+        vertex_pairs = JsonHelper.read(
                 filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'vertex_pairs.json'),
                 log=False
             )
 
-        gauge_pairs = list(gauge_peak_plateau_pairs.keys())
+        gauge_pairs = list(vertex_pairs.keys())
         up_limit = meta.loc[start_station].river_km
         low_limit = meta.loc[end_station].river_km
 
@@ -288,60 +288,61 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peak_plateau_df: pd.DataFrame) -> list:
+    def get_peak_list(peaks: pd.DataFrame) -> list:
         """
         Creates a list containing (date, value) tuples.
-        :param peak_plateau_df: single column DataFrame which to convert
+        :param peaks: single column DataFrame which to convert
         :return: Tuple list
         """
         # TODO: Renaming suggestion: get_peak_tuples / get_peak_list
-        peak_plateau_tuple = peak_plateau_df.to_records(index=True)
-        peak_plateau_list = [
+        peak_tuples = peaks.to_records(index=True)
+        peak_list = [
             tuple(x)
-            for x in peak_plateau_tuple
+            for x in peak_tuples
         ]
-        return peak_plateau_list
+        return peak_list
 
     @staticmethod
-    def clean_dataframe_for_getting_peak_plateau_list(
+    def clean_dataframe_for_getting_peak_list(
             local_peak_values: np.array,
-            gauge_df: pd.DataFrame,
+            gauge_data: pd.DataFrame,
             reg_number: str
     ) -> pd.DataFrame:
         """
         Creates a dataframe containing a given station's peaks with the desired date format and data type
 
         :param local_peak_values: The flagged time series of the desired station in a numpy array
-        :param gauge_df: The time series of the desired station in a DataFrame
+        :param gauge_data: The time series of the desired station in a DataFrame
         :param reg_number: The ID of the desired station
         :return: A DataFrame containing the given station's peaks with date index
         """
 
-        peak_plateau_df = gauge_df.loc[np.array([x.is_peak for x in local_peak_values])]
-        peak_plateau_df = peak_plateau_df.drop(columns="Date") \
-            .set_index(peak_plateau_df.index.strftime('%Y-%m-%d'))
-        peak_plateau_df[reg_number] = peak_plateau_df[reg_number].astype(float)
-        return peak_plateau_df
+        peaks = gauge_data.loc[np.array([x.is_peak for x in local_peak_values])]
+        peaks = peaks.drop(columns="Date") \
+            .set_index(peaks.index.strftime('%Y-%m-%d'))
+        peaks[reg_number] = peaks[reg_number].astype(float)
+        return peaks
 
     @staticmethod
     def filter_for_start_and_length(
-            gauge_df: pd.DataFrame,
+            potential_vertices: pd.DataFrame,
             min_date: datetime,
             window_size: int
     ) -> pd.DataFrame:
         """
         Find possible follow-up dates for the flood wave coming from the previous gauge
 
-        :param pd.DataFrame gauge_df: Dataframe to crop
+        :param pd.DataFrame potential_vertices: Dataframe to crop
         :param datetime min_date: start date of the crop
         :param int window_size: size of the new dataframe (number of days we want)
         :return pd.DataFrame: Cropped dataframe with found next dates.
         """
 
         max_date = min_date + timedelta(days=window_size)
-        found_next_dates = gauge_df[(gauge_df['Date'] >= min_date) & (gauge_df['Date'] <= max_date)]
+        possible_dates = potential_vertices[(potential_vertices['Date'] >= min_date) &
+                                            (potential_vertices['Date'] <= max_date)]
 
-        return found_next_dates
+        return possible_dates
 
     @staticmethod
     def compose_graph(

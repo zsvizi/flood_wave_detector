@@ -45,14 +45,14 @@ class FloodWaveDetector:
         for gauge in self.data.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_df = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
+                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
 
                 # Get local peak/plateau values
-                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_df[str(gauge)].to_numpy())
+                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
                 potential_vertices = FloodWaveDetector.find_local_maxima(
-                    gauge_df=gauge_df,
+                    gauge_df=gauge_data,
                     local_peak_values=local_peak_values,
                     reg_number=str(gauge)
                 )
@@ -103,7 +103,7 @@ class FloodWaveDetector:
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     delay=delay,
-                    next_gauge_df=next_gauge_potential_vertices,
+                    next_gauge_potential_vertices=next_gauge_potential_vertices,
                     window_size=window_size
                 )
 
@@ -175,25 +175,25 @@ class FloodWaveDetector:
     @staticmethod
     @measure_time
     def find_local_maxima(
-            gauge_df: pd.DataFrame,
+            gauge_data: pd.DataFrame,
             local_peak_values: np.array,
             reg_number: str
             ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
-        :param pd.DataFrame gauge_df: One gauge column, one date column, date index
+        :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
         :return list: list of tuple of local max values and the date. (date, value)
         """
 
         # Clean-up dataframe for getting peak-plateau list
-        peak_plateau_df = FloodWaveHandler.clean_dataframe_for_getting_peak_plateau_list(
+        peaks = FloodWaveHandler.clean_dataframe_for_getting_peak_list(
             local_peak_values=local_peak_values,
-            gauge_df=gauge_df,
+            gauge_data=gauge_data,
             reg_number=reg_number
         )
 
         # Get peak-plateau list
-        return FloodWaveHandler.get_peak_list(peak_plateau_df=peak_plateau_df)
+        return FloodWaveHandler.get_peak_list(peaks=peaks)
