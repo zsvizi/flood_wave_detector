@@ -52,7 +52,7 @@ class FloodWaveDetector:
 
                 # Create keys for dictionary
                 potential_vertices = FloodWaveDetector.find_local_maxima(
-                    gauge_df=gauge_data,
+                    gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
                     reg_number=str(gauge)
                 )
