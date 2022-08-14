@@ -1,9 +1,6 @@
 import networkx as nx
-import os
 
-from src import PROJECT_PATH
 from src.flood_wave_data import FloodWaveData
-from src.json_helper import JsonHelper
 
 
 class Analysis:
@@ -85,10 +82,17 @@ class Analysis:
 
         unfinished_waves = 0
 
-        '''for k in range(0, len(gauges)):
-            edges = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', f'{gauges[k]}_{gauges[k+1]}.json')
-            )
-        '''
+        for start_node in start_nodes:
+            for end_node in end_nodes:
+                try:
+                    paths = [
+                        list(x)
+                        for x
+                        in nx.all_shortest_paths(subgraph, source=start_node, target=end_node)
+                    ]
+                    print(paths)
+
+                except nx.NetworkXNoPath:
+                    unfinished_waves += 1
 
         return unfinished_waves
