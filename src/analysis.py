@@ -1,4 +1,9 @@
 import networkx as nx
+import os
+
+from src import PROJECT_PATH
+from src.flood_wave_data import FloodWaveData
+from src.json_helper import JsonHelper
 
 
 class Analysis:
@@ -7,6 +12,9 @@ class Analysis:
     Any method that does calculation or information extraction on the already existing flood wave graph structure
     belongs here.
     """
+    def __init__(self) -> None:
+        self.data = FloodWaveData()
+
     @staticmethod
     def count_waves(
             joined_graph: nx.Graph,
@@ -48,3 +56,39 @@ class Analysis:
                         for x in nx.all_shortest_paths(joined_graph, source=start, target=end)]
                     total_waves += len(paths)
         return total_waves
+
+    def count_unfinished_waves(self,
+                               joined_graph: nx.Graph,
+                               start_station: int,
+                               end_station: int
+                               ) -> int:
+
+        start_index = self.data.gauges.index(start_station)
+        end_index = self.data.gauges.index(end_station)
+
+        gauges = self.data.gauges[start_index:end_index + 1]
+
+        print(gauges)
+
+        nodes = [node for node in joined_graph if int(node[0]) in gauges]
+
+        print(nodes)
+
+        subgraph = joined_graph.subgraph(nodes)
+
+        print(subgraph)
+
+        start_nodes = [node for node in subgraph.nodes if int(node[0]) == start_station]
+        end_nodes = [node for node in subgraph.nodes if int(node[0]) == end_station]
+        print(start_nodes)
+        print(end_nodes)
+
+        unfinished_waves = 0
+
+        '''for k in range(0, len(gauges)):
+            edges = JsonHelper.read(
+                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', f'{gauges[k]}_{gauges[k+1]}.json')
+            )
+        '''
+
+        return unfinished_waves
