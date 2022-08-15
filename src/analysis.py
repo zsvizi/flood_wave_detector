@@ -73,20 +73,11 @@ class Analysis:
         
         connected_components = [
             list(x)
-            for x
-            in nx.connected_components(subgraph)
+            for x in nx.connected_components(subgraph)
+            if len(list(x)) >= 2
         ]
-        connected_components = list(connected_components)
+
         print(connected_components)
-        
-        one_length_components = [
-            x
-            for x in connected_components
-            if len(x) == 1
-        ]
-        
-        for one_length_component in one_length_components:
-            connected_components = connected_components.remove(one_length_component)
         
         unfinished_waves = 0
             
