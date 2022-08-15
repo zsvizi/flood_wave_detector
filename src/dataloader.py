@@ -33,20 +33,21 @@ class CombinedDataloader:
 
     def create_pre_data(self):
         raw_data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'data_pre_1951.csv'), index_col=[0])[: -1]
+
         reg_name_pairs = self.meta['station_name'].to_dict()
         reg_name_pairs = dict((v, k) for k, v in reg_name_pairs.items())
-        pre_data = raw_data.rename(columns=reg_name_pairs).reindex(pd.to_datetime(raw_data.index))
+
+        pre_data = raw_data.rename(columns=reg_name_pairs)
+        pre_data.index = pd.to_datetime(pre_data.index)
         return pre_data
 
     def get_daily_time_series(self, reg_number_list: list, threshold: Union[None, int] = None):
         pro_data = self.db.get_daily_time_series(reg_number_list=reg_number_list, threshold=threshold)
+        # TODO: Check if given stations are available in the database (1951 and after)
         pre_reg_list = [reg for reg in reg_number_list if reg in self.pre_data]
         pre_data = self.pre_data[pre_reg_list]
         pre_data.columns = pre_data.columns.astype(str)
-        print(pro_data.columns)
-        print(pre_data.columns)
-        print(pd.concat([pre_data, pro_data]))
-        pass
+        return pd.concat([pre_data, pro_data])
 
     def get_metadata(self):
         meta = self.db.meta_data \
@@ -62,16 +63,6 @@ class CombinedDataloader:
         print(f"Downloaded storage object {source} from bucket {bucket} to local file {destination}.")
 
 
-def filter_by_threshold(df, thresh):
-    full_dates = df.index
-    null_groups = df[df[df.columns[-1]].isnull()].groupby((~df[df.columns[-1]].isnull()).cumsum())
-    for k, v in null_groups:
-        if len(v) > thresh:
-            full_dates = full_dates.difference(v.index)
-    df = df.reindex(full_dates)
-    return df
-
-
 if __name__ == "__main__":
     comb_dataloader = CombinedDataloader()
-    comb_dataloader.get_daily_time_series(reg_number_list=[2541, 1514, 1515])
+    data = comb_dataloader.get_daily_time_series(reg_number_list=[2541, 1514, 1515])
