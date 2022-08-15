@@ -65,18 +65,28 @@ class Analysis:
         gauges = self.data.gauges[start_index:end_index + 1]
         print(gauges)
 
-        nodes = [node for node in joined_graph if int(node[0]) in gauges]
+        nodes = [node for node in joined_graph.nodes if int(node[0]) in gauges]
         print(nodes)
 
         subgraph = joined_graph.subgraph(nodes)
-        # print(subgraph)
+        print(subgraph)
         
         connected_components = [
             list(x)
             for x
             in nx.connected_components(subgraph)
         ]
+        connected_components = list(connected_components)
         print(connected_components)
+        
+        one_length_components = [
+            x
+            for x in connected_components
+            if len(x) == 1
+        ]
+        
+        for one_length_component in one_length_components:
+            connected_components = connected_components.remove(one_length_component)
         
         unfinished_waves = 0
             
