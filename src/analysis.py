@@ -60,22 +60,15 @@ class Analysis:
                                end_station: int
                                ) -> int:
         
-        start_str = str(start_station)
-        end_str = str(end_station)
-        
         start_index = self.data.gauges.index(start_station)
         end_index = self.data.gauges.index(end_station)
-        
         gauges = self.data.gauges[start_index:end_index + 1]
-        
         print(gauges)
 
         nodes = [node for node in joined_graph if int(node[0]) in gauges]
-
         print(nodes)
 
         subgraph = joined_graph.subgraph(nodes)
-
         # print(subgraph)
         
         connected_components = [
@@ -83,22 +76,49 @@ class Analysis:
             for x
             in nx.connected_components(subgraph)
         ]
-
         print(connected_components)
         
         unfinished_waves = 0
             
         for sub_connected_component in connected_components:
+
             print(sub_connected_component)
-            
+
+            start_nodes = [
+                node
+                for node in sub_connected_component
+                if int(node[0]) == start_station
+            ]
+
             component_gauges = [
                 x[0]
-                for x
-                in sub_connected_component
+                for x in sub_connected_component
             ]
             print(component_gauges)
+
+            component_gauges_ordered = [
+                str(x)
+                for x in gauges
+                if str(x) in component_gauges
+            ]
+            print(component_gauges_ordered)
+
+            end_nodes = [
+                node
+                for node in sub_connected_component
+                if node[0] == component_gauges_ordered[-1]
+            ]
+            print(end_nodes)
             
-            if start_str in component_gauges and end_str not in component_gauges:
-                unfinished_waves += 1
+            for start_node in start_nodes:
+                for end_node in end_nodes:
+                    paths = [
+                        list(x)
+                        for x in nx.all_shortest_paths(joined_graph, source=start_node, target=end_node)
+                    ]
+                    print(paths)
+                    
+                    if int(end_node[0]) != end_station:
+                        unfinished_waves += len(paths)
 
         return unfinished_waves
