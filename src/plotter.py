@@ -28,9 +28,9 @@ class Plotter:
         """
         Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
 
-        :param directed_graph: A graph to be plotted
-        :param start_date: start date for the figure
-        :param save: Boolean whether to save the graph or not
+        :param nx.DiGraph directed_graph: A graph to be plotted
+        :param str start_date: start date for the figure
+        :param bool save: Boolean whether to save the graph or not
         :return:
         """
 
@@ -77,7 +77,7 @@ class Plotter:
         """
         Saving the graph on the figure
 
-        :param joined_graph: The graph to be saved
+        :param nx.DiGraph joined_graph: The graph to be saved
         :return:
         """
         joined_graph_save = nx.node_link_data(joined_graph)
@@ -99,12 +99,12 @@ class Plotter:
         """
         Creating and setting the ticks and labels for the x-axis
 
-        :param ax: A figure to set the x-axis ticks and labels for
-        :param positions: Coordinates for the vertices
-        :param start: Start date of the figure
-        :param rotation: Degree of rotation of the labels
-        :param horizontalalignment: Keyword for alignment
-        :param fontsize: Font size value
+        :param plt.axis ax: A figure to set the x-axis ticks and labels for
+        :param dict positions: Coordinates for the vertices
+        :param datetime start: Start date of the figure
+        :param int rotation: Degree of rotation of the labels
+        :param str horizontalalignment: Keyword for alignment
+        :param int fontsize: Font size value
         :return:
         """
 
@@ -130,10 +130,10 @@ class Plotter:
         """
         Creating and setting the ticks and labels for the y-axis
 
-        :param ax: A figure to set the y-axis ticks and labels for
-        :param rotation: Degree of rotation of the labels
-        :param horizontalalignment: Keyword for alignment
-        :param fontsize: Font size value
+        :param plt.axis ax: A figure to set the y-axis ticks and labels for
+        :param int rotation: Degree of rotation of the labels
+        :param str horizontalalignment: Keyword for alignment
+        :param int fontsize: Font size value
         :return:
         """
 
@@ -160,12 +160,12 @@ class Plotter:
         """
         Formats figure as desired
 
-        :param ax: A figure to format
-        :param xsize: Vertical size
-        :param ysize: Horizontal size
-        :param joined_graph: A graph to plot
+        :param plt.axis ax: A figure to format
+        :param int xsize: Vertical size
+        :param int ysize: Horizontal size
+        :param nx.Graph joined_graph: A graph to plot
         :param positions: Coordinates for the graph
-        :param node_size: Size of the vertices
+        :param int node_size: Size of the vertices
         :return:
         """
 

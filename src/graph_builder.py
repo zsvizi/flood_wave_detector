@@ -169,9 +169,9 @@ class GraphBuilder:
         """
         Adds the found new vertex and edge to the graph.
 
-        :param actual_date: The date of the previous vertex
-        :param gauge_pair: The station pair which contains the IDs of the two vertices' stations
-        :param next_date: The date of the latter vertex
+        :param str actual_date: The date of the previous vertex
+        :param str gauge_pair: The station pair which contains the IDs of the two vertices' stations
+        :param str next_date: The date of the latter vertex
         :return:
         """
 
@@ -201,10 +201,10 @@ class GraphBuilder:
         """
         Adds the found next vertex to the path dictionary
 
-        :param actual_date: The date of the previous vertex
-        :param next_date: The date of the latter vertex
-        :param actual_gauge: The station ID of the previous vertex
-        :param next_gauge: The station ID the latter vertex
+        :param str actual_date: The date of the previous vertex
+        :param str next_date: The date of the latter vertex
+        :param str actual_gauge: The station ID of the previous vertex
+        :param str next_gauge: The station ID the latter vertex
         :return:
         """
         self.path[actual_gauge] = actual_date
@@ -213,7 +213,7 @@ class GraphBuilder:
     def reset_gauge_pair_index_and_serial_number(self) -> int:
         """
         Resetting variables before next search
-        :return: next gauge pair index
+        :return int: next gauge pair index
         """
         next_g_p_idx = 1
         self.wave_serial_number = 0
@@ -247,12 +247,12 @@ class GraphBuilder:
         This ensures that we have a memory of the branches that we passed
         We store information in a LiFoQueue (Last in First out)
 
-        :param current_gauge: ID of the current station that we are at
-        :param date: The date of the branch (date of first node on the new branch)
-        :param k: Index of the branch (earlier implementations allowed more than one)
-        :param next_gauge: ID of the subsequent station
-        :param next_gauge_date: The date of the branching
-        :param next_idx: The index of the previous path
+        :param str current_gauge: ID of the current station that we are at
+        :param str date: The date of the branch (date of first node on the new branch)
+        :param int k: Index of the branch (earlier implementations allowed more than one)
+        :param str next_gauge: ID of the subsequent station
+        :param str next_gauge_date: The date of the branching
+        :param int next_idx: The index of the previous path
         :return:
         """
         # TODO: Variable renaming
@@ -275,10 +275,10 @@ class GraphBuilder:
         """
         Updates path dictionary and adds new edge
 
-        :param current_gauge: ID of current station
-        :param next_gauge_date: The date of the latter vertex
-        :param next_gauge: ID of latter station
-        :param current_gauge_date: The date of the current vertex
+        :param str current_gauge: ID of current station
+        :param str next_gauge_date: The date of the latter vertex
+        :param str next_gauge: ID of latter station
+        :param str current_gauge_date: The date of the current vertex
         :return:
         """
         # TODO: Variable renaming

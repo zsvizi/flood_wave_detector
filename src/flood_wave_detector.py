@@ -4,7 +4,6 @@ import os
 import numpy as np
 import pandas as pd
 
-
 from src import PROJECT_PATH
 from src.flood_wave_data import FloodWaveData
 from src.flood_wave_handler import FloodWaveHandler
@@ -32,8 +31,7 @@ class FloodWaveDetector:
         FloodWaveDetector.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
-        builder = GraphBuilder()
-        builder.build_graph()
+        GraphBuilder().build_graph()
 
     @measure_time
     def find_vertices(self) -> None:
@@ -51,7 +49,7 @@ class FloodWaveDetector:
                 local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
-                potential_vertices = FloodWaveDetector.find_local_maxima(
+                candidate_vertices = FloodWaveDetector.find_local_maxima(
                     gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
                     reg_number=str(gauge)
@@ -60,7 +58,7 @@ class FloodWaveDetector:
                 # Save
                 JsonHelper.write(
                     filepath=os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'),
-                    obj=potential_vertices
+                    obj=candidate_vertices
                 )
 
     @measure_time
@@ -80,30 +78,30 @@ class FloodWaveDetector:
         """
 
         vertex_pairs = {}
-        big_json_exists = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
-                                                      'vertex_pairs.json'))
+        does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
+                                             'vertex_pairs.json'))
 
         for current_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
-            actual_json_exists = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
-                                                             f'{current_gauge}_{next_gauge}.json'))
+            does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, 'generated', 'find_edges',
+                                                    f'{current_gauge}_{next_gauge}.json'))
 
-            if actual_json_exists and big_json_exists:
+            if does_actual_json_exist and does_big_json_exist:
                 continue
 
             # Read the data from the actual gauge.
-            current_gauge_potential_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge)
+            current_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge)
 
             # Read the data from the next gauge.
-            next_gauge_potential_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge)
+            next_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge)
 
             # Create actual_next_pair
             gauge_pair = dict()
-            for actual_date in current_gauge_potential_vertices['Date']:
+            for actual_date in current_gauge_candidate_vertices['Date']:
                 # Find next dates for the following gauge
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     delay=delay,
-                    next_gauge_potential_vertices=next_gauge_potential_vertices,
+                    next_gauge_candidate_vertices=next_gauge_candidate_vertices,
                     window_size=window_size
                 )
 
@@ -153,7 +151,7 @@ class FloodWaveDetector:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
-        :param gauge_ts: the time series of a station
+        :param np.array gauge_ts: the time series of a station
         :return: a numpy array containing the time series with the values flagged whether they are a peak or not
         """
         # TODO: refactor this function so it is possible to set window size and also not as ugly as the current version.
