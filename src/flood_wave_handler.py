@@ -113,6 +113,7 @@ class FloodWaveHandler:
                      end_date: str,
                      gauges: list,
                      meta: pd.DataFrame,
+                     filter_not_including_start_or_end: bool = True
                      ) -> nx.Graph:
         """
         Filters out the full composed graph. The parts in between the desired station and in the desired time
@@ -124,6 +125,7 @@ class FloodWaveHandler:
         :param str end_date: The last possible starting date for the node to be kept
         :param list gauges: The list of stations
         :param pd.DataFrame meta: A metadata table
+        :param bool filter_not_including_start_or_end: Boolean whether to filter components not including start or end
         :return nx.Graph: The filtered graph
         """
 
@@ -171,78 +173,12 @@ class FloodWaveHandler:
         )
 
         # fourth filter
-        FloodWaveHandler.remove_components_not_including_start_or_end_station(
-            start_station=start_station,
-            end_station=end_station,
-            joined_graph=joined_graph
-        )
-
-        return joined_graph
-
-    @staticmethod
-    def filter_graph_2(
-                     start_station: int,
-                     end_station: int,
-                     start_date: str,
-                     end_date: str,
-                     gauges: list,
-                     meta: pd.DataFrame,
-                     ) -> nx.Graph:
-        """
-        Filters out the full composed graph. The parts in between the desired station and in the desired time
-        interval stays if they contain a shortest path between the endpoints.
-
-        :param int start_station: The ID of the desired starting station
-        :param int end_station: The ID of the desired end station
-        :param str start_date: The first possible starting date for the node to be kept
-        :param str end_date: The last possible starting date for the node to be kept
-        :param list gauges: The list of stations
-        :param pd.DataFrame meta: A metadata table
-        :return nx.Graph: The filtered graph
-        """
-
-        vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'vertex_pairs.json'),
-                log=False
+        if filter_not_including_start_or_end:
+            FloodWaveHandler.remove_components_not_including_start_or_end_station(
+                start_station=start_station,
+                end_station=end_station,
+                joined_graph=joined_graph
             )
-
-        gauge_pairs = list(vertex_pairs.keys())
-        up_limit = meta.loc[start_station].river_km
-        low_limit = meta.loc[end_station].river_km
-
-        # first filter
-        start_gauges = FloodWaveHandler.select_start_gauges(low_limit=low_limit, meta=meta)
-
-        selected_pairs = [
-            x
-            for x in gauge_pairs
-            if int(x.split('_')[0]) in start_gauges
-        ]
-
-        joined_graph = nx.Graph()
-        for gauge_pair in selected_pairs:
-            joined_graph = FloodWaveHandler.compose_graph(
-                end_date=end_date,
-                gauge_pair=gauge_pair,
-                joined_graph=joined_graph,
-                start_date=start_date
-            )
-
-        # second filter
-        FloodWaveHandler.remove_nodes_with_improper_km_data(
-            joined_graph=joined_graph,
-            low_limit=low_limit,
-            up_limit=up_limit,
-            gauges=gauges,
-            meta=meta
-        )
-
-        # third filter
-        FloodWaveHandler.date_filter(
-            joined_graph=joined_graph,
-            start_date=start_date,
-            end_date=end_date
-        )
 
         return joined_graph
 
