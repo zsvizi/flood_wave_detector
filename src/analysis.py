@@ -67,7 +67,11 @@ class Analysis:
         print(gauges)
 
         # We select the nodes of the graph, where the gauge (node[0]) is in the already existing gauges list
-        nodes = [node for node in joined_graph.nodes if int(node[0]) in gauges]
+        nodes = [
+            node
+            for node in joined_graph.nodes
+            if int(node[0]) in gauges
+        ]
         print(nodes)
 
         # Creating the subgraph induced on the nodes list
@@ -122,13 +126,14 @@ class Analysis:
             # Counting the number of waves between all start and end nodes
             for start_node in start_nodes:
                 for end_node in end_nodes:
+
                     paths = [
                         list(x)
                         for x in nx.all_shortest_paths(joined_graph, source=start_node, target=end_node)
                     ]
                     print(paths)
                     
-                    # We need only those waves, when the last station is not the end (a. k. a. unfinished wave)
+                    # We need only those waves, when the last station is not the end station (a. k. a. unfinished wave)
                     if int(end_node[0]) != end_station:
                         unfinished_waves += len(paths)
 
