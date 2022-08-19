@@ -23,6 +23,7 @@ class Plotter:
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
                    start_date: str,
+                   folder_pf: str,
                    save: bool = False
                    ) -> None:
         """
@@ -35,7 +36,7 @@ class Plotter:
         """
 
         if save:
-            Plotter.save_plot_graph(directed_graph)
+            Plotter.save_plot_graph(directed_graph, folder_pf=folder_pf)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
@@ -70,10 +71,10 @@ class Plotter:
             node_size=500
         )
 
-        plt.savefig(os.path.join(PROJECT_PATH, 'generated', 'graph.pdf'))
+        plt.savefig(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'graph.pdf'))
 
     @staticmethod
-    def save_plot_graph(joined_graph: nx.DiGraph) -> None:
+    def save_plot_graph(joined_graph: nx.DiGraph, folder_pf: str) -> None:
         """
         Saving the graph on the figure
 
@@ -82,7 +83,7 @@ class Plotter:
         """
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
-            filepath=os.path.join(PROJECT_PATH, 'generated', 'plot_graph.json'),
+            filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'plot_graph.json'),
             obj=joined_graph_save,
             log=False
         )

@@ -18,14 +18,15 @@ class FloodWaveHandler:
     """
 
     @staticmethod
-    def read_vertex_file(gauge: str) -> pd.DataFrame:
+    def read_vertex_file(gauge: str, folder_pf: str) -> pd.DataFrame:
         """
         Reads the generated vertex file of the station with the given ID
 
         :param str gauge: the ID of the desired station
         :return pd.DataFrame: A Dataframe with the peak value and date
         """
-        gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, 'generated', 'find_vertices', f'{gauge}.json'))
+        gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, f'generated_{folder_pf}',
+                                                        'find_vertices', f'{gauge}.json'))
         gauge_peaks = pd.DataFrame(data=gauge_with_index,
                                    columns=['Date', 'Max value'])
         gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
@@ -113,7 +114,8 @@ class FloodWaveHandler:
                      end_date: str,
                      gauges: list,
                      meta: pd.DataFrame,
-                     filter_not_including_start_or_end: bool = True
+                     folder_pf: str,
+                     filter_not_including_start_or_end: bool = True,
                      ) -> nx.Graph:
         """
         Filters out the full composed graph. The parts in between the desired station and in the desired time
@@ -130,7 +132,7 @@ class FloodWaveHandler:
         """
 
         vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'vertex_pairs.json'),
+                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges', 'vertex_pairs.json'),
                 log=False
             )
 
@@ -153,7 +155,8 @@ class FloodWaveHandler:
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
-                start_date=start_date
+                start_date=start_date,
+                folder_pf=folder_pf
             )
 
         # second filter
@@ -351,7 +354,8 @@ class FloodWaveHandler:
                       joined_graph: nx.Graph,
                       gauge_pair: str,
                       start_date: str,
-                      end_date: str
+                      end_date: str,
+                      folder_pf: str
                       ) -> nx.Graph:
         """
         Combines graphs that are saved out individually with one that is given into one undirected graph
@@ -363,7 +367,7 @@ class FloodWaveHandler:
         :return nx.Graph:
         """
 
-        filenames = next(os.walk(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}')),
+        filenames = next(os.walk(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph', f'{gauge_pair}')),
                          (None, None, []))[2]
         sorted_files = FloodWaveHandler.sort_wave(
             filenames=filenames,
@@ -372,7 +376,8 @@ class FloodWaveHandler:
         )
         for file in sorted_files:
             data = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}', f'{file}'),
+                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph',
+                                      f'{gauge_pair}', f'{file}'),
                 log=False
             )
             h = nx.readwrite.json_graph.node_link_graph(data)
@@ -406,6 +411,7 @@ class FloodWaveHandler:
                               start_date: str,
                               end_date: str,
                               gauge_pairs: list,
+                              folder_pf: str
                               ) -> nx.DiGraph:
         """
         Creates a directed graph by composing directed graphs
@@ -422,6 +428,7 @@ class FloodWaveHandler:
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
-                start_date=start_date
+                start_date=start_date,
+                folder_pf=folder_pf
             )
         return joined_graph

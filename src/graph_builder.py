@@ -26,7 +26,7 @@ class GraphBuilder:
         self.flood_wave = {}
 
     @measure_time
-    def build_graph(self) -> None:
+    def build_graph(self, folder_pf: str) -> None:
         """
         Searching for flood waves and constructing a graph from them. It searches from all the stations, to find all
         possible flood waves. Branching can occur, so a depth first search is used. The end result is saved out.
@@ -35,7 +35,7 @@ class GraphBuilder:
 
         # Read the gauge_peak_plateau_pairs (super dict)
         self.vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'vertex_pairs.json')
+                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges', 'vertex_pairs.json')
             )
 
         self.gauge_pairs = list(self.vertex_pairs.keys())
@@ -44,7 +44,8 @@ class GraphBuilder:
 
             gauge_pair_dates = self.vertex_pairs[gauge_pair]
 
-            os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}'), exist_ok=True)
+            os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph', f'{gauge_pair}'),
+                        exist_ok=True)
 
             # Search waves starting from the root
             for actual_date in gauge_pair_dates.keys():
@@ -72,7 +73,8 @@ class GraphBuilder:
 
                     data = nx.readwrite.json_graph.node_link_data(self.tree_g)
                     JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}/{actual_date}'),
+                        filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph',
+                                              f'{gauge_pair}/{actual_date}'),
                         obj=data
                     )
 
