@@ -1,3 +1,5 @@
+from typing import Union
+
 import networkx as nx
 
 from src.flood_wave_data import FloodWaveData
@@ -9,8 +11,10 @@ class Analysis:
     Any method that does calculation or information extraction on the already existing flood wave graph structure
     belongs here.
     """
-    def __init__(self) -> None:
+    def __init__(self, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
+        if gauges is not None:
+            self.data.gauges = gauges
 
     @staticmethod
     def count_waves(

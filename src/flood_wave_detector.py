@@ -1,3 +1,4 @@
+from typing import Union
 import itertools
 import os
 
@@ -19,8 +20,10 @@ class FloodWaveDetector:
     It has all the necessary functions to find the flood waves and also has a run function which executes all the
     necessary methods in order.
     """
-    def __init__(self, folder_pf: str) -> None:
+    def __init__(self, folder_pf: str, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
+        if gauges is not None:
+            self.data.gauges = gauges
         self.folder_pf = folder_pf
 
     @measure_time

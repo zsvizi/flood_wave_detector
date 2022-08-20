@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Union
 import os
 
 import matplotlib.pyplot as plt
@@ -17,8 +18,10 @@ class Plotter:
 
     All the functions related to creating figures are located here.
     """
-    def __init__(self) -> None:
+    def __init__(self, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
+        if gauges is not None:
+            self.data.gauges = gauges
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
