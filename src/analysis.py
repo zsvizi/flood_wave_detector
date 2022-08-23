@@ -13,8 +13,11 @@ class Analysis:
     """
     def __init__(self, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
+        self.gauges = []
         if gauges is not None:
-            self.data.gauges = gauges
+            self.gauges = gauges
+        else:
+            self.gauges = self.data.gauges
 
     @staticmethod
     def count_waves(
@@ -26,10 +29,10 @@ class Analysis:
         Returns the number of flood waves which impacted the start_station and reached the end_station as well.
         If there were branching(s), then all the branches that reach the end_station will be counted.
 
-        :param nx.Graph() joined_graph: The full composed graph of the desired time interval.
+        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
         :param int start_station: The ID of the desired start station.
         :param int end_station: The ID of the desired end station.
-        :return:
+        :return int: The number of flood waves which impacted the start_station and reached the end_station
         """
 
         connected_components = [
@@ -63,6 +66,15 @@ class Analysis:
                                start_station: int,
                                end_station: int
                                ) -> int:
+        """
+        Returns the number of flood waves which impacted the start_station, but did not reach the end_station.
+        If there were branching(s), then all the branches will be counted.
+
+        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
+        :param int start_station: The ID of the desired start station
+        :param int end_station: The ID of the last station, which is not reached by the flood waves
+        :return int: The number of flood waves which impacted the start_station but did not reach the end_station
+        """
 
         # First we select the gauges between start_station and end_station
         start_index = self.data.gauges.index(start_station)

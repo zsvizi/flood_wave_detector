@@ -1,6 +1,6 @@
-from typing import Union
 import itertools
 import os
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -22,9 +22,12 @@ class FloodWaveDetector:
     """
     def __init__(self, folder_pf: str, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
+        self.gauges = []
         if gauges is not None:
-            self.data.gauges = gauges
-        self.folder_pf = folder_pf
+            self.gauges = gauges
+        else:
+            self.gauges = self.data.gauges
+        self.folder_name = f'generated_{folder_pf}'
 
     @measure_time
     def run(self) -> None:
@@ -32,20 +35,20 @@ class FloodWaveDetector:
         Executes the steps needed to find all the flood waves.
         :return:
         """
-        FloodWaveDetector.mkdirs(folder_pf=self.folder_pf)
-        self.find_vertices(folder_pf=self.folder_pf)
-        self.find_edges(delay=0, window_size=3, gauges=self.data.gauges, folder_pf=self.folder_pf)
-        GraphBuilder().build_graph(folder_pf=self.folder_pf)
+        FloodWaveDetector.mkdirs()
+        self.find_vertices()
+        self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
+        GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
-    def find_vertices(self, folder_pf: str) -> None:
+    def find_vertices(self) -> None:
         """
         Creates a dictionary containing all the possible vertices for each station.
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
         for gauge in self.data.gauges:
-            if not os.path.exists(os.path.join(PROJECT_PATH, f'generated_{folder_pf}',
+            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
                 gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
@@ -62,7 +65,7 @@ class FloodWaveDetector:
 
                 # Save
                 JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_vertices', f'{gauge}.json'),
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
                     obj=candidate_vertices
                 )
 
@@ -71,7 +74,6 @@ class FloodWaveDetector:
                    delay: int,
                    window_size: int,
                    gauges: list,
-                   folder_pf: str
                    ) -> None:
         """
         Creates the wave-pairs for gauges next to each other.
@@ -84,11 +86,11 @@ class FloodWaveDetector:
         """
 
         vertex_pairs = {}
-        does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges',
+        does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                              'vertex_pairs.json'))
 
         for current_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
-            does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges',
+            does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                                     f'{current_gauge}_{next_gauge}.json'))
 
             if does_actual_json_exist and does_big_json_exist:
@@ -96,11 +98,11 @@ class FloodWaveDetector:
 
             # Read the data from the actual gauge.
             current_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge,
-                                                                                 folder_pf=folder_pf)
+                                                                                 folder_name=self.folder_name)
 
             # Read the data from the next gauge.
             next_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge,
-                                                                              folder_pf=folder_pf)
+                                                                              folder_name=self.folder_name)
 
             # Create actual_next_pair
             gauge_pair = dict()
@@ -122,7 +124,7 @@ class FloodWaveDetector:
 
             # Save to file
             JsonHelper.write(
-                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}',
+                filepath=os.path.join(PROJECT_PATH, self.folder_name,
                                       'find_edges', f'{current_gauge}_{next_gauge}.json'),
                 obj=gauge_pair
             )
@@ -133,26 +135,25 @@ class FloodWaveDetector:
         # Save to file
         if not vertex_pairs == {}:
             JsonHelper.write(
-                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges', 'vertex_pairs.json'),
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
                 obj=vertex_pairs
             )
 
-    @staticmethod
     @measure_time
-    def mkdirs(folder_pf: str) -> None:
+    def mkdirs(self) -> None:
         """
-        Creates the 'PROJECT_PATH/generated' folder and the following 4 sub folders:
-        'PROJECT_PATH/generated/find_vertices'
-        'PROJECT_PATH/generated/find_edges'
-        'PROJECT_PATH/generated/build_graph'
-        'PROJECT_PATH/generated/new/build_graph'
+        Creates the 'PROJECT_PATH/generated_{folder_pf}' folder and the following 4 sub folders:
+        'PROJECT_PATH/generated_{folder_pf}/find_vertices'
+        'PROJECT_PATH/generated_{folder_pf}/find_edges'
+        'PROJECT_PATH/generated_{folder_pf}/build_graph'
+        'PROJECT_PATH/generated_{folder_pf}/new/build_graph'
         :return:
         """
-        os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}'), exist_ok=True)
-        os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_vertices'), exist_ok=True)
-        os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges'), exist_ok=True)
-        os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph'), exist_ok=True)
-        os.makedirs(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'new', 'build_graph'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, self.folder_name), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'build_graph'), exist_ok=True)
+        os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'new', 'build_graph'), exist_ok=True)
 
     @staticmethod
     @measure_time
@@ -161,7 +162,7 @@ class FloodWaveDetector:
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
         :param np.array gauge_ts: the time series of a station
-        :return: a numpy array containing the time series with the values flagged whether they are a peak or not
+        :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """
         # TODO: refactor this function so it is possible to set window size and also not as ugly as the current version.
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)

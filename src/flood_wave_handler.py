@@ -18,14 +18,15 @@ class FloodWaveHandler:
     """
 
     @staticmethod
-    def read_vertex_file(gauge: str, folder_pf: str) -> pd.DataFrame:
+    def read_vertex_file(gauge: str, folder_name: str) -> pd.DataFrame:
         """
         Reads the generated vertex file of the station with the given ID
 
         :param str gauge: the ID of the desired station
+        :param str folder_name: Name of the folder to use for file handling.
         :return pd.DataFrame: A Dataframe with the peak value and date
         """
-        gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, f'generated_{folder_pf}',
+        gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{gauge}.json'))
         gauge_peaks = pd.DataFrame(data=gauge_with_index,
                                    columns=['Date', 'Max value'])
@@ -114,7 +115,7 @@ class FloodWaveHandler:
                      end_date: str,
                      gauges: list,
                      meta: pd.DataFrame,
-                     folder_pf: str,
+                     folder_name: str,
                      filter_not_including_start_or_end: bool = True,
                      ) -> nx.Graph:
         """
@@ -127,12 +128,13 @@ class FloodWaveHandler:
         :param str end_date: The last possible starting date for the node to be kept
         :param list gauges: The list of stations
         :param pd.DataFrame meta: A metadata table
+        :param str folder_name: Name of the folder to use for file handling.
         :param bool filter_not_including_start_or_end: Boolean whether to filter components not including start or end
         :return nx.Graph: The filtered graph
         """
 
         vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'find_edges', 'vertex_pairs.json'),
+                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json'),
                 log=False
             )
 
@@ -156,7 +158,7 @@ class FloodWaveHandler:
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
                 start_date=start_date,
-                folder_pf=folder_pf
+                folder_name=folder_name
             )
 
         # second filter
@@ -355,7 +357,7 @@ class FloodWaveHandler:
                       gauge_pair: str,
                       start_date: str,
                       end_date: str,
-                      folder_pf: str
+                      folder_name: str
                       ) -> nx.Graph:
         """
         Combines graphs that are saved out individually with one that is given into one undirected graph
@@ -364,10 +366,11 @@ class FloodWaveHandler:
         :param str gauge_pair: This gauge pair indicates the starting node of the graph
         :param str start_date: The first possible starting date for the graphs to be read
         :param str end_date: The last possible starting date for the graphs to be read
-        :return nx.Graph:
+        :param str folder_name: Name of the folder to use for file handling.
+        :return nx.Graph: The graph that was made by combining individually saved ones.
         """
 
-        filenames = next(os.walk(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph', f'{gauge_pair}')),
+        filenames = next(os.walk(os.path.join(PROJECT_PATH, folder_name, 'build_graph', f'{gauge_pair}')),
                          (None, None, []))[2]
         sorted_files = FloodWaveHandler.sort_wave(
             filenames=filenames,
@@ -376,7 +379,7 @@ class FloodWaveHandler:
         )
         for file in sorted_files:
             data = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'build_graph',
+                filepath=os.path.join(PROJECT_PATH, folder_name, 'build_graph',
                                       f'{gauge_pair}', f'{file}'),
                 log=False
             )
@@ -411,7 +414,7 @@ class FloodWaveHandler:
                               start_date: str,
                               end_date: str,
                               gauge_pairs: list,
-                              folder_pf: str
+                              folder_name: str
                               ) -> nx.DiGraph:
         """
         Creates a directed graph by composing directed graphs
@@ -419,7 +422,8 @@ class FloodWaveHandler:
         :param str start_date: The date of the first possible starting vertex
         :param str end_date: The date of the last possible starting vertex
         :param list gauge_pairs: The list of gauge pairs which should be included in the graph
-        :return nx.DiGraph:
+        :param str folder_name: Name of the folder to use for file handling.
+        :return nx.DiGraph: The composed directed graph
         """
 
         joined_graph = nx.DiGraph()
@@ -429,6 +433,6 @@ class FloodWaveHandler:
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
                 start_date=start_date,
-                folder_pf=folder_pf
+                folder_name=folder_name
             )
         return joined_graph

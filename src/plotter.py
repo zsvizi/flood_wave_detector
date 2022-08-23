@@ -21,12 +21,14 @@ class Plotter:
     def __init__(self, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
         if gauges is not None:
-            self.data.gauges = gauges
+            self.gauges = gauges
+        else:
+            self.gauges = self.data.gauges
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
                    start_date: str,
-                   folder_pf: str,
+                   folder_name: str,
                    save: bool = False
                    ) -> None:
         """
@@ -34,12 +36,13 @@ class Plotter:
 
         :param nx.DiGraph directed_graph: A graph to be plotted
         :param str start_date: start date for the figure
+        :param str folder_name: Name of the folder to use for file handling.
         :param bool save: Boolean whether to save the graph or not
         :return:
         """
 
         if save:
-            Plotter.save_plot_graph(directed_graph, folder_pf=folder_pf)
+            Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
@@ -74,19 +77,20 @@ class Plotter:
             node_size=500
         )
 
-        plt.savefig(os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'graph.pdf'))
+        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'))
 
     @staticmethod
-    def save_plot_graph(joined_graph: nx.DiGraph, folder_pf: str) -> None:
+    def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
         """
         Saving the graph on the figure
 
         :param nx.DiGraph joined_graph: The graph to be saved
+        :param str folder_name: Name of the folder to use for file handling.
         :return:
         """
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
-            filepath=os.path.join(PROJECT_PATH, f'generated_{folder_pf}', 'plot_graph.json'),
+            filepath=os.path.join(PROJECT_PATH, folder_name, 'plot_graph.json'),
             obj=joined_graph_save,
             log=False
         )
@@ -168,7 +172,7 @@ class Plotter:
         :param int xsize: Vertical size
         :param int ysize: Horizontal size
         :param nx.Graph joined_graph: A graph to plot
-        :param positions: Coordinates for the graph
+        :param dict positions: Coordinates for the graph
         :param int node_size: Size of the vertices
         :return:
         """
