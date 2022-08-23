@@ -35,7 +35,7 @@ class FloodWaveDetector:
         Executes the steps needed to find all the flood waves.
         :return:
         """
-        FloodWaveDetector.mkdirs()
+        self.mkdirs()
         self.find_vertices()
         self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
