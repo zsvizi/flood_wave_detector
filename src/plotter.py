@@ -47,7 +47,7 @@ class Plotter:
         start = datetime.strptime(start_date, '%Y-%m-%d')
 
         positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
-                                                      gauges=self.data.gauges)
+                                                      gauges=self.gauges)
 
         fig, ax = plt.subplots()
         ax.axhspan(4, 9, color='green', alpha=0.3, label="")
@@ -146,8 +146,8 @@ class Plotter:
         """
 
         min_y = 1
-        max_y = len(self.data.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.data.gauges[::-1]]
+        max_y = len(self.gauges) + 1
+        y_labels = [str(gauge) for gauge in self.gauges[::-1]]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,

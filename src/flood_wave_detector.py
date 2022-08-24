@@ -39,7 +39,7 @@ class FloodWaveDetector:
         """
         self.mkdirs()
         self.find_vertices()
-        self.find_edges(delay=self.delay, window_size=self.window_size, gauges=self.data.gauges)
+        self.find_edges(delay=self.delay, window_size=self.window_size, gauges=self.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
@@ -49,7 +49,7 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
-        for gauge in self.data.gauges:
+        for gauge in self.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.

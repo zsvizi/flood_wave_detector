@@ -77,9 +77,9 @@ class Analysis:
         """
 
         # First we select the gauges between start_station and end_station
-        start_index = self.data.gauges.index(start_station)
-        end_index = self.data.gauges.index(end_station)
-        gauges = self.data.gauges[start_index:end_index + 1]
+        start_index = self.gauges.index(start_station)
+        end_index = self.gauges.index(end_station)
+        gauges = self.gauges[start_index:end_index + 1]
         print(gauges)
 
         # We select the nodes of the graph, where the gauge (node[0]) is in the already existing gauges list
