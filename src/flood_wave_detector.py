@@ -20,7 +20,7 @@ class FloodWaveDetector:
     It has all the necessary functions to find the flood waves and also has a run function which executes all the
     necessary methods in order.
     """
-    def __init__(self, folder_pf: str, gauges: Union[list, None] = None) -> None:
+    def __init__(self, folder_pf: str, delay: int, window_size: int, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
         self.gauges = []
         if gauges is not None:
@@ -28,6 +28,8 @@ class FloodWaveDetector:
         else:
             self.gauges = self.data.gauges
         self.folder_name = f'generated_{folder_pf}'
+        self.delay = delay
+        self.window_size = window_size
 
     @measure_time
     def run(self) -> None:
@@ -37,7 +39,7 @@ class FloodWaveDetector:
         """
         self.mkdirs()
         self.find_vertices()
-        self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
+        self.find_edges(delay=self.delay, window_size=self.window_size, gauges=self.data.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
