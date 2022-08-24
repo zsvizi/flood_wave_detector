@@ -27,9 +27,9 @@ class JsonHelper:
         """
         Reads the file with the given path
 
-        :param filepath: The path to read from
-        :param log: Boolean whether to print the log or not
-        :return:  The contents of the file
+        :param str filepath: The path to read from
+        :param bool log: Boolean whether to print the log or not
+        :return dict:  The contents of the file
         """
         if log:
             print(f'Reading from file: {filepath}')

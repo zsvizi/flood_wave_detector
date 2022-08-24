@@ -26,32 +26,34 @@ class GraphBuilder:
         self.flood_wave = {}
 
     @measure_time
-    def build_graph(self) -> None:
+    def build_graph(self, folder_name: str) -> None:
         """
         Searching for flood waves and constructing a graph from them. It searches from all the stations, to find all
         possible flood waves. Branching can occur, so a depth first search is used. The end result is saved out.
+        :param str folder_name: Name of the folder to use for file handling.
         :return:
         """
 
         # Read the gauge_peak_plateau_pairs (super dict)
         self.vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, 'generated', 'find_edges', 'gauge_peak_plateau_pairs.json')
+                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json')
             )
 
         self.gauge_pairs = list(self.vertex_pairs.keys())
 
         for gauge_pair in self.gauge_pairs:
 
-            gauge_pair_dates_dict = self.vertex_pairs[gauge_pair]
+            gauge_pair_dates = self.vertex_pairs[gauge_pair]
 
-            os.makedirs(os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}'), exist_ok=True)
+            os.makedirs(os.path.join(PROJECT_PATH, folder_name, 'build_graph', f'{gauge_pair}'),
+                        exist_ok=True)
 
             # Search waves starting from the root
-            for actual_date in gauge_pair_dates_dict.keys():
+            for actual_date in gauge_pair_dates.keys():
 
                 self.reset_tree_and_flood_wave()
                 # Go over every date with a wave
-                for next_date in gauge_pair_dates_dict[actual_date]:
+                for next_date in gauge_pair_dates[actual_date]:
                     # Empty and reset variables
                     next_g_p_idx = self.reset_gauge_pair_index_and_serial_number()
 
@@ -72,7 +74,8 @@ class GraphBuilder:
 
                     data = nx.readwrite.json_graph.node_link_data(self.tree_g)
                     JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, 'generated', 'build_graph', f'{gauge_pair}/{actual_date}'),
+                        filepath=os.path.join(PROJECT_PATH, folder_name, 'build_graph',
+                                              f'{gauge_pair}/{actual_date}'),
                         obj=data
                     )
 
@@ -107,6 +110,7 @@ class GraphBuilder:
         A date from the list, not the key. Date after the branch
         :param int next_idx: Index of the next gauge pair.
         E.g: index 1 is referring to "1515-1516" if the root is "1514-1515".
+        :return:
         """
 
         # other variables
@@ -114,15 +118,15 @@ class GraphBuilder:
         next_gauge_pair = self.gauge_pairs[next_idx]
         current_gauge = next_gauge_pair.split('_')[0]
         next_gauge = next_gauge_pair.split('_')[1]
-        next_gauge_pair_date_dict = self.vertex_pairs[next_gauge_pair]
+        next_gauge_pair_dates = self.vertex_pairs[next_gauge_pair]
 
         # See if we continue the wave
-        can_path_be_continued = next_gauge_date in next_gauge_pair_date_dict.keys()
+        can_path_be_continued = next_gauge_date in next_gauge_pair_dates.keys()
 
         if can_path_be_continued and next_idx < max_index_value:
 
-            # Get new data values
-            new_date_value = next_gauge_pair_date_dict[next_gauge_date]
+            # Get new date values
+            new_date_value = next_gauge_pair_dates[next_gauge_date]
             # the recursion continues with the first date
             new_gauge_date = new_date_value[0]
 
@@ -130,10 +134,10 @@ class GraphBuilder:
             if len(new_date_value) > 1:
 
                 # Save the informations about the branches in a LiFoQueue (branches) so we can come back later.
-                for k, dat in enumerate(new_date_value[1:]):
+                for k, date in enumerate(new_date_value[1:]):
                     self.save_info_about_branches(
                         current_gauge=current_gauge,
-                        dat=dat,
+                        date=date,
                         k=k,
                         next_gauge=next_gauge,
                         next_gauge_date=next_gauge_date,
@@ -143,9 +147,9 @@ class GraphBuilder:
             # Update the status of our "place" (path)
             self.update_path_status(
                 current_gauge=current_gauge,
-                new_gauge_date=new_gauge_date,
+                next_gauge_date=new_gauge_date,
                 next_gauge=next_gauge,
-                next_gauge_date=next_gauge_date
+                current_gauge_date=next_gauge_date
             )
 
             # Keep going, search for the path
@@ -169,51 +173,51 @@ class GraphBuilder:
         """
         Adds the found new vertex and edge to the graph.
 
-        :param actual_date: The date of the previous vertex
-        :param gauge_pair: The station pair which contains the IDs of the two vertices' stations
-        :param next_date: The date of the latter vertex
+        :param str actual_date: The date of the previous vertex
+        :param str gauge_pair: The station pair which contains the IDs of the two vertices' stations
+        :param str next_date: The date of the latter vertex
         :return:
         """
 
         self.reset_path()
 
-        root_gauge = gauge_pair.split('_')[0]
-        root_gauge_next = gauge_pair.split('_')[1]
+        actual_gauge = gauge_pair.split('_')[0]
+        next_gauge = gauge_pair.split('_')[1]
 
         self.tree_g.add_edge(
-            u_of_edge=(root_gauge, actual_date),
-            v_of_edge=(root_gauge_next, next_date)
+            u_of_edge=(actual_gauge, actual_date),
+            v_of_edge=(next_gauge, next_date)
         )
 
         self.add_to_path(
             actual_date=actual_date,
             next_date=next_date,
-            root_gauge=root_gauge,
-            root_gauge_next=root_gauge_next
+            actual_gauge=actual_gauge,
+            next_gauge=next_gauge
         )
 
     def add_to_path(self,
                     actual_date: str,
                     next_date: str,
-                    root_gauge: str,
-                    root_gauge_next: str
+                    actual_gauge: str,
+                    next_gauge: str
                     ) -> None:
         """
         Adds the found next vertex to the path dictionary
 
-        :param actual_date: The date of the previous vertex
-        :param next_date: The date of the latter vertex
-        :param root_gauge: The station ID of the previous vertex
-        :param root_gauge_next: The station ID the latter vertex
+        :param str actual_date: The date of the previous vertex
+        :param str next_date: The date of the latter vertex
+        :param str actual_gauge: The station ID of the previous vertex
+        :param str next_gauge: The station ID the latter vertex
         :return:
         """
-        self.path[root_gauge] = actual_date
-        self.path[root_gauge_next] = next_date
+        self.path[actual_gauge] = actual_date
+        self.path[next_gauge] = next_date
 
     def reset_gauge_pair_index_and_serial_number(self) -> int:
         """
         Resetting variables before next search
-        :return: next gauge pair index
+        :return int: next gauge pair index
         """
         next_g_p_idx = 1
         self.wave_serial_number = 0
@@ -237,7 +241,7 @@ class GraphBuilder:
 
     def save_info_about_branches(self,
                                  current_gauge: str,
-                                 dat: str,
+                                 date: str,
                                  k: int,
                                  next_gauge: str,
                                  next_gauge_date: str,
@@ -247,43 +251,43 @@ class GraphBuilder:
         This ensures that we have a memory of the branches that we passed
         We store information in a LiFoQueue (Last in First out)
 
-        :param current_gauge: ID of the current station that we are at
-        :param dat: The date of the branch (date of first node on the new branch)
-        :param k: Index of the branch (earlier implementations allowed more than one)
-        :param next_gauge: ID of the subsequent station
-        :param next_gauge_date: The date of the branching
-        :param next_idx: The index of the previous path
+        :param str current_gauge: ID of the current station that we are at
+        :param str date: The date of the branch (date of first node on the new branch)
+        :param int k: Index of the branch (earlier implementations allowed more than one)
+        :param str next_gauge: ID of the subsequent station
+        :param str next_gauge_date: The date of the branching
+        :param int next_idx: The index of the previous path
         :return:
         """
         # TODO: Variable renaming
         path_partial = deepcopy(self.path)  # copy result up to now
         self.tree_g.add_edge(
             u_of_edge=(current_gauge, next_gauge_date),
-            v_of_edge=(next_gauge, dat)
+            v_of_edge=(next_gauge, date)
         )
-        path_partial[next_gauge] = dat  # update with the new node and the corresponding possible date
+        path_partial[next_gauge] = date  # update with the new node and the corresponding possible date
         new_path_key = "path" + str(next_idx + 1) + str(k)
         self.all_paths[new_path_key] = path_partial
-        self.branches.put([dat, next_idx + 1, new_path_key])
+        self.branches.put([date, next_idx + 1, new_path_key])
 
     def update_path_status(self,
                            current_gauge: str,
-                           new_gauge_date: str,
+                           next_gauge_date: str,
                            next_gauge: str,
-                           next_gauge_date: str
+                           current_gauge_date: str
                            ) -> None:
         """
         Updates path dictionary and adds new edge
 
-        :param current_gauge: ID of current station
-        :param new_gauge_date: The date of the latter vertex
-        :param next_gauge: ID of latter station
-        :param next_gauge_date: The date of the current vertex
+        :param str current_gauge: ID of current station
+        :param str next_gauge_date: The date of the latter vertex
+        :param str next_gauge: ID of latter station
+        :param str current_gauge_date: The date of the current vertex
         :return:
         """
         # TODO: Variable renaming
         self.tree_g.add_edge(
-            u_of_edge=(current_gauge, next_gauge_date),
-            v_of_edge=(next_gauge, new_gauge_date)
+            u_of_edge=(current_gauge, current_gauge_date),
+            v_of_edge=(next_gauge, next_gauge_date)
         )
-        self.path[next_gauge] = new_gauge_date
+        self.path[next_gauge] = next_gauge_date

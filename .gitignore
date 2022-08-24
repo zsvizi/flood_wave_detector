@@ -3,5 +3,6 @@
 /notebooks
 /__pycache__
 *.ini
-/generated
+/generated*
+/data
 /src/__pycache__
