@@ -116,9 +116,9 @@ class FloodWaveDetector:
                 # Find next dates for the following gauge
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
-                    delay=delay_dict[next_gauge],
+                    delay=delay_dict[current_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
-                    window_size=window_dict[next_gauge]
+                    window_size=window_dict[current_gauge]
                 )
 
                 # Convert datetime to string
