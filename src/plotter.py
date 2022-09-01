@@ -159,13 +159,13 @@ class Plotter:
         )
 
     def format_figure(self,
-            ax: plt.axis,
-            xsize: int,
-            ysize: int,
-            joined_graph: nx.Graph,
-            positions: dict,
-            node_size: int
-    ) -> None:
+                      ax: plt.axis,
+                      xsize: int,
+                      ysize: int,
+                      joined_graph: nx.Graph,
+                      positions: dict,
+                      node_size: int
+                      ) -> None:
         """
         Formats figure as desired
 
@@ -189,6 +189,11 @@ class Plotter:
         ax.legend(labels=legend_elements, loc=5, handlelength=0, handleheight=0)
         
     def create_legend(self) -> list:
+        """
+        This method is responsible for creating legend for the figure which contains information about gauges.
+
+        :return list: The list containing legend for the figure
+        """
         legend_elements = list()
         for gauge in self.gauges:
             legend_elements.append(self.meta['river_km'].loc[gauge].round(decimals=1).astype(str) + '-' +
