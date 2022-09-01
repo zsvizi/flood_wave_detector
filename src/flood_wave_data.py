@@ -16,3 +16,4 @@ class FloodWaveData:
             .get_group("Tisza") \
             .sort_values(by='river_km', ascending=False)
         self.gauges = self.meta.dropna(subset=['h_table']).index.tolist()
+        self.meta['y_ticks'] = self.meta.index.astype(str) + '_' + self.meta['river_km'].astype(str)
