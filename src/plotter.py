@@ -50,7 +50,7 @@ class Plotter:
                                                       gauges=self.gauges)
 
         fig, ax = plt.subplots()
-        ax.axhspan(4, 9, color='green', alpha=0.3, label="")
+        # ax.axhspan(4, 9, color='green', alpha=0.3, label="")
 
         Plotter.set_x_axis_ticks(
             ax=ax,
@@ -128,6 +128,7 @@ class Plotter:
             horizontalalignment=horizontalalignment,
             fontsize=fontsize
         )
+        ax.set_xticks(ax.get_xticks()[::5])
 
     def set_y_axis_ticks(self,
                          ax: plt.axis,
@@ -147,7 +148,8 @@ class Plotter:
 
         min_y = 1
         max_y = len(self.gauges) + 1
-        y_labels = [str(gauge) for gauge in self.gauges[::-1]]
+        self.data.meta = self.data.meta.loc[self.gauges]
+        y_labels = self.data.meta['y_ticks'][::-1]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,
@@ -180,4 +182,5 @@ class Plotter:
         plt.rcParams["figure.figsize"] = (xsize, ysize)
         nx.draw(joined_graph, pos=positions, node_size=node_size)
         plt.axis('on')  # turns on axis
+        plt.grid(visible=True)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
