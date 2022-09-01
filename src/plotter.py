@@ -24,6 +24,7 @@ class Plotter:
             self.gauges = gauges
         else:
             self.gauges = self.data.gauges
+        self.meta = self.data.meta.loc[self.gauges]
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
@@ -148,8 +149,7 @@ class Plotter:
 
         min_y = 1
         max_y = len(self.gauges) + 1
-        self.data.meta = self.data.meta.loc[self.gauges]
-        y_labels = self.data.meta['y_ticks'][::-1]
+        y_labels = self.meta['y_ticks'][::-1]
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,
