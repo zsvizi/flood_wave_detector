@@ -69,7 +69,7 @@ class Plotter:
             fontsize=22
         )
 
-        Plotter.format_figure(
+        self.format_figure(
             ax=ax,
             xsize=30,
             ysize=20,
@@ -149,7 +149,7 @@ class Plotter:
 
         min_y = 1
         max_y = len(self.gauges) + 1
-        y_labels = self.meta['y_ticks'][::-1]
+        y_labels = self.meta['river_km'][::-1].round(decimals=1)
         ax.yaxis.set_ticks(np.arange(min_y, max_y, 1))
         ax.set_yticklabels(
             y_labels,
@@ -158,8 +158,7 @@ class Plotter:
             fontsize=fontsize
         )
 
-    @staticmethod
-    def format_figure(
+    def format_figure(self,
             ax: plt.axis,
             xsize: int,
             ysize: int,
@@ -185,3 +184,15 @@ class Plotter:
         plt.axis('on')  # turns on axis
         plt.grid(visible=True)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        
+        legend_elements = self.create_legend()
+        ax.legend(labels=legend_elements, loc=5, handlelength=0, handleheight=0)
+        
+    def create_legend(self) -> list:
+        legend_elements = list()
+        for gauge in self.gauges:
+            legend_elements.append(self.meta['river_km'].loc[gauge].round(decimals=1).astype(str) + '-' +
+                                   str(gauge) + '-' +
+                                   self.meta['station_name'].loc[gauge])
+        return legend_elements
+        
