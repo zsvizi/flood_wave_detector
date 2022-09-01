@@ -181,6 +181,7 @@ class Plotter:
 
         plt.rcParams["figure.figsize"] = (xsize, ysize)
         nx.draw(joined_graph, pos=positions, node_size=node_size)
+        nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
         plt.axis('on')  # turns on axis
         plt.grid(visible=True)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
