@@ -20,7 +20,11 @@ class FloodWaveDetector:
     It has all the necessary functions to find the flood waves and also has a run function which executes all the
     necessary methods in order.
     """
-    def __init__(self, folder_pf: str, delay: int, window_size: int, gauges: Union[list, None] = None) -> None:
+    def __init__(self,
+                 folder_pf: str,
+                 window_dict: dict,
+                 delay_dict: dict,
+                 gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
         self.gauges = []
         if gauges is not None:
@@ -28,8 +32,8 @@ class FloodWaveDetector:
         else:
             self.gauges = self.data.gauges
         self.folder_name = f'generated_{folder_pf}'
-        self.delay = delay
-        self.window_size = window_size
+        self.delay_dict = delay_dict
+        self.window_dict = window_dict
 
     @measure_time
     def run(self) -> None:
@@ -39,7 +43,7 @@ class FloodWaveDetector:
         """
         self.mkdirs()
         self.find_vertices()
-        self.find_edges(delay=self.delay, window_size=self.window_size, gauges=self.gauges)
+        self.find_edges(delay_dict=self.delay_dict, window_dict=self.window_dict, gauges=self.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
@@ -73,8 +77,8 @@ class FloodWaveDetector:
 
     @measure_time
     def find_edges(self,
-                   delay: int,
-                   window_size: int,
+                   delay_dict: dict,
+                   window_dict: dict,
                    gauges: list,
                    ) -> None:
         """
@@ -82,8 +86,8 @@ class FloodWaveDetector:
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
 
-        :param int delay: Minimum delay (days) between two gauges
-        :param int window_size: Size of the interval (days) we allow a delay
+        :param int delay_dict: A dictionary containing the minimum delay (days) between two gauges
+        :param int window_dict: A dictionary containing the size of the interval (days) we allow a delay
         :param list gauges: The id list of the gauges (in order)
         """
 
@@ -112,9 +116,9 @@ class FloodWaveDetector:
                 # Find next dates for the following gauge
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
-                    delay=delay,
+                    delay=delay_dict[next_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
-                    window_size=window_size
+                    window_size=window_dict[next_gauge]
                 )
 
                 # Convert datetime to string
