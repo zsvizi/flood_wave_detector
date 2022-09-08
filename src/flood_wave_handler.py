@@ -80,10 +80,10 @@ class FloodWaveHandler:
     @staticmethod
     @measure_time
     def sort_wave(
-                  filenames: list,
-                  start: str = '2006-02-01',
-                  end: str = '2006-06-01'
-                  ) -> list:
+            filenames: list,
+            start: str = '2006-02-01',
+            end: str = '2006-06-01'
+    ) -> list:
         """
         It's hard to visualize waves far from each other.
         With this method, we can choose a period and check the waves in it.
@@ -109,15 +109,15 @@ class FloodWaveHandler:
 
     @staticmethod
     def filter_graph(
-                     start_station: int,
-                     end_station: int,
-                     start_date: str,
-                     end_date: str,
-                     gauges: list,
-                     meta: pd.DataFrame,
-                     folder_name: str,
-                     filter_not_including_start_or_end: bool = True,
-                     ) -> nx.Graph:
+            start_station: int,
+            end_station: int,
+            start_date: str,
+            end_date: str,
+            gauges: list,
+            meta: pd.DataFrame,
+            folder_name: str,
+            filter_not_including_start_or_end: bool = True,
+    ) -> nx.Graph:
         """
         Filters out the full composed graph. The parts in between the desired station and in the desired time
         interval stays if they contain a shortest path between the endpoints.
@@ -134,9 +134,9 @@ class FloodWaveHandler:
         """
 
         vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json'),
-                log=False
-            )
+            filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json'),
+            log=False
+        )
 
         gauge_pairs = list(vertex_pairs.keys())
         up_limit = meta.loc[start_station].river_km
@@ -189,9 +189,9 @@ class FloodWaveHandler:
 
     @staticmethod
     def select_start_gauges(
-                            low_limit: int,
-                            meta: pd.DataFrame
-                            ) -> list:
+            low_limit: int,
+            meta: pd.DataFrame
+    ) -> list:
         """
         Selects the possible starting stations for the desired flood waves, the rest is not kept.
 
@@ -206,12 +206,12 @@ class FloodWaveHandler:
 
     @staticmethod
     def remove_nodes_with_improper_km_data(
-                                           joined_graph: nx.Graph,
-                                           low_limit: int,
-                                           up_limit: int,
-                                           meta: pd.DataFrame,
-                                           gauges: list
-                                           ) -> None:
+            joined_graph: nx.Graph,
+            low_limit: int,
+            up_limit: int,
+            meta: pd.DataFrame,
+            gauges: list
+    ) -> None:
         """
         Filters out vertices which are outside the river kilometre boundaries from a given graph
 
@@ -335,7 +335,7 @@ class FloodWaveHandler:
             candidate_vertices: pd.DataFrame,
             date: datetime,
             forward_span: int,
-            backward_span : int
+            backward_span: int
     ) -> pd.DataFrame:
         """
         Find possible follow-up dates for the flood wave coming from the previous gauge
@@ -355,12 +355,12 @@ class FloodWaveHandler:
 
     @staticmethod
     def compose_graph(
-                      joined_graph: nx.Graph,
-                      gauge_pair: str,
-                      start_date: str,
-                      end_date: str,
-                      folder_name: str
-                      ) -> nx.Graph:
+            joined_graph: nx.Graph,
+            gauge_pair: str,
+            start_date: str,
+            end_date: str,
+            folder_name: str
+    ) -> nx.Graph:
         """
         Combines graphs that are saved out individually with one that is given into one undirected graph
 
@@ -391,10 +391,10 @@ class FloodWaveHandler:
 
     @staticmethod
     def create_positions(
-                         joined_graph: nx.Graph,
-                         start: datetime.strptime,
-                         gauges: list
-                         ) -> dict:
+            joined_graph: nx.Graph,
+            start: datetime.strptime,
+            gauges: list
+    ) -> dict:
         """
         Creates coordinates for a given graph in order to be able to plot it on a grid
 
@@ -405,19 +405,29 @@ class FloodWaveHandler:
         """
 
         positions = dict()
+        max_date = [datetime.strptime(node[1], '%Y-%m-%d')
+                    for node in joined_graph.nodes()].max()
+
+        min_date = [datetime.strptime(node[1], '%Y-%m-%d')
+                    for node in joined_graph.nodes()].min()
+
+        date_range = (max_date - min_date).days
+
         for node in joined_graph.nodes():
-            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
+            x_flipped = abs((max_date - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
+            x_coord = date_range - x_flipped
             y_coord = len(gauges) - gauges.index(int(node[0]))
             positions[node] = (x_coord, y_coord)
+        print(positions)
         return positions
 
     @staticmethod
     def create_directed_graph(
-                              start_date: str,
-                              end_date: str,
-                              gauge_pairs: list,
-                              folder_name: str
-                              ) -> nx.DiGraph:
+            start_date: str,
+            end_date: str,
+            gauge_pairs: list,
+            folder_name: str
+    ) -> nx.DiGraph:
         """
         Creates a directed graph by composing directed graphs
 
