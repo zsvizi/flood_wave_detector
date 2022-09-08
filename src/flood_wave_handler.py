@@ -50,11 +50,11 @@ class FloodWaveHandler:
         :return pd.DataFrame: A DataFrame containing the found dates
         """
 
-        past_date = actual_date - timedelta(days=delay)
         dates = FloodWaveHandler.filter_for_start_and_length(
             candidate_vertices=next_gauge_candidate_vertices,
-            min_date=past_date,
-            window_size=window_size
+            date=actual_date,
+            forward_span=window_size,
+            backward_span=delay
         )
         return dates
 
@@ -333,19 +333,21 @@ class FloodWaveHandler:
     @staticmethod
     def filter_for_start_and_length(
             candidate_vertices: pd.DataFrame,
-            min_date: datetime,
-            window_size: int
+            date: datetime,
+            forward_span: int,
+            backward_span : int
     ) -> pd.DataFrame:
         """
         Find possible follow-up dates for the flood wave coming from the previous gauge
 
         :param pd.DataFrame candidate_vertices: Dataframe to crop
-        :param datetime min_date: start date of the crop
+        :param datetime date: start date of the crop
         :param int window_size: size of the new dataframe (number of days we want)
         :return pd.DataFrame: Cropped dataframe with found next dates.
         """
 
-        max_date = min_date + timedelta(days=window_size)
+        max_date = date + timedelta(days=forward_span)
+        min_date = date - timedelta(days=backward_span)
         possible_dates = candidate_vertices[(candidate_vertices['Date'] >= min_date) &
                                             (candidate_vertices['Date'] <= max_date)]
 
