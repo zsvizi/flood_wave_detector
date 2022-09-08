@@ -391,34 +391,24 @@ class FloodWaveHandler:
 
     @staticmethod
     def create_positions(
-            joined_graph: nx.Graph,
-            start: datetime.strptime,
-            gauges: list
-    ) -> dict:
+                     joined_graph: nx.Graph,
+                     start: datetime.strptime,
+                     gauges: list
+                     ) -> dict:
         """
         Creates coordinates for a given graph in order to be able to plot it on a grid
 
-        :param nx.Graph joined_graph: The graph which to give coordinates for
-        :param datetime.strptime start: Starting date of the plot
-        :param list gauges: The list of stations
-        :return dict: A dictionary containing 'node: (x, y)' pairs
+        :param joined_graph: The graph which to give coordinates for
+        :param start: Starting date of the plot
+        :param gauges: The list of stations
+        :return: A dictionary containing 'node: (x, y)' pairs
         """
 
         positions = dict()
-        max_date = [datetime.strptime(node[1], '%Y-%m-%d')
-                    for node in joined_graph.nodes()].max()
-
-        min_date = [datetime.strptime(node[1], '%Y-%m-%d')
-                    for node in joined_graph.nodes()].min()
-
-        date_range = (max_date - min_date).days
-
         for node in joined_graph.nodes():
-            x_flipped = abs((max_date - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
-            x_coord = date_range - x_flipped
+            x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
             y_coord = len(gauges) - gauges.index(int(node[0]))
             positions[node] = (x_coord, y_coord)
-        print(positions)
         return positions
 
     @staticmethod
