@@ -405,6 +405,13 @@ class FloodWaveHandler:
         """
 
         positions = dict()
+        
+        remove = [node
+                  for node
+                  in joined_graph.nodes()
+                  if datetime.strptime(node[1], '%Y-%m-%d') < start]
+        
+        joined_graph.remove_nodes_from(remove)
         for node in joined_graph.nodes():
             x_coord = abs((start - datetime.strptime(node[1], '%Y-%m-%d')).days) - 1
             y_coord = len(gauges) - gauges.index(int(node[0]))
