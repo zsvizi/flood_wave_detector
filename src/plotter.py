@@ -30,7 +30,8 @@ class Plotter:
                    directed_graph: nx.DiGraph,
                    start_date: str,
                    folder_name: str,
-                   save: bool = False
+                   save: bool = False,
+                   show_nan: bool = False
                    ) -> None:
         """
         Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
@@ -46,12 +47,19 @@ class Plotter:
             Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
-
-        positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
-                                                      gauges=self.gauges)
-        
         min_date = min([node[1] for node in directed_graph.nodes()])
         min_date = datetime.strptime(min_date, '%Y-%m-%d')
+        max_date = max([node[1] for node in directed_graph.nodes()])
+        max_date = datetime.strptime(max_date, '%Y-%m-%d')
+        
+                
+        positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
+                                                      gauges=self.gauges)
+        if show_nan:
+            nan_graph = self.create_nan_graph(min_date=min_date, max_date=max_date)
+            nan_positions = FloodWaveHandler.create_positions(joined_graph=nan_graph, start=start,
+                                                      gauges=self.gauges)
+        
 
         fig, ax = plt.subplots()
         # ax.axhspan(4, 9, color='green', alpha=0.3, label="")
@@ -71,14 +79,16 @@ class Plotter:
             horizontalalignment='right',
             fontsize=22
         )
-
+ 
         self.format_figure(
             ax=ax,
             xsize=30,
             ysize=20,
             joined_graph=directed_graph,
             positions=positions,
-            node_size=500
+            node_size=500,
+            nan_graph=nan_graph,
+            nan_positions=nan_positions
         )
 
         plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'))
@@ -168,7 +178,9 @@ class Plotter:
                       ysize: int,
                       joined_graph: nx.Graph,
                       positions: dict,
-                      node_size: int
+                      node_size: int,
+                      nan_graph: nx.DiGraph = None,
+                      nan_positions: dict = None
                       ) -> None:
         """
         Formats figure as desired
@@ -185,6 +197,8 @@ class Plotter:
         plt.rcParams["figure.figsize"] = (xsize, ysize)
         nx.draw(joined_graph, pos=positions, node_size=node_size)
         nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
+        if nan_graph is not None:
+            nx.draw(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
         plt.axis('on')  # turns on axis
         plt.grid(visible=True)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
@@ -204,4 +218,15 @@ class Plotter:
                                    str(gauge) + '-' +
                                    self.meta['station_name'].loc[gauge])
         return legend_elements
-        
+    
+    def create_nan_graph(self, min_date: str, max_date: str):
+        gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=self.gauges)\
+                                                     .loc[min_date:max_date]
+        nan_graph = nx.DiGraph()
+        for gauge in gauge_data.columns:
+            nan_dates = gauge_data[str(gauge)].index[gauge_data[str(gauge)].apply(np.isnan)].strftime("%Y-%m-%d")
+
+            for date in nan_dates:
+                nan_graph.add_node(node_for_adding=(gauge, date))
+
+        return nan_graph
