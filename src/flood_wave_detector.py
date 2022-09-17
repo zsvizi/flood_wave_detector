@@ -24,7 +24,9 @@ class FloodWaveDetector:
                  folder_pf: str,
                  window_dict: dict,
                  delay_dict: dict,
-                 gauges: Union[list, None] = None) -> None:
+                 gauges: Union[list, None] = None,
+                 start_date: str = None,
+                 end_date: str = None) -> None:
         self.data = FloodWaveData()
         self.gauges = []
         if gauges is not None:
@@ -34,6 +36,14 @@ class FloodWaveDetector:
         self.folder_name = f'generated_{folder_pf}'
         self.delay_dict = delay_dict
         self.window_dict = window_dict
+        if start_date is not None:
+            self.start_date = start_date
+        else:
+            self.start_date = '1951-01-01'
+        if end_date is not None:
+            self.end_date = end_date
+        else:
+            self.end_date = '2020-12-31'
 
     @measure_time
     def run(self) -> None:
@@ -57,8 +67,9 @@ class FloodWaveDetector:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
-
+                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).loc[self.start_date:self.end_date].dropna()
+                print(gauge_data)
+                    
                 # Get local peak/plateau values
                 local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
 
