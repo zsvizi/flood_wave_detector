@@ -72,9 +72,12 @@ class FloodWaveDetector:
                 # Get gauge data and drop missing data and make it an array.
                 gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge])\
                                                  .loc[self.start_date:self.end_date].dropna()
-                    
+                   
+                gauge_ts = gauge_data[str(gauge)].to_numpy()
+                if gauge_ts.shape[0] < math.ceil(self.centered_window_size/2):
+                    continue
                 # Get local peak/plateau values
-                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
+                local_peak_values = self.get_local_peak_values(gauge_ts=gauge_ts)
 
                 # Create keys for dictionary
                 candidate_vertices = FloodWaveDetector.find_local_maxima(
@@ -175,9 +178,8 @@ class FloodWaveDetector:
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'build_graph'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'new', 'build_graph'), exist_ok=True)
 
-    @staticmethod
     @measure_time
-    def get_local_peak_values(gauge_ts: np.array) -> np.array:
+    def get_local_peak_values(self, gauge_ts: np.array) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
@@ -188,7 +190,9 @@ class FloodWaveDetector:
             raise Exception("centered_window_size has to be odd!")
             
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
+        print(gauge_ts.shape)
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
+        
         
         for shift in range(1, math.ceil(self.centered_window_size/2)):
             left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
