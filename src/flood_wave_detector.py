@@ -24,6 +24,7 @@ class FloodWaveDetector:
                  folder_pf: str,
                  window_dict: dict,
                  delay_dict: dict,
+                 centered_window_size: int = 5,
                  gauges: Union[list, None] = None,
                  start_date: str = None,
                  end_date: str = None) -> None:
@@ -36,6 +37,7 @@ class FloodWaveDetector:
         self.folder_name = f'generated_{folder_pf}'
         self.delay_dict = delay_dict
         self.window_dict = window_dict
+        self.centered_window_size = centered_window_size
         if start_date is not None:
             self.start_date = start_date
         else:
@@ -52,12 +54,12 @@ class FloodWaveDetector:
         :return:
         """
         self.mkdirs()
-        self.find_vertices()
+        self.find_vertices(centered_window_size=centered_window_size)
         self.find_edges(delay_dict=self.delay_dict, window_dict=self.window_dict, gauges=self.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
-    def find_vertices(self) -> None:
+    def find_vertices(self, centered_window_size: int) -> None:
         """
         Creates a dictionary containing all the possible vertices for each station.
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
@@ -71,7 +73,8 @@ class FloodWaveDetector:
                                                  .loc[self.start_date:self.end_date].dropna()
                     
                 # Get local peak/plateau values
-                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
+                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy(),
+                                                                            centered_window_size=centered_window_size)
 
                 # Create keys for dictionary
                 candidate_vertices = FloodWaveDetector.find_local_maxima(
@@ -174,7 +177,7 @@ class FloodWaveDetector:
 
     @staticmethod
     @measure_time
-    def get_local_peak_values(gauge_ts: np.array, centered_window_size: int = 5) -> np.array:
+    def get_local_peak_values(gauge_ts: np.array, centered_window_size: int) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
