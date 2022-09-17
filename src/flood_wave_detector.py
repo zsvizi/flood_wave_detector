@@ -67,8 +67,8 @@ class FloodWaveDetector:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).loc[self.start_date:self.end_date].dropna()
-                print(gauge_data)
+                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge])\
+                                                 .loc[self.start_date:self.end_date].dropna()
                     
                 # Get local peak/plateau values
                 local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())

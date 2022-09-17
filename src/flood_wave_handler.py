@@ -342,7 +342,8 @@ class FloodWaveHandler:
 
         :param pd.DataFrame candidate_vertices: Dataframe to crop
         :param datetime date: start date of the crop
-        :param int window_size: size of the new dataframe (number of days we want)
+        :param int forward_span: number of days we allow for continuing
+        :param int backward_span: number of days we allow for delay
         :return pd.DataFrame: Cropped dataframe with found next dates.
         """
 
