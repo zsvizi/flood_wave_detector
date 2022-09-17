@@ -55,12 +55,12 @@ class FloodWaveDetector:
         :return:
         """
         self.mkdirs()
-        self.find_vertices(centered_window_size=centered_window_size)
+        self.find_vertices()
         self.find_edges(delay_dict=self.delay_dict, window_dict=self.window_dict, gauges=self.gauges)
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
-    def find_vertices(self, centered_window_size: int) -> None:
+    def find_vertices(self) -> None:
         """
         Creates a dictionary containing all the possible vertices for each station.
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
@@ -74,8 +74,7 @@ class FloodWaveDetector:
                                                  .loc[self.start_date:self.end_date].dropna()
                     
                 # Get local peak/plateau values
-                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy(),
-                                                                            centered_window_size=centered_window_size)
+                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
 
                 # Create keys for dictionary
                 candidate_vertices = FloodWaveDetector.find_local_maxima(
@@ -178,20 +177,20 @@ class FloodWaveDetector:
 
     @staticmethod
     @measure_time
-    def get_local_peak_values(gauge_ts: np.array, centered_window_size: int) -> np.array:
+    def get_local_peak_values(gauge_ts: np.array) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
         :param np.array gauge_ts: the time series of a station
         :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """
-        if not centered_window_size % 2:
+        if not self.centered_window_size % 2:
             raise Exception("centered_window_size has to be odd!")
             
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
         
-        for shift in range(1, math.ceil(centered_window_size/2)):
+        for shift in range(1, math.ceil(self.centered_window_size/2)):
             left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
             right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]
             cond = left_cond & right_cond & cond   
