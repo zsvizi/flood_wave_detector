@@ -174,23 +174,26 @@ class FloodWaveDetector:
 
     @staticmethod
     @measure_time
-    def get_local_peak_values(gauge_ts: np.array) -> np.array:
+    def get_local_peak_values(gauge_ts: np.array, centered_window_size: int = 5) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
         time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
         :param np.array gauge_ts: the time series of a station
         :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """
-        # TODO: refactor this function so it is possible to set window size and also not as ugly as the current version.
+        if not centered_window_size % 2:
+            raise Exception("centered_window_size has to be odd!")
+            
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
-        b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
-        c = np.r_[False, gauge_ts[1:] > gauge_ts[:-1]]
-        d = np.r_[gauge_ts[:-2] >= gauge_ts[2:], False, False]
-        e = np.r_[gauge_ts[:-1] >= gauge_ts[1:], False]
-        peak_bool = b & c & d & e
-        peaks = list(np.where(peak_bool)[0])
-        # print(peaks)
-
+        cond = np.r_[np.array([True] * gauge_ts.shape[0])]
+        
+        for shift in range(1, math.ceil(centered_window_size/2)):
+            left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
+            right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]
+            cond = left_cond & right_cond & cond   
+            
+        peaks = list(np.where(cond)[0])
+        
         for idx, value in enumerate(gauge_ts):
             result[idx] = GaugeData(value=value)
         for k in peaks:
