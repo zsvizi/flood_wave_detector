@@ -49,6 +49,9 @@ class Plotter:
 
         positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
                                                       gauges=self.gauges)
+        
+        min_date = min([node[1] for node in directed_graph.nodes()])
+        min_date = datetime.strptime(min_date, '%Y-%m-%d')
 
         fig, ax = plt.subplots()
         # ax.axhspan(4, 9, color='green', alpha=0.3, label="")
@@ -56,7 +59,7 @@ class Plotter:
         Plotter.set_x_axis_ticks(
             ax=ax,
             positions=positions,
-            start=start,
+            start=min_date,
             rotation=20,
             horizontalalignment='right',
             fontsize=15
@@ -117,12 +120,13 @@ class Plotter:
         :return:
         """
 
-        min_x = -1
+        min_x = min([n[0] for n in positions.values()])
         max_x = max([n[0] for n in positions.values()])
-        x_labels = pd.date_range(start - timedelta(days=1),
-                                 start + timedelta(days=max_x + 1),
+        rng = max_x - min_x
+        x_labels = pd.date_range(start,
+                                 start + timedelta(days=rng),
                                  freq='d').strftime('%Y-%m-%d').tolist()
-        ax.xaxis.set_ticks(np.arange(min_x - 1, max_x + 1, 1))
+        ax.xaxis.set_ticks(np.arange(min_x, max_x + 1, 1))
         ax.set_xticklabels(
             x_labels,
             rotation=rotation,
