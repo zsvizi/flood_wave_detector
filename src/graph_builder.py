@@ -236,7 +236,7 @@ class GraphBuilder:
         Resetting the graph and flood wave before next search
         :return:
         """
-        self.tree_g = nx.Graph()
+        self.tree_g = nx.DiGraph()
         self.flood_wave = {}
 
     def save_info_about_branches(self,

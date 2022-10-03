@@ -25,7 +25,7 @@ class FloodWaveDetector:
                  folder_pf: str,
                  window_dict: dict,
                  delay_dict: dict,
-                 centered_window_size: int = 5,
+                 centered_window_radius: int = 2,
                  gauges: Union[list, None] = None,
                  start_date: str = None,
                  end_date: str = None) -> None:
@@ -74,7 +74,11 @@ class FloodWaveDetector:
                                                  .loc[self.start_date:self.end_date].dropna()
                    
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
-                if gauge_ts.shape[0] < math.ceil(self.centered_window_size/2):
+                if gauge_ts.shape[0] < (centered_window_radius + 1):
+                    JsonHelper.write(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
+                    obj=dict()
+                    )
                     continue
                 # Get local peak/plateau values
                 local_peak_values = self.get_local_peak_values(gauge_ts=gauge_ts)
@@ -186,15 +190,13 @@ class FloodWaveDetector:
         :param np.array gauge_ts: the time series of a station
         :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """
-        if not self.centered_window_size % 2:
-            raise Exception("centered_window_size has to be odd!")
             
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         print(gauge_ts.shape)
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
         
         
-        for shift in range(1, math.ceil(self.centered_window_size/2)):
+        for shift in range(1, (centered_window_radius + 1)):
             left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
             right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]
             cond = left_cond & right_cond & cond   

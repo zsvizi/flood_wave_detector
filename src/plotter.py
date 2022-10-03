@@ -74,29 +74,26 @@ class Plotter:
             horizontalalignment='right',
             fontsize=22
         )
+        
         if show_nan:
             nan_graph = self.create_nan_graph(min_date=min_date, max_date=max_date)
             nan_positions = FloodWaveHandler.create_positions(joined_graph=nan_graph, start=start,
                                                       gauges=self.gauges)
-            self.format_figure(
-            ax=ax,
-            xsize=30,
-            ysize=20,
-            joined_graph=directed_graph,
-            positions=positions,
-            node_size=500,
-            nan_graph=nan_graph,
-            nan_positions=nan_positions
-        )
         else:
-            self.format_figure(
-                ax=ax,
-                xsize=30,
-                ysize=20,
-                joined_graph=directed_graph,
-                positions=positions,
-                node_size=500
-            )
+            nan_graph = None
+            nan_positions = None
+            
+        self.format_figure(
+        ax=ax,
+        xsize=30,
+        ysize=20,
+        joined_graph=directed_graph,
+        positions=positions,
+        node_size=500,
+        nan_graph=nan_graph,
+        nan_positions=nan_positions
+    )
+        
 
         plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'))
 
@@ -183,7 +180,7 @@ class Plotter:
                       ax: plt.axis,
                       xsize: int,
                       ysize: int,
-                      joined_graph: nx.Graph,
+                      joined_graph: nx.DiGraph,
                       positions: dict,
                       node_size: int,
                       nan_graph: nx.DiGraph = None,

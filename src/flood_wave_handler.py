@@ -117,7 +117,7 @@ class FloodWaveHandler:
             meta: pd.DataFrame,
             folder_name: str,
             filter_not_including_start_or_end: bool = True,
-    ) -> nx.Graph:
+    ) -> nx.DiGraph:
         """
         Filters out the full composed graph. The parts in between the desired station and in the desired time
         interval stays if they contain a shortest path between the endpoints.
@@ -151,7 +151,7 @@ class FloodWaveHandler:
             if int(x.split('_')[0]) in start_gauges
         ]
 
-        joined_graph = nx.Graph()
+        joined_graph = nx.DiGraph()
         for gauge_pair in selected_pairs:
             joined_graph = FloodWaveHandler.compose_graph(
                 end_date=end_date,
@@ -361,7 +361,7 @@ class FloodWaveHandler:
             start_date: str,
             end_date: str,
             folder_name: str
-    ) -> nx.Graph:
+    ) -> nx.DiGraph:
         """
         Combines graphs that are saved out individually with one that is given into one undirected graph
 
@@ -392,7 +392,7 @@ class FloodWaveHandler:
 
     @staticmethod
     def create_positions(
-                     joined_graph: nx.Graph,
+                     joined_graph: nx.DiGraph,
                      start: datetime.strptime,
                      gauges: list
                      ) -> dict:
