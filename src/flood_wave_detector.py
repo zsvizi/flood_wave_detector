@@ -79,6 +79,7 @@ class FloodWaveDetector:
                     filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
                     obj=dict()
                     )
+                    print(f'No peaks found at {gauge}')
                     continue
                 # Get local peak/plateau values
                 local_peak_values = self.get_local_peak_values(gauge_ts=gauge_ts)
@@ -192,7 +193,6 @@ class FloodWaveDetector:
         """
             
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
-        print(gauge_ts.shape)
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
         
         
