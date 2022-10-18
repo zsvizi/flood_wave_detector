@@ -38,7 +38,7 @@ class FloodWaveDetector:
         self.folder_name = f'generated_{folder_pf}'
         self.delay_dict = delay_dict
         self.window_dict = window_dict
-        self.centered_window_size = centered_window_size
+        self.centered_window_radius = centered_window_radius
         if start_date is not None:
             self.start_date = start_date
         else:
@@ -74,7 +74,7 @@ class FloodWaveDetector:
                                                  .loc[self.start_date:self.end_date].dropna()
                    
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
-                if gauge_ts.shape[0] < (centered_window_radius + 1):
+                if gauge_ts.shape[0] < (self.centered_window_radius + 1):
                     JsonHelper.write(
                     filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
                     obj=dict()
@@ -196,7 +196,7 @@ class FloodWaveDetector:
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
         
         
-        for shift in range(1, (centered_window_radius + 1)):
+        for shift in range(1, (self.centered_window_radius + 1)):
             left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
             right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]
             cond = left_cond & right_cond & cond   
