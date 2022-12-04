@@ -36,7 +36,7 @@ class GraphBuilder:
 
         # Read the gauge_peak_plateau_pairs (super dict)
         self.vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json')
+                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json'), log=False
             )
 
         self.gauge_pairs = list(self.vertex_pairs.keys())
@@ -76,7 +76,8 @@ class GraphBuilder:
                     JsonHelper.write(
                         filepath=os.path.join(PROJECT_PATH, folder_name, 'build_graph',
                                               f'{gauge_pair}/{actual_date}'),
-                        obj=data
+                        obj=data,
+                        log=False
                     )
 
     def depth_first_search(self) -> None:

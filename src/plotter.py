@@ -29,6 +29,7 @@ class Plotter:
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
                    start_date: str,
+                   end_date: str,
                    folder_name: str,
                    save: bool = False,
                    show_nan: bool = False
@@ -42,6 +43,14 @@ class Plotter:
         :param bool save: Boolean whether to save the graph or not
         :return:
         """
+        
+        for gauge in self.gauges:
+            nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'), log=False)
+            node_lst=[]
+            for node in nodes:
+                if (node[0] >= start_date and node[0] <= end_date):
+                    node_lst.append((str(gauge), node[0]))
+            directed_graph.add_nodes_from(node_lst)
 
         if save:
             Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
@@ -63,16 +72,16 @@ class Plotter:
             ax=ax,
             positions=positions,
             start=min_date,
-            rotation=20,
+            rotation=45,
             horizontalalignment='right',
-            fontsize=15
+            fontsize=19
         )
 
         self.set_y_axis_ticks(
             ax=ax,
             rotation=20,
             horizontalalignment='right',
-            fontsize=22
+            fontsize=19
         )
         
         if show_nan:
@@ -91,11 +100,9 @@ class Plotter:
         positions=positions,
         node_size=500,
         nan_graph=nan_graph,
-        nan_positions=nan_positions
-    )
-        
+        nan_positions=nan_positions)
 
-        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'))
+        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.png'), bbox_inches='tight')
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
@@ -147,7 +154,9 @@ class Plotter:
             horizontalalignment=horizontalalignment,
             fontsize=fontsize
         )
+        
         ax.set_xticks(ax.get_xticks()[::5])
+        
 
     def set_y_axis_ticks(self,
                          ax: plt.axis,
@@ -199,16 +208,24 @@ class Plotter:
         """
 
         plt.rcParams["figure.figsize"] = (xsize, ysize)
-        nx.draw(joined_graph, pos=positions, node_size=node_size)
-        nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
+        plt.rcParams.update({
+        "savefig.facecolor": (0.0, 0.0, 1.0, 0.0)
+        })
+        
+        
+        nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0) 
+        # nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
         if nan_graph is not None:
             nx.draw(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
         plt.axis('on')  # turns on axis
-        plt.grid(visible=True)
+        plt.grid(visible=True, which='major')
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         
+        
+        ax.set_ylabel('River kilometre', fontsize=30)
+        ax.set_xlabel('Date', fontsize=30)
+       
         legend_elements = self.create_legend()
-        ax.legend(labels=legend_elements, loc=5, handlelength=0, handleheight=0)
         
     def create_legend(self) -> list:
         """
