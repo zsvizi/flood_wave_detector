@@ -70,6 +70,16 @@ class Analysis:
             start_station: int,
             end_station: int
     ) -> int:
+        """
+        Returns the average propagation time of flood waves between the two selected stations unweighted,
+        meaning that no matter how many paths are between the same two vertices, the propagation time value
+        will be only counted in once.
+
+        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
+        :param int start_station: The ID of the desired start station
+        :param int end_station: The ID of the last station, which is not reached by the flood waves
+        :return int: The average propagation time of flood waves in joined_graph between the two given stations.
+        """
 
         connected_components = [
             list(x)
@@ -112,6 +122,15 @@ class Analysis:
             start_station: int,
             end_station: int
     ) -> int:
+        """
+        Returns the weighted average propagation time of flood waves between the two selected stations. Each time value
+        is weighted by the number of paths with that given propagation time.
+
+        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
+        :param int start_station: The ID of the desired start station
+        :param int end_station: The ID of the last station, which is not reached by the flood waves
+        :return int: The weighted average propagation time of flood waves in joined_graph between the two given stations.
+        """
 
         connected_components = [
             list(x)
