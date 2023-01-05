@@ -1,7 +1,7 @@
+from datetime import datetime
 from typing import Union
 
 import networkx as nx
-from datetime import datetime
 
 from src.flood_wave_data import FloodWaveData
 
@@ -57,7 +57,7 @@ class Analysis:
             for start in start_nodes:
                 for end in end_nodes:
                     try:
-                        _ = nx.shortest_path(joined_graph, start, end)
+                        nx.shortest_path(joined_graph, start, end)
                         total_waves.append(nx.shortest_path(joined_graph, start, end)[-1])
                     except nx.NetworkXNoPath:
                         continue
