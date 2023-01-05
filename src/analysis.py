@@ -57,7 +57,7 @@ class Analysis:
             for start in start_nodes:
                 for end in end_nodes:
                     try:
-                        a = nx.shortest_path(joined_graph, start, end)
+                        _ = nx.shortest_path(joined_graph, start, end)
                         total_waves.append(nx.shortest_path(joined_graph, start, end)[-1])
                     except nx.NetworkXNoPath:
                         continue
@@ -69,7 +69,7 @@ class Analysis:
             joined_graph: nx.DiGraph,
             start_station: int,
             end_station: int
-    ) -> int:
+    ) -> float:
         """
         Returns the average propagation time of flood waves between the two selected stations unweighted,
         meaning that no matter how many paths are between the same two vertices, the propagation time value
@@ -78,7 +78,7 @@ class Analysis:
         :param nx.Graph joined_graph: The full composed graph of the desired time interval.
         :param int start_station: The ID of the desired start station
         :param int end_station: The ID of the last station, which is not reached by the flood waves
-        :return int: The average propagation time of flood waves in joined_graph between the two given stations.
+        :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
 
         connected_components = [
@@ -86,7 +86,6 @@ class Analysis:
             for x in nx.weakly_connected_components(joined_graph)
         ]
 
-        
         prop_times = []
         for sub_connected_component in connected_components:
             
@@ -121,7 +120,7 @@ class Analysis:
             joined_graph: nx.DiGraph,
             start_station: int,
             end_station: int
-    ) -> int:
+    ) -> float:
         """
         Returns the weighted average propagation time of flood waves between the two selected stations. Each time value
         is weighted by the number of paths with that given propagation time.
@@ -129,14 +128,14 @@ class Analysis:
         :param nx.Graph joined_graph: The full composed graph of the desired time interval.
         :param int start_station: The ID of the desired start station
         :param int end_station: The ID of the last station, which is not reached by the flood waves
-        :return int: The weighted average propagation time of flood waves in joined_graph between the two given stations.
+        :return float: The weighted average propagation time of flood waves in joined_graph between
+        the two given stations.
         """
 
         connected_components = [
             list(x)
             for x in nx.weakly_connected_components(joined_graph)
         ]
-
         
         prop_times = []
         for sub_connected_component in connected_components:

@@ -2,7 +2,6 @@ import itertools
 import os
 from typing import Union
 
-import math
 import numpy as np
 import pandas as pd
 
@@ -76,8 +75,8 @@ class FloodWaveDetector:
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
                 if gauge_ts.shape[0] < (self.centered_window_radius + 1):
                     JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                    obj=dict()
+                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
+                        obj=dict()
                     )
                     print(f'No peaks found at {gauge}')
                     continue
@@ -194,8 +193,7 @@ class FloodWaveDetector:
             
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
         cond = np.r_[np.array([True] * gauge_ts.shape[0])]
-        
-        
+
         for shift in range(1, (self.centered_window_radius + 1)):
             left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
             right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]

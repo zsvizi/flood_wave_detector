@@ -38,17 +38,20 @@ class Plotter:
         Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
 
         :param nx.DiGraph directed_graph: A graph to be plotted
+        :param str end_date: end date for the plotting
         :param str start_date: start date for the figure
         :param str folder_name: Name of the folder to use for file handling.
         :param bool save: Boolean whether to save the graph or not
+        :param bool show_nan: flag for showing missing values in the data (thus intervals)
         :return:
         """
         
         for gauge in self.gauges:
-            nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'), log=False)
-            node_lst=[]
+            nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
+                                    log=False)
+            node_lst = []
             for node in nodes:
-                if (node[0] >= start_date and node[0] <= end_date):
+                if start_date <= node[0] <= end_date:
                     node_lst.append((str(gauge), node[0]))
             directed_graph.add_nodes_from(node_lst)
 
@@ -60,8 +63,7 @@ class Plotter:
         min_date = datetime.strptime(min_date, '%Y-%m-%d')
         max_date = max([node[1] for node in directed_graph.nodes()])
         max_date = datetime.strptime(max_date, '%Y-%m-%d')
-        
-                
+
         positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
                                                       gauges=self.gauges)       
 
@@ -85,22 +87,23 @@ class Plotter:
         )
         
         if show_nan:
-            nan_graph = self.create_nan_graph(min_date=min_date, max_date=max_date)
-            nan_positions = FloodWaveHandler.create_positions(joined_graph=nan_graph, start=start,
-                                                      gauges=self.gauges)
+            nan_graph = self.create_nan_graph(min_date=str(min_date), max_date=str(max_date))
+            nan_positions = FloodWaveHandler.create_positions(
+                joined_graph=nan_graph, start=start,
+                gauges=self.gauges)
         else:
             nan_graph = None
             nan_positions = None
             
         self.format_figure(
-        ax=ax,
-        xsize=30,
-        ysize=20,
-        joined_graph=directed_graph,
-        positions=positions,
-        node_size=500,
-        nan_graph=nan_graph,
-        nan_positions=nan_positions)
+            ax=ax,
+            xsize=30,
+            ysize=20,
+            joined_graph=directed_graph,
+            positions=positions,
+            node_size=500,
+            nan_graph=nan_graph,
+            nan_positions=nan_positions)
 
         plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.png'), bbox_inches='tight')
 
@@ -156,7 +159,6 @@ class Plotter:
         )
         
         ax.set_xticks(ax.get_xticks()[::5])
-        
 
     def set_y_axis_ticks(self,
                          ax: plt.axis,
@@ -204,14 +206,15 @@ class Plotter:
         :param nx.Graph joined_graph: A graph to plot
         :param dict positions: Coordinates for the graph
         :param int node_size: Size of the vertices
+        :param nx.DiGraph nan_graph: ...
+        :param dict nan_positions: ...
         :return:
         """
 
         plt.rcParams["figure.figsize"] = (xsize, ysize)
         plt.rcParams.update({
-        "savefig.facecolor": (0.0, 0.0, 1.0, 0.0)
+            "savefig.facecolor": (0.0, 0.0, 1.0, 0.0)
         })
-        
         
         nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0) 
         # nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
@@ -220,12 +223,10 @@ class Plotter:
         plt.axis('on')  # turns on axis
         plt.grid(visible=True, which='major')
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-        
-        
         ax.set_ylabel('River kilometre', fontsize=30)
         ax.set_xlabel('Date', fontsize=30)
        
-        legend_elements = self.create_legend()
+        self.create_legend()
         
     def create_legend(self) -> list:
         """
