@@ -25,7 +25,7 @@ class Analysis:
           start_station: int,
           end_station: int,
           func: Callable
-          ) -> int:
+          ) -> list:
         
         connected_components = [
             list(x)
@@ -43,16 +43,18 @@ class Analysis:
                 for node in sub_connected_component
                 if int(node[0]) == end_station
             ]
-            counted_quantity.extend(func(joined_graph, start_nodes, end_nodes))
+            counted_quantity.extend(func(j_graph=joined_graph,
+                                         start_nodes=start_nodes,
+                                         end_nodes=end_nodes))
             
         return counted_quantity 
-           
-    
-    def count_waves(self,
-                    joined_graph: nx.DiGraph,
-                    start_station: int,
-                    end_station: int
-                    ) -> int:
+
+    def count_waves(
+            self,
+            joined_graph: nx.DiGraph,
+            start_station: int,
+            end_station: int
+    ) -> int:
         """
         Returns the number of flood waves which impacted the start_station and reached the end_station as well.
         If there were branching(s), then all the branches that reach the end_station will be counted.
@@ -62,24 +64,27 @@ class Analysis:
         :param int end_station: The ID of the desired end station.
         :return int: The number of flood waves which impacted the start_station and reached the end_station
         """  
-        def func(joined_graph, start_nodes, end_nodes):
+        def func(j_graph, start_nodes, end_nodes):
             waves = []
             for start in start_nodes:
                 for end in end_nodes:
                     try:
-                        a = nx.shortest_path(joined_graph, start, end)
-                        waves.append(nx.shortest_path(joined_graph, start, end)[-1])                        
+                        nx.shortest_path(j_graph, start, end)
+                        waves.append(nx.shortest_path(j_graph, start, end)[-1])
                     except nx.NetworkXNoPath:
                         continue
             return waves
-        return len(set(self.f(joined_graph, start_station, end_station, func)))   
-    
-    
-    def propagation_time(self,
-                         joined_graph: nx.DiGraph,
-                         start_station: int,
-                         end_station: int
-                        ) -> int:
+        return len(set(self.f(joined_graph=joined_graph,
+                              start_station=start_station,
+                              end_station=end_station,
+                              func=func)))
+
+    def propagation_time(
+            self,
+            joined_graph: nx.DiGraph,
+            start_station: int,
+            end_station: int
+    ) -> int:
         """
         Returns the average propagation time of flood waves between the two selected stations unweighted,
         meaning that no matter how many paths are between the same two vertices, the propagation time value
@@ -90,14 +95,14 @@ class Analysis:
         :param int end_station: The ID of the last station, which is not reached by the flood waves
         :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
-        def func(joined_graph, start_nodes, end_nodes):
+        def func(j_graph, start_nodes, end_nodes):
             prop_times = []
 
             for start in start_nodes:
                 start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
                 for end in end_nodes:
                     try:
-                        nx.shortest_path(joined_graph, start, end)
+                        nx.shortest_path(j_graph, start, end)
                         end_date = datetime.strptime(end[1], '%Y-%m-%d').date()
                         diff = (end_date - start_date).days
                         prop_times.append(diff)
@@ -105,17 +110,20 @@ class Analysis:
                         continue
             return prop_times
         
-        prop_times_total = self.f(joined_graph, start_station, end_station, func)
+        prop_times_total = self.f(joined_graph=joined_graph,
+                                  start_station=start_station,
+                                  end_station=end_station,
+                                  func=func)
         avg_prop_time = sum(prop_times_total) / len(prop_times_total)
   
         return avg_prop_time
-    
 
-    def propagation_time_weighted(self,
-                         joined_graph: nx.DiGraph,
-                         start_station: int,
-                         end_station: int
-                        ) -> int:
+    def propagation_time_weighted(
+            self,
+            joined_graph: nx.DiGraph,
+            start_station: int,
+            end_station: int
+    ) -> int:
         """
         Returns the weighted average propagation time of flood waves between the two selected stations. Each time value
         is weighted by the number of paths with that given propagation time.
@@ -126,13 +134,13 @@ class Analysis:
         :return float: The weighted average propagation time of flood waves in joined_graph between
         the two given stations.
         """
-        def func(joined_graph, start_nodes, end_nodes):
+        def func(j_graph, start_nodes, end_nodes):
             prop_times = []
             for start in start_nodes:
                 start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
                 for end in end_nodes:
                     try:
-                        paths = [p for p in nx.all_shortest_paths(joined_graph, start, end)]
+                        paths = [p for p in nx.all_shortest_paths(j_graph, start, end)]
                         end_date = datetime.strptime(end[1], '%Y-%m-%d').date()
                         diff = [(end_date - start_date).days] * len(paths)
                         prop_times.extend(diff)
@@ -140,7 +148,10 @@ class Analysis:
                         continue
             return prop_times
             
-        prop_times_total = self.f(joined_graph, start_station, end_station, func)
+        prop_times_total = self.f(joined_graph=joined_graph,
+                                  start_station=start_station,
+                                  end_station=end_station,
+                                  func=func)
         avg_prop_time = sum(prop_times_total) / len(prop_times_total)
         
         return avg_prop_time
