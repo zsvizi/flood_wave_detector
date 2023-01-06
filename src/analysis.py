@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from datetime import datetime
 from typing import Union
+=======
+from typing import Union, Callable
+>>>>>>> changes
 
 import networkx as nx
 
@@ -15,33 +19,24 @@ class Analysis:
     def __init__(self, gauges: Union[list, None] = None) -> None:
         self.data = FloodWaveData()
         self.gauges = []
+        self.counted_quantity = []
         if gauges is not None:
             self.gauges = gauges
         else:
             self.gauges = self.data.gauges
 
     @staticmethod
-    def count_waves(
-            joined_graph: nx.DiGraph,
-            start_station: int,
-            end_station: int
-    ) -> int:
-        """
-        Returns the number of flood waves which impacted the start_station and reached the end_station as well.
-        If there were branching(s), then all the branches that reach the end_station will be counted.
-
-        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
-        :param int start_station: The ID of the desired start station.
-        :param int end_station: The ID of the desired end station.
-        :return int: The number of flood waves which impacted the start_station and reached the end_station
-        """
-
+    def f(joined_graph: nx.DiGraph,
+          start_station: int,
+          end_station: int,
+          func: Callable
+          ) -> int:
+        
         connected_components = [
             list(x)
             for x in nx.weakly_connected_components(joined_graph)
         ]
-
-        total_waves = []
+        counted_quantity = []
         for sub_connected_component in connected_components:
             start_nodes = [
                 node
@@ -53,23 +48,43 @@ class Analysis:
                 for node in sub_connected_component
                 if int(node[0]) == end_station
             ]
-                   
+            counted_quantity.extend(func(joined_graph, start_nodes, end_nodes))
+            
+        return counted_quantity 
+           
+    
+    def count_waves(self,
+                    joined_graph: nx.DiGraph,
+                    start_station: int,
+                    end_station: int
+                    ) -> int:
+        """
+        Returns the number of flood waves which impacted the start_station and reached the end_station as well.
+        If there were branching(s), then all the branches that reach the end_station will be counted.
+
+        :param nx.Graph joined_graph: The full composed graph of the desired time interval.
+        :param int start_station: The ID of the desired start station.
+        :param int end_station: The ID of the desired end station.
+        :return int: The number of flood waves which impacted the start_station and reached the end_station
+        """  
+        def func(joined_graph, start_nodes, end_nodes):
+            waves = []
             for start in start_nodes:
                 for end in end_nodes:
                     try:
-                        nx.shortest_path(joined_graph, start, end)
-                        total_waves.append(nx.shortest_path(joined_graph, start, end)[-1])
+                        a = nx.shortest_path(joined_graph, start, end)
+                        waves.append(nx.shortest_path(joined_graph, start, end)[-1])                        
                     except nx.NetworkXNoPath:
                         continue
-        total_waves = len(set(total_waves))   
-        return total_waves
+            return waves
+        return len(set(self.f(joined_graph, start_station, end_station, func)))   
     
-    @staticmethod
-    def propagation_time(
-            joined_graph: nx.DiGraph,
-            start_station: int,
-            end_station: int
-    ) -> float:
+    
+    def propagation_time(self,
+                         joined_graph: nx.DiGraph,
+                         start_station: int,
+                         end_station: int
+                        ) -> int:
         """
         Returns the average propagation time of flood waves between the two selected stations unweighted,
         meaning that no matter how many paths are between the same two vertices, the propagation time value
@@ -80,26 +95,9 @@ class Analysis:
         :param int end_station: The ID of the last station, which is not reached by the flood waves
         :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
+        def func(joined_graph, start_nodes, end_nodes):
+            prop_times = []
 
-        connected_components = [
-            list(x)
-            for x in nx.weakly_connected_components(joined_graph)
-        ]
-
-        prop_times = []
-        for sub_connected_component in connected_components:
-            
-            start_nodes = [
-                node
-                for node in sub_connected_component
-                if int(node[0]) == start_station
-            ]
-            end_nodes = [
-                node
-                for node in sub_connected_component
-                if int(node[0]) == end_station
-            ]
-                   
             for start in start_nodes:
                 start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
                 for end in end_nodes:
@@ -110,17 +108,19 @@ class Analysis:
                         prop_times.append(diff)
                     except nx.NetworkXNoPath:
                         continue
-            
-        avg_prop_t = sum(prop_times) / len(prop_times)
-           
-        return avg_prop_t
+            return prop_times
+        
+        prop_times_total = self.f(joined_graph, start_station, end_station, func)
+        avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+  
+        return avg_prop_time
     
-    @staticmethod
-    def propagation_time_weighted(
-            joined_graph: nx.DiGraph,
-            start_station: int,
-            end_station: int
-    ) -> float:
+
+    def propagation_time_weighted(self,
+                         joined_graph: nx.DiGraph,
+                         start_station: int,
+                         end_station: int
+                        ) -> int:
         """
         Returns the weighted average propagation time of flood waves between the two selected stations. Each time value
         is weighted by the number of paths with that given propagation time.
@@ -131,26 +131,8 @@ class Analysis:
         :return float: The weighted average propagation time of flood waves in joined_graph between
         the two given stations.
         """
-
-        connected_components = [
-            list(x)
-            for x in nx.weakly_connected_components(joined_graph)
-        ]
-        
-        prop_times = []
-        for sub_connected_component in connected_components:
-            
-            start_nodes = [
-                node
-                for node in sub_connected_component
-                if int(node[0]) == start_station
-            ]
-            end_nodes = [
-                node
-                for node in sub_connected_component
-                if int(node[0]) == end_station
-            ]
-                   
+        def func(joined_graph, start_nodes, end_nodes):
+            prop_times = []
             for start in start_nodes:
                 start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
                 for end in end_nodes:
@@ -161,10 +143,12 @@ class Analysis:
                         prop_times.extend(diff)
                     except nx.NetworkXNoPath:
                         continue
+            return prop_times
             
-        avg_prop_t = sum(prop_times) / len(prop_times)
-           
-        return avg_prop_t
+        prop_times_total = self.f(joined_graph, start_station, end_station, func)
+        avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+        
+        return avg_prop_time
 
     def count_unfinished_waves(self,
                                joined_graph: nx.Graph,

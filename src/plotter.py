@@ -242,6 +242,13 @@ class Plotter:
         return legend_elements
     
     def create_nan_graph(self, min_date: str, max_date: str):
+        """
+        Formats figure as desired
+
+        :param str min_date: The first date desired to be covered by the nan graph
+        :param str max_date: The last date desired to be covered by the nan graph
+        :return nx.DiGraph The nan graph of the given interval:
+        """
         gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=self.gauges)\
                                                      .loc[min_date:max_date]
         nan_graph = nx.DiGraph()

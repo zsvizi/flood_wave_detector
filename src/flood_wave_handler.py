@@ -78,7 +78,6 @@ class FloodWaveHandler:
             gauge_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
 
     @staticmethod
-    @measure_time
     def sort_wave(
             filenames: list,
             start: str = '2006-02-01',
@@ -399,9 +398,9 @@ class FloodWaveHandler:
         """
         Creates coordinates for a given graph in order to be able to plot it on a grid
 
-        :param joined_graph: The graph which to give coordinates for
-        :param start: Starting date of the plot
-        :param gauges: The list of stations
+        :param nx.DiGraph joined_graph: The graph which to give coordinates for
+        :param datetime.strptime start: Starting date of the plot
+        :param list gauges: The list of stations
         :return: A dictionary containing 'node: (x, y)' pairs
         """
 
