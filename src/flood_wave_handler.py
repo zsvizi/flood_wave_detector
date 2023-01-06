@@ -35,25 +35,27 @@ class FloodWaveHandler:
     @staticmethod
     def find_dates_for_next_gauge(
             actual_date: datetime,
-            delay: int,
+            backward: int,
             next_gauge_candidate_vertices: pd.DataFrame,
-            window_size: int
+            forward: int
     ) -> pd.DataFrame:
         """
         Searches for continuation of a flood wave.
 
         :param datetime actual_date: The date of the last peak
-        :param int delay: The allowed delay backwards for the next peak to be considered continuing
+        :param int before: The number of days allowed before a node for continuation (at a given gauge).
+                            This parameter is also called as alpha.
         :param pd.DataFrame next_gauge_candidate_vertices: The time series of the subsequent station in a DataFrame
-        :param int window_size: The allowed window size in which we consider continuation
+        :param int forward: The number of days allowed after a node for continuation (at a given gauge).
+                            This parameter is also called as beta.
         :return pd.DataFrame: A DataFrame containing the found dates
         """
 
         dates = FloodWaveHandler.filter_for_start_and_length(
             candidate_vertices=next_gauge_candidate_vertices,
             date=actual_date,
-            forward_span=window_size,
-            backward_span=delay
+            forward_span=forward,
+            backward_span=backward
         )
         return dates
 

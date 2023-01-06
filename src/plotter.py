@@ -19,6 +19,11 @@ class Plotter:
     All the functions related to creating figures are located here.
     """
     def __init__(self, gauges: Union[list, None] = None) -> None:
+        """
+        Constructor for Plotter class
+
+        :param Union[list, None] gauges: The gauges used for the plot.
+        """
         self.data = FloodWaveData()
         if gauges is not None:
             self.gauges = gauges
@@ -206,8 +211,8 @@ class Plotter:
         :param nx.Graph joined_graph: A graph to plot
         :param dict positions: Coordinates for the graph
         :param int node_size: Size of the vertices
-        :param nx.DiGraph nan_graph: ...
-        :param dict nan_positions: ...
+        :param nx.DiGraph nan_graph: The nan graph to be added to the plot. (empty graph if None is given)
+        :param dict nan_positions: The positions for the nan graph's nodes'.
         :return:
         """
 
@@ -247,7 +252,7 @@ class Plotter:
 
         :param str min_date: The first date desired to be covered by the nan graph
         :param str max_date: The last date desired to be covered by the nan graph
-        :return nx.DiGraph The nan graph of the given interval:
+        :return nx.DiGraph: The nan graph of the given interval
         """
         gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=self.gauges)\
                                                      .loc[min_date:max_date]

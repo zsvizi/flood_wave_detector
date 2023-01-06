@@ -9,6 +9,10 @@ class FloodWaveData:
     Stores all the essential metadata and the Dataloader instance.
     """
     def __init__(self):
+        """
+        Constructor for FloodWaveData class
+
+        """
         self.__db_credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.ini')
         self.dataloader = Dataloader(self.__db_credentials_path)
         self.meta = self.dataloader.meta_data \

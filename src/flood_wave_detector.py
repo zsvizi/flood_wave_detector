@@ -22,12 +22,29 @@ class FloodWaveDetector:
     """
     def __init__(self,
                  folder_pf: str,
-                 window_dict: dict,
-                 delay_dict: dict,
+                 forward_dict: dict,
+                 backward_dict: dict,
                  centered_window_radius: int = 2,
                  gauges: Union[list, None] = None,
                  start_date: str = None,
                  end_date: str = None) -> None:
+        """
+        Constructor for FloodWaveDetector class
+
+        :param str folder_pf: The name of the to be generated folder, which will contain the generated files.
+        :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation, for each gauge.
+                                  This parameter is also called as beta. 
+        :param dict backward_dict: The dictionary containing the number of days allowed before a node for continuation, for each gauge.
+                                  This parameter is also called as alpha.
+        :param int centered_window_radius: The number of days that a record of time series is required to be greater than the records
+                                           before and to be greater or equal to after, to be considered as a peak.
+                                           (I.e.: centered_window_radius=2 means that you need 2 smaller values before and 2 nom-greater
+                                           values after)
+        :param Union[list, None] gauges: The gauges used for the analysis.
+        :param str start_date: The date to start the flood wave search from.
+        :param str start_date: The date to finish the flood wave search at.
+        """
+        
         self.data = FloodWaveData()
         self.gauges = []
         if gauges is not None:
@@ -35,8 +52,8 @@ class FloodWaveDetector:
         else:
             self.gauges = self.data.gauges
         self.folder_name = f'generated_{folder_pf}'
-        self.delay_dict = delay_dict
-        self.window_dict = window_dict
+        self.backward_dict = backward_dict
+        self.forward_dict = forward_dict
         self.centered_window_radius = centered_window_radius
         if start_date is not None:
             self.start_date = start_date
@@ -55,7 +72,7 @@ class FloodWaveDetector:
         """
         self.mkdirs()
         self.find_vertices()
-        self.find_edges(delay_dict=self.delay_dict, window_dict=self.window_dict, gauges=self.gauges)
+        self.find_edges()
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
@@ -97,26 +114,18 @@ class FloodWaveDetector:
                 )
 
     @measure_time
-    def find_edges(self,
-                   delay_dict: dict,
-                   window_dict: dict,
-                   gauges: list,
-                   ) -> None:
+    def find_edges(self) -> None:
         """
         Creates the wave-pairs for gauges next to each other.
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
-
-        :param int delay_dict: A dictionary containing the minimum delay (days) between two gauges
-        :param int window_dict: A dictionary containing the size of the interval (days) we allow a delay
-        :param list gauges: The id list of the gauges (in order)
         """
 
         vertex_pairs = {}
         does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                              'vertex_pairs.json'))
 
-        for current_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
+        for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                                     f'{current_gauge}_{next_gauge}.json'))
 
@@ -137,9 +146,9 @@ class FloodWaveDetector:
                 # Find next dates for the following gauge
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
-                    delay=delay_dict[current_gauge],
+                    backward=self.backward_dict[current_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
-                    window_size=window_dict[current_gauge]
+                    forward=self.forward_dict[current_gauge]
                 )
 
                 # Convert datetime to string
