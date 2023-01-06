@@ -30,18 +30,19 @@ class Analysis:
                 joined_graph: nx.DiGraph,
                 start_station: int,
                 end_station: int,
-                func: Callable[[nx.DiGraph, list, list], list]
+                func: Callable
                   ) -> list:
         """
         Iterates through all the connected components within the input graph joined_graph.
         It gathers all the start and end nodes that are (weakly)reachable within the same connected component.
-        Within the iteration of each connected component, it executes a callable functioun which is given as input.
+        Within the iteration of each connected component, it executes a callable function which is given as input.
         (It should be a calculation which could be executed using the same inputs as given for this function)
         The results are gathered into a list and returned.
 
         :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
         :param int start_station: The ID of the station from which you want to get the reachable end nodes.
         :param int end_station: The ID of the desired end station.
+        :param Callable func:
         :return list: The results organized into a list.
         """
         
@@ -188,7 +189,7 @@ class Analysis:
         :param int end_station: The ID of the last station, which is not reached by the flood waves
         :return int: The number of flood waves which impacted the start_station but did not reach the end_station
         """
-        # Some of the used nx features are not implemented for DiGraphs
+        # Some used nx features are not implemented for DiGraphs
         joined_graph = joined_graph.to_undirected()
         # First we select the gauges between start_station and end_station
         start_index = self.gauges.index(start_station)
