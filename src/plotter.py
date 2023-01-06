@@ -73,21 +73,20 @@ class Plotter:
                                                       gauges=self.gauges)       
 
         fig, ax = plt.subplots()
-        # ax.axhspan(4, 9, color='green', alpha=0.3, label="")
 
         Plotter.set_x_axis_ticks(
             ax=ax,
             positions=positions,
             start=min_date,
             rotation=45,
-            horizontalalignment='right',
+            horizontal_alignment='right',
             fontsize=19
         )
 
         self.set_y_axis_ticks(
             ax=ax,
             rotation=20,
-            horizontalalignment='right',
+            horizontal_alignment='right',
             fontsize=19
         )
         
@@ -102,8 +101,8 @@ class Plotter:
             
         self.format_figure(
             ax=ax,
-            xsize=30,
-            ysize=20,
+            x_size=30,
+            y_size=20,
             joined_graph=directed_graph,
             positions=positions,
             node_size=500,
@@ -134,7 +133,7 @@ class Plotter:
             positions: dict,
             start: datetime,
             rotation: int,
-            horizontalalignment: str,
+            horizontal_alignment: str,
             fontsize: int
     ) -> None:
         """
@@ -144,7 +143,7 @@ class Plotter:
         :param dict positions: Coordinates for the vertices
         :param datetime start: Start date of the figure
         :param int rotation: Degree of rotation of the labels
-        :param str horizontalalignment: Keyword for alignment
+        :param str horizontal_alignment: Keyword for alignment
         :param int fontsize: Font size value
         :return:
         """
@@ -159,7 +158,7 @@ class Plotter:
         ax.set_xticklabels(
             x_labels,
             rotation=rotation,
-            horizontalalignment=horizontalalignment,
+            horizontalalignment=horizontal_alignment,
             fontsize=fontsize
         )
         
@@ -168,7 +167,7 @@ class Plotter:
     def set_y_axis_ticks(self,
                          ax: plt.axis,
                          rotation: int,
-                         horizontalalignment: str,
+                         horizontal_alignment: str,
                          fontsize: int
                          ) -> None:
         """
@@ -176,7 +175,7 @@ class Plotter:
 
         :param plt.axis ax: A figure to set the y-axis ticks and labels for
         :param int rotation: Degree of rotation of the labels
-        :param str horizontalalignment: Keyword for alignment
+        :param str horizontal_alignment: Keyword for alignment
         :param int fontsize: Font size value
         :return:
         """
@@ -188,14 +187,14 @@ class Plotter:
         ax.set_yticklabels(
             y_labels,
             rotation=rotation,
-            horizontalalignment=horizontalalignment,
+            horizontalalignment=horizontal_alignment,
             fontsize=fontsize
         )
 
     def format_figure(self,
                       ax: plt.axis,
-                      xsize: int,
-                      ysize: int,
+                      x_size: int,
+                      y_size: int,
                       joined_graph: nx.DiGraph,
                       positions: dict,
                       node_size: int,
@@ -206,8 +205,8 @@ class Plotter:
         Formats figure as desired
 
         :param plt.axis ax: A figure to format
-        :param int xsize: Vertical size
-        :param int ysize: Horizontal size
+        :param int x_size: Vertical size
+        :param int y_size: Horizontal size
         :param nx.Graph joined_graph: A graph to plot
         :param dict positions: Coordinates for the graph
         :param int node_size: Size of the vertices
@@ -216,7 +215,7 @@ class Plotter:
         :return:
         """
 
-        plt.rcParams["figure.figsize"] = (xsize, ysize)
+        plt.rcParams["figure.figsize"] = (x_size, y_size)
         plt.rcParams.update({
             "savefig.facecolor": (0.0, 0.0, 1.0, 0.0)
         })
@@ -254,8 +253,7 @@ class Plotter:
         :param str max_date: The last date desired to be covered by the nan graph
         :return nx.DiGraph: The nan graph of the given interval
         """
-        gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=self.gauges)\
-                                                     .loc[min_date:max_date]
+        gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=self.gauges).loc[min_date:max_date]
         nan_graph = nx.DiGraph()
         for gauge in gauge_data.columns:
             nan_dates = gauge_data[str(gauge)].index[gauge_data[str(gauge)].apply(np.isnan)].strftime("%Y-%m-%d")

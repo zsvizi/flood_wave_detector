@@ -30,7 +30,7 @@ class Analysis:
                 joined_graph: nx.DiGraph,
                 start_station: int,
                 end_station: int,
-                func: Callable
+                func: Callable[[nx.DiGraph, list, list], list]
                   ) -> list:
         """
         Iterates through all the connected components within the input graph joined_graph.

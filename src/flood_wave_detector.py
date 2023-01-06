@@ -32,14 +32,14 @@ class FloodWaveDetector:
         Constructor for FloodWaveDetector class
 
         :param str folder_pf: The name of the to be generated folder, which will contain the generated files.
-        :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation, for each gauge.
-                                  This parameter is also called as beta. 
-        :param dict backward_dict: The dictionary containing the number of days allowed before a node for continuation, for each gauge.
-                                  This parameter is also called as alpha.
-        :param int centered_window_radius: The number of days that a record of time series is required to be greater than the records
-                                           before and to be greater or equal to after, to be considered as a peak.
-                                           (I.e.: centered_window_radius=2 means that you need 2 smaller values before and 2 nom-greater
-                                           values after)
+        :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation,
+                                  for each gauge. This parameter is also called as beta.
+        :param dict backward_dict: The dictionary containing the number of days allowed before a node for continuation,
+                                   for each gauge. This parameter is also called as alpha.
+        :param int centered_window_radius: The number of days that a record of time series is required to be greater
+                                           than the records before and to be greater or equal to after, to be considered
+                                           as a peak. (I.e.: centered_window_radius=2 means that you need 2 smaller
+                                            values before and 2 nom-greater values after)
         :param Union[list, None] gauges: The gauges used for the analysis.
         :param str start_date: The date to start the flood wave search from.
         :param str start_date: The date to finish the flood wave search at.
@@ -195,7 +195,7 @@ class FloodWaveDetector:
     def get_local_peak_values(self, gauge_ts: np.array) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
-        time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
+        time window which will be called peaks from now on, then converts the flagged time series to GaugeData
         :param np.array gauge_ts: the time series of a station
         :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """

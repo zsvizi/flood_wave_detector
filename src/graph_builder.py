@@ -134,7 +134,7 @@ class GraphBuilder:
             # we store the other possible dates for continuation in a LiFoQueue
             if len(new_date_value) > 1:
 
-                # Save the informations about the branches in a LiFoQueue (branches) so we can come back later.
+                # Save the information about the branches in a LiFoQueue (branches) so we can come back later.
                 for k, date in enumerate(new_date_value[1:]):
                     self.save_info_about_branches(
                         current_gauge=current_gauge,

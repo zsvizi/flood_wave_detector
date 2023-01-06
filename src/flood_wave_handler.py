@@ -43,7 +43,7 @@ class FloodWaveHandler:
         Searches for continuation of a flood wave.
 
         :param datetime actual_date: The date of the last peak
-        :param int before: The number of days allowed before a node for continuation (at a given gauge).
+        :param int backward: The number of days allowed before a node for continuation (at a given gauge).
                             This parameter is also called as alpha.
         :param pd.DataFrame next_gauge_candidate_vertices: The time series of the subsequent station in a DataFrame
         :param int forward: The number of days allowed after a node for continuation (at a given gauge).
