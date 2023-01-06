@@ -1,6 +1,7 @@
 from datetime import datetime
-import networkx as nx
 from typing import Union, Callable
+
+import networkx as nx
 
 from src.flood_wave_data import FloodWaveData
 
