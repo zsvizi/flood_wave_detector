@@ -272,7 +272,7 @@ class Analysis:
         :param list river_section_gauges:
         :return int: The number of flood waves which impacted the start_station and reached the end_station
         """
-        flood_map = nx.DiGraph
+        flood_map = nx.DiGraph()
         river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
         flood_map_edges = []
         def func(j_graph, start_nodes, end_nodes):
