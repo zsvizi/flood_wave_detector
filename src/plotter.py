@@ -37,7 +37,8 @@ class Plotter:
                    end_date: str,
                    folder_name: str,
                    save: bool = False,
-                   show_nan: bool = False
+                   show_nan: bool = False,
+                   add_isolated_nodes: bool = True
                    ) -> None:
         """
         Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
@@ -48,17 +49,18 @@ class Plotter:
         :param str folder_name: Name of the folder to use for file handling.
         :param bool save: Boolean whether to save the graph or not
         :param bool show_nan: flag for showing missing values in the data (thus intervals)
+        :param bool add_isolated_nodes: flag for adding the nodes of 0 degree to the graph.
         :return:
         """
-        
-        for gauge in self.gauges:
-            nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
-                                    log=False)
-            node_lst = []
-            for node in nodes:
-                if start_date <= node[0] <= end_date:
-                    node_lst.append((str(gauge), node[0]))
-            directed_graph.add_nodes_from(node_lst)
+        if add_isolated_nodes:
+            for gauge in self.gauges:
+                nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
+                                        log=False)
+                node_lst = []
+                for node in nodes:
+                    if start_date <= node[0] <= end_date:
+                        node_lst.append((str(gauge), node[0]))
+                directed_graph.add_nodes_from(node_lst)
 
         if save:
             Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
