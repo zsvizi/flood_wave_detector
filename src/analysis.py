@@ -257,3 +257,37 @@ class Analysis:
                         unfinished_waves += len(paths)
 
         return unfinished_waves
+
+
+    def create_flood_map(
+            self,
+            joined_graph: nx.DiGraph,
+            river_section_gauges: list
+    ) -> nx.DiGraph:
+        """
+        Returns the number of flood waves which impacted the start_station and reached the end_station as well.
+        If there were branching(s), then all the branches that reach the end_station will be counted.
+
+        :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
+        :param list river_section_gauges:
+        :return int: The number of flood waves which impacted the start_station and reached the end_station
+        """
+        flood_map = nx.DiGraph
+        river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
+        flood_map_edges = []
+        def func(j_graph, start_nodes, end_nodes):
+            edges = []
+            for start in start_nodes:
+                for end in end_nodes:
+                    try:
+                        nx.shortest_path(j_graph, start, end)
+                        edges.append((start, end))
+                    except nx.NetworkXNoPath:
+                        continue
+            return edges
+
+        for section in river_sections:
+            flood_map_edges.extend(self.connected_components_iter(joined_graph=joined_graph, start_station=section[0],
+                                                                  end_station=section[1], func=func))
+        flood_map.add_edges_from(ebunch_to_add=flood_map_edges)
+        return flood_map
