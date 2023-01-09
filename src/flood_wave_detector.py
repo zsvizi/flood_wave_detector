@@ -20,7 +20,31 @@ class FloodWaveDetector:
     It has all the necessary functions to find the flood waves and also has a run function which executes all the
     necessary methods in order.
     """
-    def __init__(self, folder_pf: str, gauges: Union[list, None] = None) -> None:
+    def __init__(self,
+                 folder_pf: str,
+                 forward_dict: dict,
+                 backward_dict: dict,
+                 centered_window_radius: int = 2,
+                 gauges: Union[list, None] = None,
+                 start_date: str = None,
+                 end_date: str = None) -> None:
+        """
+        Constructor for FloodWaveDetector class
+
+        :param str folder_pf: The name of the to be generated folder, which will contain the generated files.
+        :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation,
+                                  for each gauge. This parameter is also called as beta.
+        :param dict backward_dict: The dictionary containing the number of days allowed before a node for continuation,
+                                   for each gauge. This parameter is also called as alpha.
+        :param int centered_window_radius: The number of days that a record of time series is required to be greater
+                                           than the records before and to be greater or equal to after, to be considered
+                                           as a peak. (I.e.: centered_window_radius=2 means that you need 2 smaller
+                                            values before and 2 nom-greater values after)
+        :param Union[list, None] gauges: The gauges used for the analysis.
+        :param str start_date: The date to start the flood wave search from.
+        :param str start_date: The date to finish the flood wave search at.
+        """
+        
         self.data = FloodWaveData()
         self.gauges = []
         if gauges is not None:
@@ -28,6 +52,17 @@ class FloodWaveDetector:
         else:
             self.gauges = self.data.gauges
         self.folder_name = f'generated_{folder_pf}'
+        self.backward_dict = backward_dict
+        self.forward_dict = forward_dict
+        self.centered_window_radius = centered_window_radius
+        if start_date is not None:
+            self.start_date = start_date
+        else:
+            self.start_date = '1951-01-01'
+        if end_date is not None:
+            self.end_date = end_date
+        else:
+            self.end_date = '2020-12-31'
 
     @measure_time
     def run(self) -> None:
@@ -37,7 +72,7 @@ class FloodWaveDetector:
         """
         self.mkdirs()
         self.find_vertices()
-        self.find_edges(delay=0, window_size=3, gauges=self.data.gauges)
+        self.find_edges()
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
@@ -47,14 +82,23 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
-        for gauge in self.data.gauges:
+        for gauge in self.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge]).dropna()
-
+                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge])\
+                                                 .loc[self.start_date:self.end_date].dropna()
+                   
+                gauge_ts = gauge_data[str(gauge)].to_numpy()
+                if gauge_ts.shape[0] < (self.centered_window_radius + 1):
+                    JsonHelper.write(
+                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
+                        obj=dict()
+                    )
+                    print(f'No peaks found at {gauge}')
+                    continue
                 # Get local peak/plateau values
-                local_peak_values = FloodWaveDetector.get_local_peak_values(gauge_ts=gauge_data[str(gauge)].to_numpy())
+                local_peak_values = self.get_local_peak_values(gauge_ts=gauge_ts)
 
                 # Create keys for dictionary
                 candidate_vertices = FloodWaveDetector.find_local_maxima(
@@ -70,26 +114,18 @@ class FloodWaveDetector:
                 )
 
     @measure_time
-    def find_edges(self,
-                   delay: int,
-                   window_size: int,
-                   gauges: list,
-                   ) -> None:
+    def find_edges(self) -> None:
         """
         Creates the wave-pairs for gauges next to each other.
         Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
-
-        :param int delay: Minimum delay (days) between two gauges
-        :param int window_size: Size of the interval (days) we allow a delay
-        :param list gauges: The id list of the gauges (in order)
         """
 
         vertex_pairs = {}
         does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                              'vertex_pairs.json'))
 
-        for current_gauge, next_gauge in itertools.zip_longest(gauges[:-1], gauges[1:]):
+        for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                                     f'{current_gauge}_{next_gauge}.json'))
 
@@ -110,9 +146,9 @@ class FloodWaveDetector:
                 # Find next dates for the following gauge
                 next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
-                    delay=delay,
+                    backward=self.backward_dict[current_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
-                    window_size=window_size
+                    forward=self.forward_dict[current_gauge]
                 )
 
                 # Convert datetime to string
@@ -155,25 +191,25 @@ class FloodWaveDetector:
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'build_graph'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'new', 'build_graph'), exist_ok=True)
 
-    @staticmethod
     @measure_time
-    def get_local_peak_values(gauge_ts: np.array) -> np.array:
+    def get_local_peak_values(self, gauge_ts: np.array) -> np.array:
         """
         Finds and flags all the values from the time series which have the highest value in a 5-day centered
-        time window which will be called peaks from now on, then converts the flagged timeseries to GaugeData
+        time window which will be called peaks from now on, then converts the flagged time series to GaugeData
         :param np.array gauge_ts: the time series of a station
         :return np.array: numpy array containing the time series with the values flagged whether they are a peak or not
         """
-        # TODO: refactor this function so it is possible to set window size and also not as ugly as the current version.
+            
         result = np.empty(gauge_ts.shape[0], dtype=GaugeData)
-        b = np.r_[False, False, gauge_ts[2:] > gauge_ts[:-2]]
-        c = np.r_[False, gauge_ts[1:] > gauge_ts[:-1]]
-        d = np.r_[gauge_ts[:-2] >= gauge_ts[2:], False, False]
-        e = np.r_[gauge_ts[:-1] >= gauge_ts[1:], False]
-        peak_bool = b & c & d & e
-        peaks = list(np.where(peak_bool)[0])
-        # print(peaks)
+        cond = np.r_[np.array([True] * gauge_ts.shape[0])]
 
+        for shift in range(1, (self.centered_window_radius + 1)):
+            left_cond = np.r_[np.array([False] * shift), gauge_ts[shift:] > gauge_ts[:-shift]]
+            right_cond = np.r_[gauge_ts[:-shift] >= gauge_ts[shift:], np.array([False] * shift)]
+            cond = left_cond & right_cond & cond   
+            
+        peaks = list(np.where(cond)[0])
+        
         for idx, value in enumerate(gauge_ts):
             result[idx] = GaugeData(value=value)
         for k in peaks:

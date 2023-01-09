@@ -8,4 +8,4 @@ To download the notebooks, use the following commands from the root directory of
 
 
 ## Database.ini
-The notebook expects the database.ini file in the root of the repository.
+The notebook expects the `database.ini` file in the root of the repository.

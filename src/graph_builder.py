@@ -36,7 +36,7 @@ class GraphBuilder:
 
         # Read the gauge_peak_plateau_pairs (super dict)
         self.vertex_pairs = JsonHelper.read(
-                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json')
+                filepath=os.path.join(PROJECT_PATH, folder_name, 'find_edges', 'vertex_pairs.json'), log=False
             )
 
         self.gauge_pairs = list(self.vertex_pairs.keys())
@@ -76,7 +76,8 @@ class GraphBuilder:
                     JsonHelper.write(
                         filepath=os.path.join(PROJECT_PATH, folder_name, 'build_graph',
                                               f'{gauge_pair}/{actual_date}'),
-                        obj=data
+                        obj=data,
+                        log=False
                     )
 
     def depth_first_search(self) -> None:
@@ -133,7 +134,7 @@ class GraphBuilder:
             # we store the other possible dates for continuation in a LiFoQueue
             if len(new_date_value) > 1:
 
-                # Save the informations about the branches in a LiFoQueue (branches) so we can come back later.
+                # Save the information about the branches in a LiFoQueue (branches) so we can come back later.
                 for k, date in enumerate(new_date_value[1:]):
                     self.save_info_about_branches(
                         current_gauge=current_gauge,
@@ -236,7 +237,7 @@ class GraphBuilder:
         Resetting the graph and flood wave before next search
         :return:
         """
-        self.tree_g = nx.Graph()
+        self.tree_g = nx.DiGraph()
         self.flood_wave = {}
 
     def save_info_about_branches(self,
