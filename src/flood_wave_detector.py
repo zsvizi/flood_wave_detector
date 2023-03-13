@@ -86,7 +86,7 @@ class FloodWaveDetector:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge])\
+                gauge_data = self.data.dataloader.data[[str(gauge), 'Date']]\
                                                  .loc[self.start_date:self.end_date].dropna()
                    
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
@@ -165,7 +165,7 @@ class FloodWaveDetector:
                 obj=gauge_pair
             )
 
-            # Store result for the all in one dict
+            # Store result for the all-in-one dict
             vertex_pairs[f'{current_gauge}_{next_gauge}'] = gauge_pair
 
         # Save to file
