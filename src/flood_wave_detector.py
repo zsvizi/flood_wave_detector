@@ -117,7 +117,7 @@ class FloodWaveDetector:
     def find_edges(self) -> None:
         """
         Creates the wave-pairs for gauges next to each other.
-        Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
+        Creates separate jsons and an actual_next_pair (super_dict) including all the pairs with all of their waves.
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
         """
 
@@ -185,6 +185,7 @@ class FloodWaveDetector:
         'PROJECT_PATH/generated_{folder_pf}/new/build_graph'
         :return:
         """
+
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges'), exist_ok=True)

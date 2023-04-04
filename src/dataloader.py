@@ -1,23 +1,21 @@
-
 from src import PROJECT_PATH
-from src.json_helper import JsonHelper
-
-from typing import Union
 
 import os
 import pandas as pd
 
 
 class Dataloader:
-    def __init__(self):
+    def __init__(self, dataset_name: str = None):
         os.makedirs(os.path.join(PROJECT_PATH, 'data'), exist_ok=True)
         self.meta = self.get_metadata()
+        if dataset_name is None:
+            self.dataset_name = '1951_2020'
+        else:
+            self.dataset_name = dataset_name
         self.data = self.read_data()
 
-
-
-
-    def get_metadata(self):
+    @staticmethod
+    def get_metadata():
         meta = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'meta.csv'), index_col=0) \
             .groupby(["river"]) \
             .get_group("Tisza") \
@@ -25,12 +23,22 @@ class Dataloader:
         return meta
 
     def read_data(self):
-        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', '1951_2020.csv'), index_col=0)
-        return data
+        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0)
+        date = pd.to_datetime(data['Date']).dt.strftime('%Y-%m-%d')
+
+        def isnumber(x):
+            try:
+                float(x)
+                return True
+            except:
+                return False
+        df = data[data.applymap(isnumber)]
+        df['Date'] = date
+        df = df.set_index(df['Date'])
+        return df
 
 
 if __name__ == "__main__":
-   dl = Dataloader()
-   print(dl.meta)
-   print(dl.data)
-
+    dl = Dataloader()
+    print(dl.meta)
+    print(dl.data)

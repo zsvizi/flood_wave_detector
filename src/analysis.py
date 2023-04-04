@@ -89,7 +89,8 @@ class Analysis:
                 for end in end_nodes:
                     try:
                         nx.shortest_path(j_graph, start, end)
-                        waves.append(nx.shortest_path(j_graph, start, end)[-1])
+                        waves.append((nx.shortest_path(j_graph, start, end)[0],
+                                      nx.shortest_path(j_graph, start, end)[-1]))
                     except nx.NetworkXNoPath:
                         continue
             return waves
@@ -133,7 +134,10 @@ class Analysis:
                                                           start_station=start_station,
                                                           end_station=end_station,
                                                           func=func)
-        avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+        if sum(prop_times_total):
+            avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+        else:
+            avg_prop_time = 0
   
         return avg_prop_time
 
@@ -171,7 +175,10 @@ class Analysis:
                                                           start_station=start_station,
                                                           end_station=end_station,
                                                           func=func)
-        avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+        if sum(prop_times_total):
+            avg_prop_time = sum(prop_times_total) / len(prop_times_total)
+        else:
+            avg_prop_time = 0
         
         return avg_prop_time
 
@@ -280,8 +287,9 @@ class Analysis:
             for start in start_nodes:
                 for end in end_nodes:
                     try:
-                        nx.shortest_path(j_graph, start, end)
-                        edges.append((start, end))
+                        paths = [p for p in nx.all_shortest_paths(j_graph, start, end)]
+                        edges.append((start, end, len(paths)))
+                        print(edges)
                     except nx.NetworkXNoPath:
                         continue
             return edges
@@ -289,5 +297,5 @@ class Analysis:
         for section in river_sections:
             flood_map_edges.extend(self.connected_components_iter(joined_graph=joined_graph, start_station=section[0],
                                                                   end_station=section[1], func=func))
-        flood_map.add_edges_from(ebunch_to_add=flood_map_edges)
+        flood_map.add_weighted_edges_from(ebunch_to_add=flood_map_edges)
         return flood_map
