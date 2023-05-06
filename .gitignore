@@ -4,5 +4,4 @@
 /__pycache__
 *.ini
 /generated*
-/data
 /src/__pycache__
