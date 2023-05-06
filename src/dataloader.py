@@ -9,7 +9,7 @@ class Dataloader:
         os.makedirs(os.path.join(PROJECT_PATH, 'data'), exist_ok=True)
         self.meta = self.get_metadata()
         if dataset_name is None:
-            self.dataset_name = '1951_2020'
+            self.dataset_name = '2010_2020'
         else:
             self.dataset_name = dataset_name
         self.data = self.read_data()
