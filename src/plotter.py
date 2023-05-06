@@ -37,7 +37,8 @@ class Plotter:
                    end_date: str,
                    folder_name: str,
                    save: bool = False,
-                   show_nan: bool = False
+                   show_nan: bool = False,
+                   add_isolated_nodes: bool = True
                    ) -> None:
         """
         Plots a given graph with a given starting date and saves out the plot. If desired it saves the graph as well
@@ -48,17 +49,18 @@ class Plotter:
         :param str folder_name: Name of the folder to use for file handling.
         :param bool save: Boolean whether to save the graph or not
         :param bool show_nan: flag for showing missing values in the data (thus intervals)
+        :param bool add_isolated_nodes: flag for adding the nodes of 0 degree to the graph.
         :return:
         """
-        
-        for gauge in self.gauges:
-            nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
-                                    log=False)
-            node_lst = []
-            for node in nodes:
-                if start_date <= node[0] <= end_date:
-                    node_lst.append((str(gauge), node[0]))
-            directed_graph.add_nodes_from(node_lst)
+        if add_isolated_nodes:
+            for gauge in self.gauges:
+                nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
+                                        log=False)
+                node_lst = []
+                for node in nodes:
+                    if start_date <= node[0] <= end_date:
+                        node_lst.append((str(gauge), node[0]))
+                directed_graph.add_nodes_from(node_lst)
 
         if save:
             Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
@@ -80,7 +82,7 @@ class Plotter:
             start=min_date,
             rotation=45,
             horizontal_alignment='right',
-            fontsize=19
+            fontsize=14
         )
 
         self.set_y_axis_ticks(
@@ -101,7 +103,7 @@ class Plotter:
             
         self.format_figure(
             ax=ax,
-            x_size=30,
+            x_size=40,
             y_size=20,
             joined_graph=directed_graph,
             positions=positions,
@@ -109,7 +111,7 @@ class Plotter:
             nan_graph=nan_graph,
             nan_positions=nan_positions)
 
-        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.png'), bbox_inches='tight')
+        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'), bbox_inches='tight')
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
@@ -216,16 +218,31 @@ class Plotter:
         """
 
         plt.rcParams["figure.figsize"] = (x_size, y_size)
+
         plt.rcParams.update({
-            "savefig.facecolor": (0.0, 0.0, 1.0, 0.0)
+            "savefig.facecolor": 'white'
         })
         
-        nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0) 
-        # nx.draw_networkx_labels(joined_graph, pos=positions, labels={n: n[1] for n in joined_graph})
+        nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0)
+        nx.draw_networkx_labels(joined_graph, pos=positions,
+                                labels={n: str(self.meta["river_km"].loc[int(n[0])].round(decimals=1)) + " \n " + n[1]
+                                        for n in joined_graph}, font_size=13)
+        if nx.is_weighted(joined_graph):
+            edge_labels = nx.get_edge_attributes(joined_graph, "weight")
+            nx.draw_networkx_edge_labels(G=joined_graph, pos=positions, edge_labels=edge_labels, font_size=30)
         if nan_graph is not None:
             nx.draw(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
         plt.axis('on')  # turns on axis
-        plt.grid(visible=True, which='major')
+        plt.grid(visible=True, which='major', color='black')
+        ax.patch.set_linewidth('4')
+        ax.patch.set_edgecolor('black')
+        ax.set_facecolor('white')
+
+        # plt.axhline(y=4, color='r', linewidth=3)
+        # plt.axhline(y=10, color='r', linewidth=3)
+        # plt.axhline(y=17, color='r', linewidth=3)
+        # plt.axhline(y=25, color='r', linewidth=3)
+
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         ax.set_ylabel('River kilometre', fontsize=30)
         ax.set_xlabel('Date', fontsize=30)

@@ -86,7 +86,7 @@ class FloodWaveDetector:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.get_daily_time_series(reg_number_list=[gauge])\
+                gauge_data = self.data.dataloader.data[[str(gauge), 'Date']]\
                                                  .loc[self.start_date:self.end_date].dropna()
                    
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
@@ -117,7 +117,7 @@ class FloodWaveDetector:
     def find_edges(self) -> None:
         """
         Creates the wave-pairs for gauges next to each other.
-        Creates separate jsons and a actual_next_pair (super_dict) including all the pairs with all of their waves.
+        Creates separate jsons and an actual_next_pair (super_dict) including all the pairs with all of their waves.
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
         """
 
@@ -165,7 +165,7 @@ class FloodWaveDetector:
                 obj=gauge_pair
             )
 
-            # Store result for the all in one dict
+            # Store result for the all-in-one dict
             vertex_pairs[f'{current_gauge}_{next_gauge}'] = gauge_pair
 
         # Save to file
@@ -185,6 +185,7 @@ class FloodWaveDetector:
         'PROJECT_PATH/generated_{folder_pf}/new/build_graph'
         :return:
         """
+
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices'), exist_ok=True)
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges'), exist_ok=True)

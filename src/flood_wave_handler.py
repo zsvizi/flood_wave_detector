@@ -325,8 +325,10 @@ class FloodWaveHandler:
         """
 
         peaks = gauge_data.loc[np.array([x.is_peak for x in local_peak_values])]
-        peaks = peaks.drop(columns="Date") \
-            .set_index(peaks.index.strftime('%Y-%m-%d'))
+        peaks.info()
+        peaks.index = pd.to_datetime(peaks.index).strftime('%Y-%m-%d')
+        peaks.info()
+        peaks = peaks.drop(columns="Date") #      .set_index(peaks.index.strftime('%Y-%m-%d'))
         peaks[reg_number] = peaks[reg_number].astype(float)
         return peaks
 
