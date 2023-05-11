@@ -1,4 +1,6 @@
-## Szakdolgozat
+# Gráfreprezentáció árhullámok modellezésére idősoros adatokban
+
+A szakdolgozat az alábbi linken érhető el: 
 
 
 ## Adatok
