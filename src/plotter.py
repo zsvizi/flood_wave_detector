@@ -224,9 +224,7 @@ class Plotter:
         })
         
         nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0)
-        nx.draw_networkx_labels(joined_graph, pos=positions,
-                                labels={n: str(self.meta["river_km"].loc[int(n[0])].round(decimals=1)) + " \n " + n[1]
-                                        for n in joined_graph}, font_size=13)
+
         if nx.is_weighted(joined_graph):
             edge_labels = nx.get_edge_attributes(joined_graph, "weight")
             nx.draw_networkx_edge_labels(G=joined_graph, pos=positions, edge_labels=edge_labels, font_size=30)

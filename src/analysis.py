@@ -289,7 +289,6 @@ class Analysis:
                     try:
                         paths = [p for p in nx.all_shortest_paths(j_graph, start, end)]
                         edges.append((start, end, len(paths)))
-                        print(edges)
                     except nx.NetworkXNoPath:
                         continue
             return edges

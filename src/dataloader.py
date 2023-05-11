@@ -36,9 +36,3 @@ class Dataloader:
         df['Date'] = date
         df = df.set_index(df['Date'])
         return df
-
-
-if __name__ == "__main__":
-    dl = Dataloader()
-    print(dl.meta)
-    print(dl.data)
