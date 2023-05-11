@@ -1,8 +1,8 @@
 # Gráfreprezentáció árhullámok modellezésére idősoros adatokban
 
-A szakdolgozat az alábbi linken érhető el: https://drive.google.com/file/d/1Jy9vZSqsYOtHzQScv9tv6RdDbXfxj8R0/view?usp=share_link
+Az adatmodellt tárgyaló szakdolgozat az alábbi linken érhető el: https://drive.google.com/file/d/1Jy9vZSqsYOtHzQScv9tv6RdDbXfxj8R0/view?usp=share_link .
 
-# Követelmények
+## Követelmények
 
 A szükséges csomagok a requirements.txt-ben vannak listázva, a repository 3.8-as Python verzión fut.
 
@@ -16,6 +16,6 @@ FONTOS: A két .csv fájlt a data mappába kell helyezni, a .ipynb végződésű
 
 ## Használat
 
-A notebookot futtatva lehet tesztelni a kódot, az ábrázoló cella olykor két futtatást is igényel a matplotlib nem mindig kiszámíthazó viselkedése miatt.
+A notebookot lokálisan futtatva lehet tesztelni a kódot. Az ábrázoló cellák olykor két futtatást is igényelnek a matplotlib nem mindig kiszámíthazó viselkedése miatt.
 
 
