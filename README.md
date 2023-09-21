@@ -1,4 +1,4 @@
-# Gráfreprezentáció árhullámok modellezése
+# Gráfreprezentáció árhullámok modellezésére
 Az adatmodellt tárgyaló szakdolgozat az alábbi linken érhető el: https://drive.google.com/file/d/1Jy9vZSqsYOtHzQScv9tv6RdDbXfxj8R0/view?usp=share_link .
 
 ## Követelmények
