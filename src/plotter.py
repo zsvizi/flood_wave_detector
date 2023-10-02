@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from typing import Union
 import os
 
+import itertools
+import json
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -18,6 +20,7 @@ class Plotter:
 
     All the functions related to creating figures are located here.
     """
+
     def __init__(self, gauges: Union[list, None] = None) -> None:
         """
         Constructor for Plotter class
@@ -30,6 +33,8 @@ class Plotter:
         else:
             self.gauges = self.data.gauges
         self.meta = self.data.meta.loc[self.gauges]
+
+        self.graph = None
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
@@ -54,7 +59,7 @@ class Plotter:
         """
         if add_isolated_nodes:
             for gauge in self.gauges:
-                nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge)+'.json'),
+                nodes = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name, 'find_vertices', str(gauge) + '.json'),
                                         log=False)
                 node_lst = []
                 for node in nodes:
@@ -72,7 +77,7 @@ class Plotter:
         max_date = datetime.strptime(max_date, '%Y-%m-%d')
 
         positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
-                                                      gauges=self.gauges)       
+                                                      gauges=self.gauges)
 
         fig, ax = plt.subplots()
 
@@ -91,7 +96,7 @@ class Plotter:
             horizontal_alignment='right',
             fontsize=19
         )
-        
+
         if show_nan:
             nan_graph = self.create_nan_graph(min_date=str(min_date), max_date=str(max_date))
             nan_positions = FloodWaveHandler.create_positions(
@@ -100,18 +105,30 @@ class Plotter:
         else:
             nan_graph = None
             nan_positions = None
-            
+
+        floodwavehangler = FloodWaveHandler()
+        floodwavehangler.color_and_label(gauges=self.gauges, directed_graph=directed_graph, positions=positions,
+                                         folder_name=folder_name)
+
         self.format_figure(
             ax=ax,
             x_size=40,
             y_size=20,
             joined_graph=directed_graph,
             positions=positions,
-            node_size=500,
+            node_size=550,
             nan_graph=nan_graph,
             nan_positions=nan_positions)
 
-        plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'), bbox_inches='tight')
+        if self.graph is None:
+            self.graph = directed_graph
+
+        if not os.path.exists(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf')):
+            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'), bbox_inches='tight')
+        elif not os.path.exists(os.path.join(PROJECT_PATH, folder_name, 'filtered_graph.pdf')):
+            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'filtered_graph.pdf'), bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'filtered_fixed.pdf'), bbox_inches='tight')
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
@@ -163,7 +180,7 @@ class Plotter:
             horizontalalignment=horizontal_alignment,
             fontsize=fontsize
         )
-        
+
         ax.set_xticks(ax.get_xticks()[::5])
 
     def set_y_axis_ticks(self,
@@ -222,14 +239,14 @@ class Plotter:
         plt.rcParams.update({
             "savefig.facecolor": 'white'
         })
-        
-        nx.draw(joined_graph, pos=positions, node_size=node_size, arrowsize=15, width=2.0)
+
+        nx.draw_networkx(joined_graph, pos=positions, arrowsize=15, width=2.0, node_size=node_size, with_labels=False)
 
         if nx.is_weighted(joined_graph):
             edge_labels = nx.get_edge_attributes(joined_graph, "weight")
             nx.draw_networkx_edge_labels(G=joined_graph, pos=positions, edge_labels=edge_labels, font_size=30)
         if nan_graph is not None:
-            nx.draw(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
+            nx.draw_networkx(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
         plt.axis('on')  # turns on axis
         plt.grid(visible=True, which='major', color='black')
         ax.patch.set_linewidth('4')
@@ -244,9 +261,9 @@ class Plotter:
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
         ax.set_ylabel('River kilometre', fontsize=30)
         ax.set_xlabel('Date', fontsize=30)
-       
+
         self.create_legend()
-        
+
     def create_legend(self) -> list:
         """
         This method is responsible for creating legend for the figure which contains information about gauges.
@@ -259,7 +276,7 @@ class Plotter:
                                    str(gauge) + '-' +
                                    self.meta['station_name'].loc[gauge])
         return legend_elements
-    
+
     def create_nan_graph(self, min_date: str, max_date: str):
         """
         Formats figure as desired
@@ -274,6 +291,107 @@ class Plotter:
             nan_dates = gauge_data[str(gauge)].index[gauge_data[str(gauge)].apply(np.isnan)].strftime("%Y-%m-%d")
 
             for date in nan_dates:
-                nan_graph.add_node(node_for_adding=(gauge, date))
+                nan_graph.add_node(node_for_adding=(gauge, date), color="green")
 
         return nan_graph
+
+    def get_subgraph_by_level_group(self, directed_graph: nx.DiGraph):
+        all_connected_subgraphs = []
+        for nb_nodes in range(2, directed_graph.number_of_nodes()):
+            for SG in (directed_graph.subgraph(selected_nodes) for selected_nodes in
+                       itertools.combinations(directed_graph, nb_nodes)):
+                if nx.is_connected(SG):
+                    print(SG.nodes)
+                    all_connected_subgraphs.append(SG)
+        print(all_connected_subgraphs)
+
+    def filter_by_gauge(self,
+                        gauge: str,
+                        start_date: str,
+                        end_date: str,
+                        folder_name: str,
+                        save: bool = False,
+                        show_nan: bool = False,
+                        add_isolated_nodes: bool = True
+                        ):
+        comps = list(nx.weakly_connected_components(self.graph))
+        edges = self.graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
+
+        for comp in comps_copy:
+            if not any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]]):
+                comps.remove(comp)
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
+
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+
+        self.plot_graph(directed_graph=G,
+                        start_date=start_date,
+                        end_date=end_date,
+                        folder_name=folder_name,
+                        save=save,
+                        show_nan=show_nan,
+                        add_isolated_nodes=add_isolated_nodes)
+
+    def filter_fixed(self,
+                     start_date: str,
+                     end_date: str,
+                     folder_name: str,
+                     save: bool = False,
+                     show_nan: bool = False,
+                     add_isolated_nodes: bool = True
+                     ):
+        gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720"]
+        comps = list(nx.weakly_connected_components(self.graph))
+        edges = self.graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
+
+        for comp in comps_copy:
+            if not (any(gauges[0] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[1] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[2] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[3] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[4] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[5] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[6] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                    or any(gauges[7] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+            ):
+                comps.remove(comp)
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
+
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+
+        self.plot_graph(directed_graph=G,
+                        start_date=start_date,
+                        end_date=end_date,
+                        folder_name=folder_name,
+                        save=save,
+                        show_nan=show_nan,
+                        add_isolated_nodes=add_isolated_nodes)
+
