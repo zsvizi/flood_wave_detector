@@ -41,6 +41,7 @@ class Plotter:
                    start_date: str,
                    end_date: str,
                    folder_name: str,
+                   file_name: str,
                    save: bool = False,
                    show_nan: bool = False,
                    add_isolated_nodes: bool = True
@@ -52,6 +53,7 @@ class Plotter:
         :param str end_date: end date for the plotting
         :param str start_date: start date for the figure
         :param str folder_name: Name of the folder to use for file handling.
+        :param str file_name: Name of the graph (graph, filtered_by_gauge, filtered_by_multiple...)
         :param bool save: Boolean whether to save the graph or not
         :param bool show_nan: flag for showing missing values in the data (thus intervals)
         :param bool add_isolated_nodes: flag for adding the nodes of 0 degree to the graph.
@@ -123,12 +125,7 @@ class Plotter:
         if self.graph is None:
             self.graph = directed_graph
 
-        if not os.path.exists(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf')):
-            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'graph.pdf'), bbox_inches='tight')
-        elif not os.path.exists(os.path.join(PROJECT_PATH, folder_name, 'filtered_graph.pdf')):
-            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'filtered_graph.pdf'), bbox_inches='tight')
-        else:
-            plt.savefig(os.path.join(PROJECT_PATH, folder_name, 'filtered_fixed.pdf'), bbox_inches='tight')
+        plt.savefig(os.path.join(PROJECT_PATH, folder_name, file_name + ".pdf"), bbox_inches='tight')
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
@@ -310,6 +307,7 @@ class Plotter:
                         start_date: str,
                         end_date: str,
                         folder_name: str,
+                        file_name: str,
                         save: bool = False,
                         show_nan: bool = False,
                         add_isolated_nodes: bool = True
@@ -342,36 +340,53 @@ class Plotter:
                         start_date=start_date,
                         end_date=end_date,
                         folder_name=folder_name,
+                        file_name=file_name,
                         save=save,
                         show_nan=show_nan,
                         add_isolated_nodes=add_isolated_nodes)
 
-    def filter_fixed(self,
+    def filter_multiple_gauges(self,
+                     start_gauge: str,
+                     end_gauge: str,
                      start_date: str,
                      end_date: str,
                      folder_name: str,
+                     file_name: str,
                      save: bool = False,
                      show_nan: bool = False,
                      add_isolated_nodes: bool = True
                      ):
-        gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720"]
+        """
+        This method filters an interval of gauges. Any component starting in the interval will be displayed, otherwise deleted.
+        """
+        gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720", "1721", "2541", "1722", "1723",
+                  "2543", "2040", "2041", "2042", "2046", "2048", "2271", "2272", "2274", "2275", "210888",
+                  "210896", "210900"]
         comps = list(nx.weakly_connected_components(self.graph))
         edges = self.graph.edges()
         comps_copy = comps.copy()
         edges = list(edges)
         edges_copy = edges.copy()
 
+        filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge)+1]
+
         for comp in comps_copy:
-            if not (any(gauges[0] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[1] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[2] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[3] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[4] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[5] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[6] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                    or any(gauges[7] == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-            ):
+            list_of_bools = []
+            for fg in filtered_gauges:
+                bool = any(fg == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                list_of_bools.append(bool)
+
+            if not any(list_of_bools):
                 comps.remove(comp)
+
+        comps_copy = comps.copy()
+        gauges_to_delete = gauges[0:gauges.index(start_gauge)]
+        for comp in comps_copy:
+            comp_copy = comp.copy()
+            for elem in comp_copy:
+                if any(gtd in str(elem) for gtd in gauges_to_delete):
+                    comps[comps.index(comp)].remove(elem)
+
         for i in range(len(comps)):
             comps[i] = list(comps[i])
         nodes = [item for sublist in comps for item in sublist]
@@ -391,6 +406,7 @@ class Plotter:
                         start_date=start_date,
                         end_date=end_date,
                         folder_name=folder_name,
+                        file_name=file_name,
                         save=save,
                         show_nan=show_nan,
                         add_isolated_nodes=add_isolated_nodes)
