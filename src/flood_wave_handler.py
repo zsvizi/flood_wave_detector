@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+import json
 
 import networkx as nx
 import numpy as np
@@ -442,3 +443,32 @@ class FloodWaveHandler:
                 folder_name=folder_name
             )
         return joined_graph
+
+    @staticmethod
+    def color_and_label(gauges, directed_graph: nx.DiGraph, positions: dict, folder_name: str):
+        colors = [""] * len(positions)
+        labels = {}
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups.json"))
+        level_groups = json.load(g)
+        for gauge in gauges:
+            f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
+            levels = json.load(f)
+            lst1 = [item for sublist in levels for item in sublist]
+            levels_dct = {lst1[i]: lst1[i + 1] for i in range(0, len(lst1), 2)}
+
+            for i in range(len(positions)):
+                if str(gauge) == list(positions.keys())[i][0]:
+                    date = list(positions.keys())[i][1]
+                    water_level = levels_dct[date]
+                    labels[list(positions.keys())[i]] = int(water_level)
+
+                    if water_level < level_groups[str(gauge)]:
+                        colors[i] = "yellow"
+                    else:
+                        colors[i] = "red"
+
+            f.close()
+            g.close()
+
+        nx.draw_networkx_labels(directed_graph, positions, labels=labels)
+        nx.draw_networkx_nodes(directed_graph, positions, node_color=colors, node_size=800)
