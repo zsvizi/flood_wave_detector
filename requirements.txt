@@ -24,6 +24,7 @@ ephem==4.1
 fbprophet==0.7
 Flask==2.1.1
 Flask-Compress==1.11
+gdown==4.7.1
 gpytorch==1.5.1
 hijri-converter==2.2.2
 holidays==0.11.3.1

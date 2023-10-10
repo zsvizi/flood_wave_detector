@@ -9,4 +9,4 @@ A szükséges csomagok a requirements.txt-ben vannak listázva, a repository 3.8
 
 A notebookot lokálisan futtatva lehet tesztelni a kódot. Az ábrázoló cellák olykor két futtatást is igényelnek a matplotlib nem mindig kiszámíthazó viselkedése miatt.
 
-
+Adatok: https://drive.google.com/drive/folders/1gCC5gLKBh8NLWt_ham42EGk_WKQk_c_B?usp=sharing
