@@ -448,7 +448,7 @@ class FloodWaveHandler:
     def color_and_label(gauges, directed_graph: nx.DiGraph, positions: dict, folder_name: str):
         colors = [""] * len(positions)
         labels = {}
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups.json"))
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
         level_groups = json.load(g)
         for gauge in gauges:
             f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
@@ -472,3 +472,5 @@ class FloodWaveHandler:
 
         nx.draw_networkx_labels(directed_graph, positions, labels=labels)
         nx.draw_networkx_nodes(directed_graph, positions, node_color=colors, node_size=800)
+
+        return colors

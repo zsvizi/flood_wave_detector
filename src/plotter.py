@@ -3,7 +3,6 @@ from typing import Union
 import os
 
 import itertools
-import json
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -35,6 +34,8 @@ class Plotter:
         self.meta = self.data.meta.loc[self.gauges]
 
         self.graph = None
+        self.positions = None
+        self.node_colors = None
 
     def plot_graph(self,
                    directed_graph: nx.DiGraph,
@@ -78,14 +79,15 @@ class Plotter:
         max_date = max([node[1] for node in directed_graph.nodes()])
         max_date = datetime.strptime(max_date, '%Y-%m-%d')
 
-        positions = FloodWaveHandler.create_positions(joined_graph=directed_graph, start=start,
-                                                      gauges=self.gauges)
+        self.positions = FloodWaveHandler.create_positions(joined_graph=directed_graph,
+                                                           start=start,
+                                                           gauges=self.gauges)
 
         fig, ax = plt.subplots()
 
         Plotter.set_x_axis_ticks(
             ax=ax,
-            positions=positions,
+            positions=self.positions,
             start=min_date,
             rotation=45,
             horizontal_alignment='right',
@@ -108,16 +110,17 @@ class Plotter:
             nan_graph = None
             nan_positions = None
 
-        floodwavehangler = FloodWaveHandler()
-        floodwavehangler.color_and_label(gauges=self.gauges, directed_graph=directed_graph, positions=positions,
-                                         folder_name=folder_name)
+        self.node_colors = FloodWaveHandler.color_and_label(gauges=self.gauges,
+                                                            directed_graph=directed_graph,
+                                                            positions=self.positions,
+                                                            folder_name=folder_name)
 
         self.format_figure(
             ax=ax,
             x_size=40,
             y_size=20,
             joined_graph=directed_graph,
-            positions=positions,
+            positions=self.positions,
             node_size=550,
             nan_graph=nan_graph,
             nan_positions=nan_positions)
@@ -346,18 +349,18 @@ class Plotter:
                         add_isolated_nodes=add_isolated_nodes)
 
     def filter_multiple_gauges(self,
-                     start_gauge: str,
-                     end_gauge: str,
-                     start_date: str,
-                     end_date: str,
-                     folder_name: str,
-                     file_name: str,
-                     save: bool = False,
-                     show_nan: bool = False,
-                     add_isolated_nodes: bool = True
-                     ):
+                               start_gauge: str,
+                               end_gauge: str,
+                               start_date: str,
+                               end_date: str,
+                               folder_name: str,
+                               file_name: str,
+                               save: bool = False,
+                               show_nan: bool = False,
+                               add_isolated_nodes: bool = True):
         """
-        This method filters an interval of gauges. Any component starting in the interval will be displayed, otherwise deleted.
+        This method filters an interval of gauges. Any component starting in the interval will be displayed,
+        otherwise deleted.
         """
         gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720", "1721", "2541", "1722", "1723",
                   "2543", "2040", "2041", "2042", "2046", "2048", "2271", "2272", "2274", "2275", "210888",
@@ -411,3 +414,62 @@ class Plotter:
                         show_nan=show_nan,
                         add_isolated_nodes=add_isolated_nodes)
 
+    def filter_by_water_level(self,
+                              gauge: str,
+                              positions,
+                              node_colors,
+                              start_date: str,
+                              end_date: str,
+                              folder_name: str,
+                              file_name: str,
+                              save: bool = False,
+                              show_nan: bool = False,
+                              add_isolated_nodes: bool = True):
+        comps = list(nx.weakly_connected_components(self.graph))
+        edges = self.graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
+        for comp in comps_copy:
+            comp_list = list(comp)
+            i0_list = []
+            gauge_in_comp = []
+            for i in comp_list:
+                i0_list.append(i[0])
+                if gauge == i[0]:
+                    gauge_in_comp.append(i)
+
+            if not any(gauge == elem for elem in i0_list):
+                comps.remove(comp)
+            else:
+                colors_of_gauge = []
+                for elem in gauge_in_comp:
+                    idx = list(positions.keys()).index(elem)
+                    colors_of_gauge.append(node_colors[idx])
+
+                if not any("red" == color for color in colors_of_gauge):
+                    comps.remove(comp)
+
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
+
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+
+        self.plot_graph(directed_graph=G,
+                        start_date=start_date,
+                        end_date=end_date,
+                        folder_name=folder_name,
+                        file_name=file_name,
+                        save=save,
+                        show_nan=show_nan,
+                        add_isolated_nodes=add_isolated_nodes)
