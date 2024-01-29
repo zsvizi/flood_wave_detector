@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import os
-import json
 
 import networkx as nx
 import numpy as np
@@ -445,32 +444,134 @@ class FloodWaveHandler:
         return joined_graph
 
     @staticmethod
-    def color_and_label(gauges, directed_graph: nx.DiGraph, positions: dict, folder_name: str):
-        colors = [""] * len(positions)
-        labels = {}
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
-        level_groups = json.load(g)
-        for gauge in gauges:
-            f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
-            levels = json.load(f)
-            lst1 = [item for sublist in levels for item in sublist]
-            levels_dct = {lst1[i]: lst1[i + 1] for i in range(0, len(lst1), 2)}
+    def filter_by_gauge(graph,
+                        gauge: str
+                        ):
+        comps = list(nx.weakly_connected_components(graph))
+        edges = graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
 
-            for i in range(len(positions)):
-                if str(gauge) == list(positions.keys())[i][0]:
-                    date = list(positions.keys())[i][1]
-                    water_level = levels_dct[date]
-                    labels[list(positions.keys())[i]] = int(water_level)
+        for comp in comps_copy:
+            if not any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]]):
+                comps.remove(comp)
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
 
-                    if water_level < level_groups[str(gauge)]:
-                        colors[i] = "yellow"
-                    else:
-                        colors[i] = "red"
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
 
-            f.close()
-            g.close()
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
 
-        nx.draw_networkx_labels(directed_graph, positions, labels=labels)
-        nx.draw_networkx_nodes(directed_graph, positions, node_color=colors, node_size=800)
+        return G
 
-        return colors
+    @staticmethod
+    def filter_multiple_gauges(graph,
+                               start_gauge: str,
+                               end_gauge: str,
+                               ):
+        """
+        This method filters an interval of gauges. Any component starting in the interval will be displayed,
+        otherwise deleted.
+        """
+        # gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720", "1721", "2541", "1722", "1723",
+        #           "2543", "2040", "2041", "2042", "2046", "2048", "2271", "2272", "2274", "2275", "210888",
+        #           "210896", "210900"]
+        gauges = [str(i) for i in range(1, 15)]
+        comps = list(nx.weakly_connected_components(graph))
+        edges = graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
+
+        filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge)+1]
+
+        for comp in comps_copy:
+            list_of_bools = []
+            for fg in filtered_gauges:
+                bool = any(fg == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                list_of_bools.append(bool)
+
+            if not any(list_of_bools):
+                comps.remove(comp)
+
+        comps_copy = comps.copy()
+        gauges_to_delete = gauges[0:gauges.index(start_gauge)]
+        for comp in comps_copy:
+            comp_copy = comp.copy()
+            for elem in comp_copy:
+                if any(gtd in str(elem) for gtd in gauges_to_delete):
+                    comps[comps.index(comp)].remove(elem)
+
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
+
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+
+        return G
+
+    @staticmethod
+    def filter_by_water_level(graph,
+                              gauge: str,
+                              positions,
+                              node_colors,
+                              ):
+        comps = list(nx.weakly_connected_components(graph))
+        edges = graph.edges()
+        comps_copy = comps.copy()
+        edges = list(edges)
+        edges_copy = edges.copy()
+        for comp in comps_copy:
+            comp_list = list(comp)
+            i0_list = []
+            gauge_in_comp = []
+            for i in comp_list:
+                i0_list.append(i[0])
+                if gauge == i[0]:
+                    gauge_in_comp.append(i)
+
+            if not any(gauge == elem for elem in i0_list):
+                comps.remove(comp)
+            else:
+                colors_of_gauge = []
+                for elem in gauge_in_comp:
+                    idx = list(positions.keys()).index(elem)
+                    colors_of_gauge.append(node_colors[idx])
+
+                if not any("red" == color for color in colors_of_gauge):
+                    comps.remove(comp)
+
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        for edge in edges_copy:
+            for comp in comps:
+                if edge[0] in comp:
+                    break
+                if comp == comps[-1]:
+                    edges.remove(edge)
+
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+
+        return G

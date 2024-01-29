@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Union
 import os
+import json
 
 import itertools
 import matplotlib.pyplot as plt
@@ -71,7 +72,7 @@ class Plotter:
                 directed_graph.add_nodes_from(node_lst)
 
         if save:
-            Plotter.save_plot_graph(directed_graph, folder_name=folder_name)
+            self.save_plot_graph(directed_graph, folder_name=folder_name)
 
         start = datetime.strptime(start_date, '%Y-%m-%d')
         min_date = min([node[1] for node in directed_graph.nodes()])
@@ -85,7 +86,7 @@ class Plotter:
 
         fig, ax = plt.subplots()
 
-        Plotter.set_x_axis_ticks(
+        self.set_x_axis_ticks(
             ax=ax,
             positions=self.positions,
             start=min_date,
@@ -110,10 +111,8 @@ class Plotter:
             nan_graph = None
             nan_positions = None
 
-        self.node_colors = FloodWaveHandler.color_and_label(gauges=self.gauges,
-                                                            directed_graph=directed_graph,
-                                                            positions=self.positions,
-                                                            folder_name=folder_name)
+        self.node_colors = self.color_and_label(directed_graph=directed_graph,
+                                                folder_name=folder_name)
 
         self.format_figure(
             ax=ax,
@@ -305,171 +304,32 @@ class Plotter:
                     all_connected_subgraphs.append(SG)
         print(all_connected_subgraphs)
 
-    def filter_by_gauge(self,
-                        gauge: str,
-                        start_date: str,
-                        end_date: str,
-                        folder_name: str,
-                        file_name: str,
-                        save: bool = False,
-                        show_nan: bool = False,
-                        add_isolated_nodes: bool = True
-                        ):
-        comps = list(nx.weakly_connected_components(self.graph))
-        edges = self.graph.edges()
-        comps_copy = comps.copy()
-        edges = list(edges)
-        edges_copy = edges.copy()
+    def color_and_label(self, directed_graph: nx.DiGraph, folder_name: str):
+        colors = [""] * len(self.positions)
+        labels = {}
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
+        level_groups = json.load(g)
+        for gauge in self.gauges:
+            f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
+            levels = json.load(f)
+            lst1 = [item for sublist in levels for item in sublist]
+            levels_dct = {lst1[i]: lst1[i + 1] for i in range(0, len(lst1), 2)}
 
-        for comp in comps_copy:
-            if not any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]]):
-                comps.remove(comp)
-        for i in range(len(comps)):
-            comps[i] = list(comps[i])
-        nodes = [item for sublist in comps for item in sublist]
+            for i in range(len(self.positions)):
+                if str(gauge) == list(self.positions.keys())[i][0]:
+                    date = list(self.positions.keys())[i][1]
+                    water_level = levels_dct[date]
+                    labels[list(self.positions.keys())[i]] = int(water_level)
 
-        for edge in edges_copy:
-            for comp in comps:
-                if edge[0] in comp:
-                    break
-                if comp == comps[-1]:
-                    edges.remove(edge)
+                    if water_level < level_groups[str(gauge)]:
+                        colors[i] = "yellow"
+                    else:
+                        colors[i] = "red"
 
-        G = nx.DiGraph()
-        G.add_nodes_from(nodes)
-        G.add_edges_from(edges)
+            f.close()
+            g.close()
 
-        self.plot_graph(directed_graph=G,
-                        start_date=start_date,
-                        end_date=end_date,
-                        folder_name=folder_name,
-                        file_name=file_name,
-                        save=save,
-                        show_nan=show_nan,
-                        add_isolated_nodes=add_isolated_nodes)
+        nx.draw_networkx_labels(directed_graph, self.positions, labels=labels)
+        nx.draw_networkx_nodes(directed_graph, self.positions, node_color=colors, node_size=800)
 
-    def filter_multiple_gauges(self,
-                               start_gauge: str,
-                               end_gauge: str,
-                               start_date: str,
-                               end_date: str,
-                               folder_name: str,
-                               file_name: str,
-                               save: bool = False,
-                               show_nan: bool = False,
-                               add_isolated_nodes: bool = True):
-        """
-        This method filters an interval of gauges. Any component starting in the interval will be displayed,
-        otherwise deleted.
-        """
-        gauges = ["1514", "1515", "1516", "1518", "1520", "1521", "1719", "1720", "1721", "2541", "1722", "1723",
-                  "2543", "2040", "2041", "2042", "2046", "2048", "2271", "2272", "2274", "2275", "210888",
-                  "210896", "210900"]
-        comps = list(nx.weakly_connected_components(self.graph))
-        edges = self.graph.edges()
-        comps_copy = comps.copy()
-        edges = list(edges)
-        edges_copy = edges.copy()
-
-        filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge)+1]
-
-        for comp in comps_copy:
-            list_of_bools = []
-            for fg in filtered_gauges:
-                bool = any(fg == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
-                list_of_bools.append(bool)
-
-            if not any(list_of_bools):
-                comps.remove(comp)
-
-        comps_copy = comps.copy()
-        gauges_to_delete = gauges[0:gauges.index(start_gauge)]
-        for comp in comps_copy:
-            comp_copy = comp.copy()
-            for elem in comp_copy:
-                if any(gtd in str(elem) for gtd in gauges_to_delete):
-                    comps[comps.index(comp)].remove(elem)
-
-        for i in range(len(comps)):
-            comps[i] = list(comps[i])
-        nodes = [item for sublist in comps for item in sublist]
-
-        for edge in edges_copy:
-            for comp in comps:
-                if edge[0] in comp:
-                    break
-                if comp == comps[-1]:
-                    edges.remove(edge)
-
-        G = nx.DiGraph()
-        G.add_nodes_from(nodes)
-        G.add_edges_from(edges)
-
-        self.plot_graph(directed_graph=G,
-                        start_date=start_date,
-                        end_date=end_date,
-                        folder_name=folder_name,
-                        file_name=file_name,
-                        save=save,
-                        show_nan=show_nan,
-                        add_isolated_nodes=add_isolated_nodes)
-
-    def filter_by_water_level(self,
-                              gauge: str,
-                              positions,
-                              node_colors,
-                              start_date: str,
-                              end_date: str,
-                              folder_name: str,
-                              file_name: str,
-                              save: bool = False,
-                              show_nan: bool = False,
-                              add_isolated_nodes: bool = True):
-        comps = list(nx.weakly_connected_components(self.graph))
-        edges = self.graph.edges()
-        comps_copy = comps.copy()
-        edges = list(edges)
-        edges_copy = edges.copy()
-        for comp in comps_copy:
-            comp_list = list(comp)
-            i0_list = []
-            gauge_in_comp = []
-            for i in comp_list:
-                i0_list.append(i[0])
-                if gauge == i[0]:
-                    gauge_in_comp.append(i)
-
-            if not any(gauge == elem for elem in i0_list):
-                comps.remove(comp)
-            else:
-                colors_of_gauge = []
-                for elem in gauge_in_comp:
-                    idx = list(positions.keys()).index(elem)
-                    colors_of_gauge.append(node_colors[idx])
-
-                if not any("red" == color for color in colors_of_gauge):
-                    comps.remove(comp)
-
-        for i in range(len(comps)):
-            comps[i] = list(comps[i])
-        nodes = [item for sublist in comps for item in sublist]
-
-        for edge in edges_copy:
-            for comp in comps:
-                if edge[0] in comp:
-                    break
-                if comp == comps[-1]:
-                    edges.remove(edge)
-
-        G = nx.DiGraph()
-        G.add_nodes_from(nodes)
-        G.add_edges_from(edges)
-
-        self.plot_graph(directed_graph=G,
-                        start_date=start_date,
-                        end_date=end_date,
-                        folder_name=folder_name,
-                        file_name=file_name,
-                        save=save,
-                        show_nan=show_nan,
-                        add_isolated_nodes=add_isolated_nodes)
+        return colors
