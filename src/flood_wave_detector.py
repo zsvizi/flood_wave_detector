@@ -58,11 +58,11 @@ class FloodWaveDetector:
         if start_date is not None:
             self.start_date = start_date
         else:
-            self.start_date = '1951-01-01'
+            self.start_date = '1876-01-01'
         if end_date is not None:
             self.end_date = end_date
         else:
-            self.end_date = '2020-12-31'
+            self.end_date = '2019-12-31'
 
     @measure_time
     def run(self) -> None:
