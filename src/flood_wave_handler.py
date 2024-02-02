@@ -301,7 +301,6 @@ class FloodWaveHandler:
         :param pd.DataFrame peaks: single column DataFrame which to convert
         :return list: Tuple list
         """
-        # TODO: Renaming suggestion: get_peak_tuples / get_peak_list
         peak_tuples = peaks.to_records(index=True)
         peak_list = [
             tuple(x)
@@ -328,7 +327,7 @@ class FloodWaveHandler:
         peaks.info()
         peaks.index = pd.to_datetime(peaks.index).strftime('%Y-%m-%d')
         peaks.info()
-        peaks = peaks.drop(columns="Date") #      .set_index(peaks.index.strftime('%Y-%m-%d'))
+        peaks = peaks.drop(columns="Date")  # .set_index(peaks.index.strftime('%Y-%m-%d'))
         peaks[reg_number] = peaks[reg_number].astype(float)
         return peaks
 

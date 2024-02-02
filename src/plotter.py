@@ -294,7 +294,8 @@ class Plotter:
 
         return nan_graph
 
-    def get_subgraph_by_level_group(self, directed_graph: nx.DiGraph):
+    @staticmethod
+    def get_subgraph_by_level_group(directed_graph: nx.DiGraph):
         all_connected_subgraphs = []
         for nb_nodes in range(2, directed_graph.number_of_nodes()):
             for SG in (directed_graph.subgraph(selected_nodes) for selected_nodes in

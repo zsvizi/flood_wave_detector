@@ -1,8 +1,8 @@
 from src import PROJECT_PATH
 
 import os
-import pandas as pd
 import gdown
+import pandas as pd
 
 
 class Dataloader:
