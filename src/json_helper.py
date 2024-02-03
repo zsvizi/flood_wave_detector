@@ -23,7 +23,7 @@ class JsonHelper:
             json.dump(obj=obj, fp=file, indent=4)
 
     @staticmethod
-    def read(filepath: str, log: bool = True) -> dict:
+    def read(filepath: str, log: bool = True):
         """
         Reads the file with the given path
 

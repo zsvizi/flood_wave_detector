@@ -71,8 +71,124 @@ class FloodWaveDetector:
         :return:
         """
         self.mkdirs()
-        self.find_vertices()
-        self.find_edges()
+        if self.start_date >= "1876-01-01" and self.end_date <= "1876-12-31":
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+            self.find_vertices()
+            self.find_edges()
+        elif self.start_date >= "1877-01-01" and self.end_date <= "1887-12-31":
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.find_vertices()
+            self.find_edges()
+        elif self.start_date >= "1888-01-01" and self.end_date <= "1888-12-31":
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.find_vertices()
+            self.find_edges()
+        elif self.start_date >= "1889-01-01":
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+            self.find_vertices()
+            self.find_edges()
+        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1877-01-01" <= self.end_date <= "1887-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+            self.end_date = "1876-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1877-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
+        elif "1877-01-01" <= self.start_date <= "1887-12-31" and "1888-01-01" <= self.end_date <= "1888-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.end_date = "1887-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1888-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
+        elif "1888-01-01" <= self.start_date <= "1888-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.end_date = "1888-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+            self.start_date = "1889-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
+        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1888-01-01" <= self.end_date <= "1888-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+            self.end_date = "1876-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1877-01-01"
+            self.end_date = "1887-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1888-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
+        elif "1877-01-01" <= self.start_date <= "1887-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.end_date = "1887-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1888-01-01"
+            self.end_date = "1888-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+            self.start_date = "1889-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
+        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
+            end_date_copy = self.end_date
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+            self.end_date = "1876-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1877-01-01"
+            self.end_date = "1887-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
+            self.start_date = "1888-01-01"
+            self.end_date = "1888-12-31"
+            self.find_vertices()
+            self.find_edges()
+
+            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+            self.start_date = "1889-01-01"
+            self.end_date = end_date_copy
+            self.find_vertices()
+            self.find_edges()
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
     @measure_time
@@ -86,7 +202,7 @@ class FloodWaveDetector:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
-                gauge_data = self.data.dataloader.data[[str(gauge), 'Date']]\
+                gauge_data = self.data.data[[str(gauge), 'Date']]\
                                                  .loc[self.start_date:self.end_date].dropna()
                    
                 gauge_ts = gauge_data[str(gauge)].to_numpy()
@@ -101,17 +217,25 @@ class FloodWaveDetector:
                 local_peak_values = self.get_local_peak_values(gauge_ts=gauge_ts)
 
                 # Create keys for dictionary
-                candidate_vertices = FloodWaveDetector.find_local_maxima(
+                candidate_vertices = self.find_local_maxima(
                     gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
                     reg_number=str(gauge)
                 )
 
                 # Save
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                    obj=candidate_vertices
-                )
+                if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json')):
+                    JsonHelper.write(
+                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
+                        obj=candidate_vertices)
+                else:
+                    candidate_read = JsonHelper.read(
+                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'))
+
+                    candidate_new = candidate_read + candidate_vertices
+                    JsonHelper.write(
+                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
+                        obj=candidate_new)
 
     @measure_time
     def find_edges(self) -> None:
@@ -129,8 +253,9 @@ class FloodWaveDetector:
             does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
                                                     f'{current_gauge}_{next_gauge}.json'))
 
-            if does_actual_json_exist and does_big_json_exist:
-                continue
+            # I had to comment this part out because from now on updating existing files is crucial.
+            # if does_actual_json_exist and does_big_json_exist:
+            #     continue
 
             # Read the data from the actual gauge.
             current_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge,
@@ -159,21 +284,39 @@ class FloodWaveDetector:
                 )
 
             # Save to file
-            JsonHelper.write(
-                filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                      'find_edges', f'{current_gauge}_{next_gauge}.json'),
-                obj=gauge_pair
-            )
+            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
+                                  'find_edges', f'{current_gauge}_{next_gauge}.json')):
+                JsonHelper.write(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
+                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
+                    obj=gauge_pair)
+            else:
+                gauge_pair_read = JsonHelper.read(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
+                                          'find_edges', f'{current_gauge}_{next_gauge}.json'))
+
+                gauge_pair_read.update(gauge_pair)
+                JsonHelper.write(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
+                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
+                    obj=gauge_pair_read)
 
             # Store result for the all-in-one dict
             vertex_pairs[f'{current_gauge}_{next_gauge}'] = gauge_pair
 
         # Save to file
         if not vertex_pairs == {}:
-            JsonHelper.write(
-                filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
-                obj=vertex_pairs
-            )
+            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json')):
+                JsonHelper.write(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
+                    obj=vertex_pairs)
+            else:
+                vertex_pairs_read = JsonHelper.read(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'))
+                vertex_pairs_read.update(vertex_pairs)
+                JsonHelper.write(
+                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
+                    obj=vertex_pairs_read)
 
     @measure_time
     def mkdirs(self) -> None:
