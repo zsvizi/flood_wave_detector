@@ -6,8 +6,7 @@ class Filtering:
     This class contains filtering functions for the final graph.
     """
 
-    @staticmethod
-    def filter_by_gauge(graph: nx.DiGraph, gauge: str) -> nx.DiGraph:
+    def filter_by_gauge(self, graph: nx.DiGraph, gauge: str) -> nx.DiGraph:
         """
         This function filters out weakly connected components that have the given gauge as a node.
 
@@ -23,7 +22,7 @@ class Filtering:
         edges_copy = edges.copy()
 
         for comp in comps_copy:
-            if not any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]]):
+            if not self.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
                 comps.remove(comp)
         for i in range(len(comps)):
             comps[i] = list(comps[i])
@@ -42,8 +41,7 @@ class Filtering:
 
         return g
 
-    @staticmethod
-    def filter_multiple_gauges(graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
+    def filter_multiple_gauges(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
         """
         This function filters for an interval of gauges. Any component starting in the interval will be displayed,
         otherwise deleted.
@@ -66,7 +64,7 @@ class Filtering:
         for comp in comps_copy:
             list_of_bools = []
             for fg in filtered_gauges:
-                x = any(fg == elem for elem in [i[0] for i in [list(ele) for ele in list(comp)]])
+                x = self.is_gauge_in_comp(gauge=fg, comp_list=list(comp))
                 list_of_bools.append(x)
 
             if not any(list_of_bools):
@@ -96,6 +94,18 @@ class Filtering:
         g.add_edges_from(edges)
 
         return g
+
+    @staticmethod
+    def is_gauge_in_comp(gauge: str, comp_list: list) -> bool:
+        """
+        This function checks whether the weakly connected component comp_list has a node at gauge.
+
+        :param str gauge: given gauge number as a string
+        :param list comp_list: given weakly connected component as a list
+        :return bool: True if the gauge is in the component, False otherwise
+        """
+
+        return any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in comp_list]])
 
     @staticmethod
     def filter_by_water_level(graph: nx.DiGraph, gauge: str, positions: dict, node_colors: list) -> nx.DiGraph:
