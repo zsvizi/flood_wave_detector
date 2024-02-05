@@ -1,5 +1,6 @@
 /venv
 /.idea
+/data
 /notebooks
 /__pycache__
 *.ini
