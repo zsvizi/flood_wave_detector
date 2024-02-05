@@ -295,10 +295,11 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peaks: pd.DataFrame) -> list:
+    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> list:
         """
-        Creates a list containing (date, value) tuples.
+        Creates a list containing (date, value, color) tuples.
         :param pd.DataFrame peaks: single column DataFrame which to convert
+        :param float level_group: level group number of the gauge
         :return list: Tuple list
         """
         peak_tuples = peaks.to_records(index=True)
@@ -306,13 +307,21 @@ class FloodWaveHandler:
             tuple(x)
             for x in peak_tuples
         ]
-        return peak_list
+        peak_list_new = []
+        for i in range(len(peak_list)):
+            if peak_list[i][1] < level_group:
+                color = "yellow"
+            else:
+                color = "red"
+            peak_list_new.append(tuple((peak_list[i][0], peak_list[i][1], color)))
+        return peak_list_new
 
     @staticmethod
     def clean_dataframe_for_getting_peak_list(
             local_peak_values: np.array,
             gauge_data: pd.DataFrame,
-            reg_number: str
+            reg_number: str,
+            level_group: float
     ) -> pd.DataFrame:
         """
         Creates a dataframe containing a given station's peaks with the desired date format and data type
@@ -320,6 +329,7 @@ class FloodWaveHandler:
         :param np.array local_peak_values: The flagged time series of the desired station in a numpy array
         :param pd.DataFrame gauge_data: The time series of the desired station in a DataFrame
         :param str reg_number: The ID of the desired station
+        :param float level_group: level group number of the gauge
         :return pd.DataFrame: A DataFrame containing the given station's peaks with date index
         """
 

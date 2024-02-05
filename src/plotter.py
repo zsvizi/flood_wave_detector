@@ -294,41 +294,30 @@ class Plotter:
 
         return nan_graph
 
-    @staticmethod
-    def get_subgraph_by_level_group(directed_graph: nx.DiGraph):
-        all_connected_subgraphs = []
-        for nb_nodes in range(2, directed_graph.number_of_nodes()):
-            for SG in (directed_graph.subgraph(selected_nodes) for selected_nodes in
-                       itertools.combinations(directed_graph, nb_nodes)):
-                if nx.is_connected(SG):
-                    print(SG.nodes)
-                    all_connected_subgraphs.append(SG)
-        print(all_connected_subgraphs)
-
-    def color_and_label(self, directed_graph: nx.DiGraph, folder_name: str):
+    def color_and_label(self, directed_graph: nx.DiGraph, folder_name: str) -> list:
+        """
+        This function colors and labels the nodes of the graph. The color will be yellow if the water level at the
+        node is low, and red if high. The label of the node will be the water level.
+        :param nx.DiGraph directed_graph: graph to be colored and labelled
+        :param str folder_name: name of the generated folder
+        :return list: list of node colors
+        """
         colors = [""] * len(self.positions)
         labels = {}
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
-        level_groups = json.load(g)
         for gauge in self.gauges:
             f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
-            levels = json.load(f)
-            lst1 = [item for sublist in levels for item in sublist]
-            levels_dct = {lst1[i]: lst1[i + 1] for i in range(0, len(lst1), 2)}
+            elem = json.load(f)
+            lst1 = [item for sublist in elem for item in sublist]
+            levels_dct = {lst1[i]: tuple((lst1[i + 1], lst1[i + 2])) for i in range(0, len(lst1), 3)}
 
             for i in range(len(self.positions)):
                 if str(gauge) == list(self.positions.keys())[i][0]:
                     date = list(self.positions.keys())[i][1]
-                    water_level = levels_dct[date]
+                    water_level = levels_dct[date][0]
                     labels[list(self.positions.keys())[i]] = int(water_level)
-
-                    if water_level < level_groups[str(gauge)]:
-                        colors[i] = "yellow"
-                    else:
-                        colors[i] = "red"
+                    colors[i] = levels_dct[date][1]
 
             f.close()
-            g.close()
 
         nx.draw_networkx_labels(directed_graph, self.positions, labels=labels)
         nx.draw_networkx_nodes(directed_graph, self.positions, node_color=colors, node_size=800)
