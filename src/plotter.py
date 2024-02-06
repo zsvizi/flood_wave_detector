@@ -3,7 +3,6 @@ from typing import Union
 import os
 import json
 
-import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
