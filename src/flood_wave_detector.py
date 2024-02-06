@@ -243,8 +243,7 @@ class FloodWaveDetector:
         peaks = FloodWaveHandler.clean_dataframe_for_getting_peak_list(
             local_peak_values=local_peak_values,
             gauge_data=gauge_data,
-            reg_number=reg_number,
-            level_group=level_group
+            reg_number=reg_number
         )
 
         # Get peak-plateau list

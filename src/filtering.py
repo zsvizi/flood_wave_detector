@@ -19,25 +19,16 @@ class Filtering:
         edges = graph.edges()
         comps_copy = comps.copy()
         edges = list(edges)
-        edges_copy = edges.copy()
 
         for comp in comps_copy:
             if not self.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
                 comps.remove(comp)
-        for i in range(len(comps)):
-            comps[i] = list(comps[i])
-        nodes = [item for sublist in comps for item in sublist]
 
-        for edge in edges_copy:
-            for comp in comps:
-                if edge[0] in comp:
-                    break
-                if comp == comps[-1]:
-                    edges.remove(edge)
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
 
         g = nx.DiGraph()
-        g.add_nodes_from(nodes)
-        g.add_edges_from(edges)
+        g.add_nodes_from(nodes_filtered)
+        g.add_edges_from(edges_filtered)
 
         return g
 
@@ -57,7 +48,6 @@ class Filtering:
         edges = graph.edges()
         comps_copy = comps.copy()
         edges = list(edges)
-        edges_copy = edges.copy()
 
         filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge) + 1]
 
@@ -75,40 +65,18 @@ class Filtering:
         for comp in comps_copy:
             comp_copy = comp.copy()
             for elem in comp_copy:
-                if any(gtd in str(elem) for gtd in gauges_to_delete):
+                if any(gtd == elem[0] for gtd in gauges_to_delete):
                     comps[comps.index(comp)].remove(elem)
 
-        for i in range(len(comps)):
-            comps[i] = list(comps[i])
-        nodes = [item for sublist in comps for item in sublist]
-
-        for edge in edges_copy:
-            for comp in comps:
-                if edge[0] in comp:
-                    break
-                if comp == comps[-1]:
-                    edges.remove(edge)
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
 
         g = nx.DiGraph()
-        g.add_nodes_from(nodes)
-        g.add_edges_from(edges)
+        g.add_nodes_from(nodes_filtered)
+        g.add_edges_from(edges_filtered)
 
         return g
 
-    @staticmethod
-    def is_gauge_in_comp(gauge: str, comp_list: list) -> bool:
-        """
-        This function checks whether the weakly connected component comp_list has a node at gauge.
-
-        :param str gauge: given gauge number as a string
-        :param list comp_list: given weakly connected component as a list
-        :return bool: True if the gauge is in the component, False otherwise
-        """
-
-        return any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in comp_list]])
-
-    @staticmethod
-    def filter_by_water_level(graph: nx.DiGraph, gauge: str, positions: dict, node_colors: list) -> nx.DiGraph:
+    def filter_by_water_level(self, graph: nx.DiGraph, gauge: str, positions: dict, node_colors: list) -> nx.DiGraph:
         """
         This function filters out weakly connected components that have high water level at the given gauge.
 
@@ -123,7 +91,6 @@ class Filtering:
         edges = graph.edges()
         comps_copy = comps.copy()
         edges = list(edges)
-        edges_copy = edges.copy()
         for comp in comps_copy:
             comp_list = list(comp)
             i0_list = []
@@ -144,19 +111,48 @@ class Filtering:
                 if not any("red" == color for color in colors_of_gauge):
                     comps.remove(comp)
 
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+
+        g = nx.DiGraph()
+        g.add_nodes_from(nodes_filtered)
+        g.add_edges_from(edges_filtered)
+
+        return g
+
+    @staticmethod
+    def is_gauge_in_comp(gauge: str, comp_list: list) -> bool:
+        """
+        This function checks whether the weakly connected component comp_list has a node at gauge.
+
+        :param str gauge: given gauge number as a string
+        :param list comp_list: given weakly connected component as a list
+        :return bool: True if the gauge is in the component, False otherwise
+        """
+
+        return any(gauge == elem for elem in [i[0] for i in [list(ele) for ele in comp_list]])
+
+    @staticmethod
+    def nodes_and_edges(comps: list, edges: list):
+        """
+        This function finds and collects the nodes and edges of the filtered graph.
+
+        :param list comps: list of the components
+        :param list edges: list of the edges
+        :return: list of nodes and list of edges
+        """
+
         for i in range(len(comps)):
             comps[i] = list(comps[i])
         nodes = [item for sublist in comps for item in sublist]
 
-        for edge in edges_copy:
+        edges_to_keep = []
+        for edge in edges:
+            found_in_comp = False
             for comp in comps:
                 if edge[0] in comp:
+                    found_in_comp = True
                     break
-                if comp == comps[-1]:
-                    edges.remove(edge)
+            if found_in_comp:
+                edges_to_keep.append(edge)
 
-        g = nx.DiGraph()
-        g.add_nodes_from(nodes)
-        g.add_edges_from(edges)
-
-        return g
+        return nodes, edges_to_keep

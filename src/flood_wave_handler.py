@@ -28,7 +28,7 @@ class FloodWaveHandler:
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{gauge}.json'))
         gauge_peaks = pd.DataFrame(data=gauge_with_index,
-                                   columns=['Date', 'Max value'])
+                                   columns=['Date', 'Max value', 'Color'])
         gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
         return gauge_peaks
 
@@ -320,8 +320,7 @@ class FloodWaveHandler:
     def clean_dataframe_for_getting_peak_list(
             local_peak_values: np.array,
             gauge_data: pd.DataFrame,
-            reg_number: str,
-            level_group: float
+            reg_number: str
     ) -> pd.DataFrame:
         """
         Creates a dataframe containing a given station's peaks with the desired date format and data type
@@ -329,7 +328,6 @@ class FloodWaveHandler:
         :param np.array local_peak_values: The flagged time series of the desired station in a numpy array
         :param pd.DataFrame gauge_data: The time series of the desired station in a DataFrame
         :param str reg_number: The ID of the desired station
-        :param float level_group: level group number of the gauge
         :return pd.DataFrame: A DataFrame containing the given station's peaks with date index
         """
 
