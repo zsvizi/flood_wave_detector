@@ -31,7 +31,6 @@ class GraphBuilder:
         Searching for flood waves and constructing a graph from them. It searches from all the stations, to find all
         possible flood waves. Branching can occur, so a depth first search is used. The end result is saved out.
         :param str folder_name: Name of the folder to use for file handling.
-        :return:
         """
 
         # Read the gauge_peak_plateau_pairs (super dict)
@@ -85,7 +84,6 @@ class GraphBuilder:
         A depth first search algorithm which makes sure, that we have a memory of the branches we didn't map out.
         If it reaches the end of a path, it goes back to the closest branching upwards,
         until we don't have any branch unmapped
-        :return:
         """
         while self.branches.qsize() != 0:
             # Get info from branches (info about the branch)
@@ -111,7 +109,6 @@ class GraphBuilder:
         A date from the list, not the key. Date after the branch
         :param int next_idx: Index of the next gauge pair.
         E.g: index 1 is referring to "1515-1516" if the root is "1514-1515".
-        :return:
         """
 
         # other variables
@@ -177,7 +174,6 @@ class GraphBuilder:
         :param str actual_date: The date of the previous vertex
         :param str gauge_pair: The station pair which contains the IDs of the two vertices' stations
         :param str next_date: The date of the latter vertex
-        :return:
         """
 
         self.reset_path()
@@ -210,7 +206,6 @@ class GraphBuilder:
         :param str next_date: The date of the latter vertex
         :param str actual_gauge: The station ID of the previous vertex
         :param str next_gauge: The station ID the latter vertex
-        :return:
         """
         self.path[actual_gauge] = actual_date
         self.path[next_gauge] = next_date
@@ -227,7 +222,6 @@ class GraphBuilder:
     def reset_path(self) -> None:
         """
         Resetting the path variables before a new search
-        :return:
         """
         self.path = {}
         self.all_paths = {}
@@ -235,7 +229,6 @@ class GraphBuilder:
     def reset_tree_and_flood_wave(self) -> None:
         """
         Resetting the graph and flood wave before next search
-        :return:
         """
         self.tree_g = nx.DiGraph()
         self.flood_wave = {}
@@ -258,7 +251,6 @@ class GraphBuilder:
         :param str next_gauge: ID of the subsequent station
         :param str next_gauge_date: The date of the branching
         :param int next_idx: The index of the previous path
-        :return:
         """
         # TODO: Variable renaming
         path_partial = deepcopy(self.path)  # copy result up to now
@@ -284,7 +276,6 @@ class GraphBuilder:
         :param str next_gauge_date: The date of the latter vertex
         :param str next_gauge: ID of latter station
         :param str current_gauge_date: The date of the current vertex
-        :return:
         """
         # TODO: Variable renaming
         self.tree_g.add_edge(

@@ -71,7 +71,6 @@ class FloodWaveHandler:
         :param datetime actual_date: The date to be converted
         :param dict gauge_pair: A dictionary to store the converted list of strings
         :param pd.DataFrame next_gauge_dates: A DataFrame containing the found dates to be converted
-        :return:
         """
 
         if not next_gauge_dates.empty:
@@ -220,7 +219,6 @@ class FloodWaveHandler:
         :param int up_limit: The upper river kilometre limit
         :param pd.DataFrame meta: A metadata table
         :param list gauges: List of stations to remove from
-        :return:
         """
 
         selected_meta = meta[(meta['river_km'] >= low_limit) &
@@ -251,7 +249,6 @@ class FloodWaveHandler:
         :param nx.Graph joined_graph: A graph to filter out
         :param str end_date: The last possible starting date for the node to be kept
         :param str start_date: The first possible starting date for the node to be kept
-        :return:
         """
 
         remove_date = [
@@ -274,7 +271,6 @@ class FloodWaveHandler:
         :param int start_station: The ID of the desired station as a starting point
         :param int end_station: The ID of the desired station as ending point
         :param nx.Graph joined_graph: A graph to filter out
-        :return:
         """
 
         connected_components = [

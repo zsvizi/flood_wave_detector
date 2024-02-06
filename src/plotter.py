@@ -59,7 +59,6 @@ class Plotter:
         :param bool save: Boolean whether to save the graph or not
         :param bool show_nan: flag for showing missing values in the data (thus intervals)
         :param bool add_isolated_nodes: flag for adding the nodes of 0 degree to the graph.
-        :return:
         """
         if add_isolated_nodes:
             for gauge in self.gauges:
@@ -136,7 +135,6 @@ class Plotter:
 
         :param nx.DiGraph joined_graph: The graph to be saved
         :param str folder_name: Name of the folder to use for file handling.
-        :return:
         """
         joined_graph_save = nx.node_link_data(joined_graph)
         JsonHelper.write(
@@ -163,7 +161,6 @@ class Plotter:
         :param int rotation: Degree of rotation of the labels
         :param str horizontal_alignment: Keyword for alignment
         :param int fontsize: Font size value
-        :return:
         """
 
         min_x = min([n[0] for n in positions.values()])
@@ -195,7 +192,6 @@ class Plotter:
         :param int rotation: Degree of rotation of the labels
         :param str horizontal_alignment: Keyword for alignment
         :param int fontsize: Font size value
-        :return:
         """
 
         min_y = 1
@@ -230,7 +226,6 @@ class Plotter:
         :param int node_size: Size of the vertices
         :param nx.DiGraph nan_graph: The nan graph to be added to the plot. (empty graph if None is given)
         :param dict nan_positions: The positions for the nan graph's nodes'.
-        :return:
         """
 
         plt.rcParams["figure.figsize"] = (x_size, y_size)
