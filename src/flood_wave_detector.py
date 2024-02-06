@@ -83,8 +83,7 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
-        level_groups = json.load(g)
+
         for gauge in self.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
@@ -107,8 +106,7 @@ class FloodWaveDetector:
                 candidate_vertices = self.find_local_maxima(
                     gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
-                    reg_number=str(gauge),
-                    level_group=level_groups[str(gauge)]
+                    reg_number=str(gauge)
                 )
 
                 # Save
@@ -227,7 +225,6 @@ class FloodWaveDetector:
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
             reg_number: str,
-            level_group: float
             ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
@@ -235,9 +232,12 @@ class FloodWaveDetector:
         :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
-        :param float level_group: level group number of the gauge
         :return list: list of tuple of local max values and the date. (date, value)
         """
+
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
+        level_groups = json.load(g)
+        level_group = level_groups[reg_number]
 
         # Clean-up dataframe for getting peak-plateau list
         peaks = FloodWaveHandler.clean_dataframe_for_getting_peak_list(
