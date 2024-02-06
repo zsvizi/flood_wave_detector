@@ -69,7 +69,6 @@ class FloodWaveDetector:
     def run(self) -> None:
         """
         Executes the steps needed to find all the flood waves.
-        :return:
         """
         self.mkdirs()
         self.find_vertices()
@@ -185,7 +184,6 @@ class FloodWaveDetector:
         'PROJECT_PATH/generated_{folder_pf}/find_edges'
         'PROJECT_PATH/generated_{folder_pf}/build_graph'
         'PROJECT_PATH/generated_{folder_pf}/new/build_graph'
-        :return:
         """
 
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name), exist_ok=True)

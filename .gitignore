@@ -1,8 +1,10 @@
-/venv
+/.venv/
+/venv/
 /.idea
-/data
-/notebooks
+/data/
+/notebooks/
 /__pycache__
 *.ini
 /generated*
 /src/__pycache__
+*.json
