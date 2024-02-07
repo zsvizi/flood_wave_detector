@@ -126,6 +126,7 @@ class Plotter:
             self.graph = directed_graph
 
         plt.savefig(os.path.join(PROJECT_PATH, folder_name, file_name + ".pdf"), bbox_inches='tight')
+        plt.show()
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
@@ -242,7 +243,7 @@ class Plotter:
             nx.draw_networkx(nan_graph, pos=nan_positions, node_size=200, node_color='red', alpha=0.3)
         plt.axis('on')  # turns on axis
         plt.grid(visible=True, which='major', color='black')
-        ax.patch.set_linewidth('4')
+        ax.patch.set_linewidth(4)
         ax.patch.set_edgecolor('black')
         ax.set_facecolor('white')
 
