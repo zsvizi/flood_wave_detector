@@ -222,7 +222,7 @@ class FloodWaveDetector:
     def find_local_maxima(
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
-            reg_number: str,
+            reg_number: str
             ) -> list:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
