@@ -265,7 +265,6 @@ class Analysis:
 
         return unfinished_waves
 
-
     def create_flood_map(
             self,
             joined_graph: nx.DiGraph,
@@ -282,6 +281,7 @@ class Analysis:
         flood_map = nx.DiGraph()
         river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
         flood_map_edges = []
+
         def func(j_graph, start_nodes, end_nodes):
             edges = []
             for start in start_nodes:

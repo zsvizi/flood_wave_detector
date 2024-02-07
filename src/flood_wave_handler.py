@@ -28,7 +28,7 @@ class FloodWaveHandler:
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{gauge}.json'))
         gauge_peaks = pd.DataFrame(data=gauge_with_index,
-                                   columns=['Date', 'Max value'])
+                                   columns=['Date', 'Max value', 'Color'])
         gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
         return gauge_peaks
 
@@ -71,7 +71,6 @@ class FloodWaveHandler:
         :param datetime actual_date: The date to be converted
         :param dict gauge_pair: A dictionary to store the converted list of strings
         :param pd.DataFrame next_gauge_dates: A DataFrame containing the found dates to be converted
-        :return:
         """
 
         if not next_gauge_dates.empty:
@@ -220,7 +219,6 @@ class FloodWaveHandler:
         :param int up_limit: The upper river kilometre limit
         :param pd.DataFrame meta: A metadata table
         :param list gauges: List of stations to remove from
-        :return:
         """
 
         selected_meta = meta[(meta['river_km'] >= low_limit) &
@@ -251,7 +249,6 @@ class FloodWaveHandler:
         :param nx.Graph joined_graph: A graph to filter out
         :param str end_date: The last possible starting date for the node to be kept
         :param str start_date: The first possible starting date for the node to be kept
-        :return:
         """
 
         remove_date = [
@@ -274,7 +271,6 @@ class FloodWaveHandler:
         :param int start_station: The ID of the desired station as a starting point
         :param int end_station: The ID of the desired station as ending point
         :param nx.Graph joined_graph: A graph to filter out
-        :return:
         """
 
         connected_components = [
@@ -295,19 +291,26 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peaks: pd.DataFrame) -> list:
+    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> list:
         """
-        Creates a list containing (date, value) tuples.
+        Creates a list containing (date, value, color) tuples.
         :param pd.DataFrame peaks: single column DataFrame which to convert
+        :param float level_group: level group number of the gauge
         :return list: Tuple list
         """
-        # TODO: Renaming suggestion: get_peak_tuples / get_peak_list
         peak_tuples = peaks.to_records(index=True)
         peak_list = [
             tuple(x)
             for x in peak_tuples
         ]
-        return peak_list
+        peak_list_new = []
+        for i in range(len(peak_list)):
+            if peak_list[i][1] < level_group:
+                color = "yellow"
+            else:
+                color = "red"
+            peak_list_new.append(tuple((peak_list[i][0], peak_list[i][1], color)))
+        return peak_list_new
 
     @staticmethod
     def clean_dataframe_for_getting_peak_list(
@@ -328,7 +331,7 @@ class FloodWaveHandler:
         peaks.info()
         peaks.index = pd.to_datetime(peaks.index).strftime('%Y-%m-%d')
         peaks.info()
-        peaks = peaks.drop(columns="Date") #      .set_index(peaks.index.strftime('%Y-%m-%d'))
+        peaks = peaks.drop(columns="Date")  # .set_index(peaks.index.strftime('%Y-%m-%d'))
         peaks[reg_number] = peaks[reg_number].astype(float)
         return peaks
 
