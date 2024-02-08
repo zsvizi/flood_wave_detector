@@ -1,4 +1,5 @@
 import itertools
+import json
 import os
 from typing import Union
 
@@ -68,7 +69,6 @@ class FloodWaveDetector:
     def run(self) -> None:
         """
         Executes the steps needed to find all the flood waves.
-        :return:
         """
         self.mkdirs()
         if self.start_date >= "1876-01-01" and self.end_date <= "1876-12-31":
@@ -198,6 +198,7 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
+
         for gauge in self.gauges:
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
@@ -326,7 +327,6 @@ class FloodWaveDetector:
         'PROJECT_PATH/generated_{folder_pf}/find_edges'
         'PROJECT_PATH/generated_{folder_pf}/build_graph'
         'PROJECT_PATH/generated_{folder_pf}/new/build_graph'
-        :return:
         """
 
         os.makedirs(os.path.join(PROJECT_PATH, self.folder_name), exist_ok=True)
@@ -376,6 +376,10 @@ class FloodWaveDetector:
         :return list: list of tuple of local max values and the date. (date, value)
         """
 
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
+        level_groups = json.load(g)
+        level_group = level_groups[reg_number]
+
         # Clean-up dataframe for getting peak-plateau list
         peaks = FloodWaveHandler.clean_dataframe_for_getting_peak_list(
             local_peak_values=local_peak_values,
@@ -384,4 +388,4 @@ class FloodWaveDetector:
         )
 
         # Get peak-plateau list
-        return FloodWaveHandler.get_peak_list(peaks=peaks)
+        return FloodWaveHandler.get_peak_list(peaks=peaks, level_group=level_group)
