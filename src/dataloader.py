@@ -21,6 +21,10 @@ class Dataloader:
             url = 'https://drive.google.com/uc?id=1jZP1bfGTjoz-f-VzHPmzH6YU6ZaO_JQa'
             output = os.path.join(PROJECT_PATH, 'data', self.dataset_name + ".csv")
             gdown.download(url, output, quiet=False)
+        if not os.path.exists(os.path.join(PROJECT_PATH, 'data', 'existing_stations' + ".json")):
+            url = 'https://drive.google.com/uc?id=1QinvW_BqUJ4pRJ52XpJeirdD_tocjd-Z'
+            output = os.path.join(PROJECT_PATH, 'data', 'existing_stations' + ".csv")
+            gdown.download(url, output, quiet=False)
         if not os.path.exists(os.path.join(PROJECT_PATH, 'data', 'level_groups_fontos' + '.json')):
             url = 'https://drive.google.com/uc?id=1kye_jkO1DhOJFZ80cmKfl1XKieFED3Xu'
             output = os.path.join(PROJECT_PATH, 'data', 'level_groups_fontos' + '.json')

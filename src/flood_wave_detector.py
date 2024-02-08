@@ -1,6 +1,7 @@
 import itertools
 import json
 import os
+from datetime import datetime, timedelta
 from typing import Union
 
 import numpy as np
@@ -71,125 +72,47 @@ class FloodWaveDetector:
         Executes the steps needed to find all the flood waves.
         """
         self.mkdirs()
-        if self.start_date >= "1876-01-01" and self.end_date <= "1876-12-31":
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-            self.find_vertices()
-            self.find_edges()
-        elif self.start_date >= "1877-01-01" and self.end_date <= "1887-12-31":
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.find_vertices()
-            self.find_edges()
-        elif self.start_date >= "1888-01-01" and self.end_date <= "1888-12-31":
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.find_vertices()
-            self.find_edges()
-        elif self.start_date >= "1889-01-01":
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-            self.find_vertices()
-            self.find_edges()
-        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1877-01-01" <= self.end_date <= "1887-12-31":
-            end_date_copy = self.end_date
 
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-            self.end_date = "1876-12-31"
-            self.find_vertices()
-            self.find_edges()
+        stations_life_intervals = JsonHelper.read(filepath=os.path.join(PROJECT_PATH,
+                                                                        'data', 'existing_stations.json'))
+        all_dates = [self.start_date, self.end_date]
+        for gauge in self.gauges:
+            x = stations_life_intervals[str(gauge)]["start"]
+            y = stations_life_intervals[str(gauge)]["end"]
+            all_dates = self.add_elem(list0=all_dates, date=x)
+            all_dates = self.add_elem(list0=all_dates, date=y)
+        all_dates.sort(key=lambda d: datetime.strptime(d, '%Y-%m-%d'))
+        cut_dates = [date for date in all_dates if self.start_date <= date <= self.end_date]
 
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1877-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
-        elif "1877-01-01" <= self.start_date <= "1887-12-31" and "1888-01-01" <= self.end_date <= "1888-12-31":
-            end_date_copy = self.end_date
+        for i in range(len(cut_dates) - 1):
+            gauges_copy = self.gauges
 
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.end_date = "1887-12-31"
+            self.start_date = cut_dates[i]
+            self.end_date = cut_dates[i + 1]
+
+            exist = str(datetime.strptime(cut_dates[i], "%Y-%m-%d") + timedelta(days=1))
+            existing_gauges = []
+            for gauge in self.gauges:
+                if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
+                    existing_gauges.append(gauge)
+            self.gauges = existing_gauges
+
             self.find_vertices()
             self.find_edges()
 
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1888-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
-        elif "1888-01-01" <= self.start_date <= "1888-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
-            end_date_copy = self.end_date
+            # Set original values
+            self.gauges = gauges_copy
+            self.start_date = cut_dates[0]
+            self.end_date = cut_dates[-1]
 
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.end_date = "1888-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-            self.start_date = "1889-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
-        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1888-01-01" <= self.end_date <= "1888-12-31":
-            end_date_copy = self.end_date
-
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-            self.end_date = "1876-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1877-01-01"
-            self.end_date = "1887-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1888-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
-        elif "1877-01-01" <= self.start_date <= "1887-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
-            end_date_copy = self.end_date
-
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.end_date = "1887-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1888-01-01"
-            self.end_date = "1888-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-            self.start_date = "1889-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
-        elif "1876-01-01" <= self.start_date <= "1876-12-31" and "1889-01-01" <= self.end_date <= "2019-12-31":
-            end_date_copy = self.end_date
-
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-            self.end_date = "1876-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1877-01-01"
-            self.end_date = "1887-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]
-            self.start_date = "1888-01-01"
-            self.end_date = "1888-12-31"
-            self.find_vertices()
-            self.find_edges()
-
-            self.gauges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-            self.start_date = "1889-01-01"
-            self.end_date = end_date_copy
-            self.find_vertices()
-            self.find_edges()
         GraphBuilder().build_graph(folder_name=self.folder_name)
+
+    @staticmethod
+    def add_elem(list0: list, date: str):
+        if date not in list0:
+            list0.append(date)
+
+        return list0
 
     @measure_time
     def find_vertices(self) -> None:
