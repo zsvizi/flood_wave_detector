@@ -32,15 +32,47 @@ class Filtering:
 
         return g
 
-    def filter_multiple_gauges(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
+    def filter_only_in_interval(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
         """
-        This function filters for an interval of gauges. Any component starting in the interval will be displayed,
+        This function filters for an interval of gauges. Each component's intersection with the given interval
+        will be displayed.
+
+        :param nx.DiGraph graph: graph to be filtered
+        :param str start_gauge: first gauge of the interval as a string
+        :param str end_gauge: last gauge of the interval as a string
+        :return nx.DiGraph: graph that contains only components that intersect with the interval
+        """
+
+        filtered = self.filter_intersecting_with_interval(graph=graph, start_gauge=start_gauge, end_gauge=end_gauge)
+
+        gauges = [str(i) for i in range(1, 15)]
+        comps = list(nx.weakly_connected_components(filtered))
+        edges = filtered.edges()
+        edges = list(edges)
+
+        gauges_to_delete = gauges[:gauges.index(start_gauge)]
+        comps = self.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+
+        gauges_to_delete = gauges[gauges.index(end_gauge):]
+        comps = self.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+
+        g = nx.DiGraph()
+        g.add_nodes_from(nodes_filtered)
+        g.add_edges_from(edges_filtered)
+
+        return g
+
+    def filter_intersecting_with_interval(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
+        """
+        This function filters for an interval of gauges. Any component intersecting with the interval will be displayed,
         otherwise deleted.
 
         :param nx.DiGraph graph: graph to be filtered
         :param str start_gauge: first gauge of the interval as a string
         :param str end_gauge: last gauge of the interval as a string
-        :return nx.DiGraph: graph that contains only components which have their starting node in the given interval
+        :return nx.DiGraph: graph that contains only components that intersect with the interval
         """
 
         gauges = [str(i) for i in range(1, 15)]
@@ -60,14 +92,6 @@ class Filtering:
             if not any(list_of_bools):
                 comps.remove(comp)
 
-        comps_copy = comps.copy()
-        gauges_to_delete = gauges[0:gauges.index(start_gauge)]
-        for comp in comps_copy:
-            comp_copy = comp.copy()
-            for elem in comp_copy:
-                if any(gtd == elem[0] for gtd in gauges_to_delete):
-                    comps[comps.index(comp)].remove(elem)
-
         nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
 
         g = nx.DiGraph()
@@ -75,6 +99,24 @@ class Filtering:
         g.add_edges_from(edges_filtered)
 
         return g
+
+    @staticmethod
+    def remove_nodes(comps: list, gauges_to_delete: list) -> list:
+        """
+        This function removes nodes corresponding to gauges_to_delete from all components.
+
+        :param list comps: list of components
+        :param list gauges_to_delete: list of gauges to delete
+        :return list: remaining components
+        """
+
+        comps_copy = comps.copy()
+        for comp in comps_copy:
+            comp_copy = comp.copy()
+            for elem in comp_copy:
+                if any(gtd == elem[0] for gtd in gauges_to_delete):
+                    comps[comps.index(comp)].remove(elem)
+        return comps
 
     def filter_by_water_level(self,
                               graph: nx.DiGraph,
