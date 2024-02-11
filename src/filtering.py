@@ -20,11 +20,12 @@ class Filtering:
         comps_copy = comps.copy()
         edges = list(edges)
 
+        comps_new = []
         for comp in comps_copy:
-            if not self.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
-                comps.remove(comp)
+            if self.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
+                comps_new.append(comp)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps_new, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
@@ -45,10 +46,11 @@ class Filtering:
 
         filtered = self.filter_intersecting_with_interval(graph=graph, start_gauge=start_gauge, end_gauge=end_gauge)
 
-        gauges = [str(i) for i in range(1, 15)]
         comps = list(nx.weakly_connected_components(filtered))
         edges = filtered.edges()
         edges = list(edges)
+
+        gauges = self.get_gauges(comps=comps)
 
         gauges_to_delete = gauges[:gauges.index(start_gauge)]
         comps = self.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
@@ -75,30 +77,52 @@ class Filtering:
         :return nx.DiGraph: graph that contains only components that intersect with the interval
         """
 
-        gauges = [str(i) for i in range(1, 15)]
         comps = list(nx.weakly_connected_components(graph))
         edges = graph.edges()
         comps_copy = comps.copy()
         edges = list(edges)
 
+        gauges = self.get_gauges(comps=comps)
+
         filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge) + 1]
 
+        comps_new = []
         for comp in comps_copy:
             list_of_bools = []
             for fg in filtered_gauges:
                 x = self.is_gauge_in_comp(gauge=fg, comp_list=list(comp))
                 list_of_bools.append(x)
 
-            if not any(list_of_bools):
-                comps.remove(comp)
+            if any(list_of_bools):
+                comps_new.append(comp)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps_new, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
         g.add_edges_from(edges_filtered)
 
         return g
+
+    @staticmethod
+    def get_gauges(comps: list) -> list:
+        """
+        This function collects the gauges corresponding to a node in the actual graph
+        :param list comps: list of components in the graph
+        :return list: decreasingly sorted gauge numbers
+        """
+
+        for i in range(len(comps)):
+            comps[i] = list(comps[i])
+        nodes = [item for sublist in comps for item in sublist]
+
+        gauges = []
+        for node in nodes:
+            if node[0] not in gauges:
+                gauges.append(node[0])
+        decreasing_gauges = sorted(gauges, key=lambda x: str(float(x)), reverse=True)
+
+        return decreasing_gauges
 
     @staticmethod
     def remove_nodes(comps: list, gauges_to_delete: list) -> list:
