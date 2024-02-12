@@ -6,7 +6,8 @@ class Filtering:
     This class contains filtering functions for the final graph.
     """
 
-    def filter_by_gauge(self, graph: nx.DiGraph, gauge: str) -> nx.DiGraph:
+    @staticmethod
+    def filter_by_gauge(graph: nx.DiGraph, gauge: str) -> nx.DiGraph:
         """
         This function filters out weakly connected components that have the given gauge as a node.
 
@@ -22,10 +23,10 @@ class Filtering:
 
         comps_new = []
         for comp in comps_copy:
-            if self.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
+            if Filtering.is_gauge_in_comp(gauge=gauge, comp_list=list(comp)):
                 comps_new.append(comp)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps_new, edges=edges)
+        nodes_filtered, edges_filtered = Filtering.nodes_and_edges(comps=comps_new, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
@@ -33,7 +34,8 @@ class Filtering:
 
         return g
 
-    def filter_only_in_interval(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
+    @staticmethod
+    def filter_only_in_interval(graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
         """
         This function filters for an interval of gauges. Each component's intersection with the given interval
         will be displayed.
@@ -44,21 +46,23 @@ class Filtering:
         :return nx.DiGraph: graph that contains only components that intersect with the interval
         """
 
-        filtered = self.filter_intersecting_with_interval(graph=graph, start_gauge=start_gauge, end_gauge=end_gauge)
+        filtered = Filtering.filter_intersecting_with_interval(graph=graph,
+                                                               start_gauge=start_gauge,
+                                                               end_gauge=end_gauge)
 
         comps = list(nx.weakly_connected_components(filtered))
         edges = filtered.edges()
         edges = list(edges)
 
-        gauges = self.get_gauges(comps=comps)
+        gauges = Filtering.get_gauges(comps=comps)
 
         gauges_to_delete = gauges[:gauges.index(start_gauge)]
-        comps = self.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+        comps = Filtering.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
 
         gauges_to_delete = gauges[gauges.index(end_gauge):]
-        comps = self.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+        comps = Filtering.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+        nodes_filtered, edges_filtered = Filtering.nodes_and_edges(comps=comps, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
@@ -66,7 +70,8 @@ class Filtering:
 
         return g
 
-    def filter_intersecting_with_interval(self, graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
+    @staticmethod
+    def filter_intersecting_with_interval(graph: nx.DiGraph, start_gauge: str, end_gauge: str) -> nx.DiGraph:
         """
         This function filters for an interval of gauges. Any component intersecting with the interval will be displayed,
         otherwise deleted.
@@ -82,7 +87,7 @@ class Filtering:
         comps_copy = comps.copy()
         edges = list(edges)
 
-        gauges = self.get_gauges(comps=comps)
+        gauges = Filtering.get_gauges(comps=comps)
 
         filtered_gauges = gauges[gauges.index(start_gauge):gauges.index(end_gauge) + 1]
 
@@ -90,13 +95,13 @@ class Filtering:
         for comp in comps_copy:
             list_of_bools = []
             for fg in filtered_gauges:
-                x = self.is_gauge_in_comp(gauge=fg, comp_list=list(comp))
+                x = Filtering.is_gauge_in_comp(gauge=fg, comp_list=list(comp))
                 list_of_bools.append(x)
 
             if any(list_of_bools):
                 comps_new.append(comp)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps_new, edges=edges)
+        nodes_filtered, edges_filtered = Filtering.nodes_and_edges(comps=comps_new, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
@@ -142,8 +147,8 @@ class Filtering:
                     comps[comps.index(comp)].remove(elem)
         return comps
 
-    def filter_by_water_level(self,
-                              graph: nx.DiGraph,
+    @staticmethod
+    def filter_by_water_level(graph: nx.DiGraph,
                               gauge: str,
                               positions: dict,
                               node_colors: list,
@@ -190,7 +195,7 @@ class Filtering:
                 if not any(c == color for color in colors_of_gauge):
                     comps.remove(comp)
 
-        nodes_filtered, edges_filtered = self.nodes_and_edges(comps=comps, edges=edges)
+        nodes_filtered, edges_filtered = Filtering.nodes_and_edges(comps=comps, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
