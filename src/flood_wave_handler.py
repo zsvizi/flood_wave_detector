@@ -445,3 +445,26 @@ class FloodWaveHandler:
                 folder_name=folder_name
             )
         return joined_graph
+
+    @staticmethod
+    def get_dates_in_between(start_date: str, end_date: str, intervals: dict, gauges: list) -> list:
+        """
+        This function returns dates from intervals that are in-between start_date and end_date
+
+        :param str start_date: starting date
+        :param str end_date: ending date
+        :param str intervals: dictionary containing dates regarding the existence of gauges
+        :param list gauges: list of gauges
+        :return list: list of dates in-between start_date and end_date
+        """
+
+        all_dates = [start_date, end_date]
+        for gauge in gauges:
+            x = intervals[str(gauge)]["start"]
+            y = intervals[str(gauge)]["end"]
+            all_dates = all_dates + [x] if x not in all_dates else all_dates
+            all_dates = all_dates + [y] if y not in all_dates else all_dates
+        all_dates.sort(key=lambda d: datetime.strptime(d, '%Y-%m-%d'))
+        cut_dates = [date for date in all_dates if start_date <= date <= end_date]
+
+        return cut_dates

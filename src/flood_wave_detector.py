@@ -75,14 +75,11 @@ class FloodWaveDetector:
 
         stations_life_intervals = JsonHelper.read(filepath=os.path.join(PROJECT_PATH,
                                                                         'data', 'existing_stations.json'))
-        all_dates = [self.start_date, self.end_date]
-        for gauge in self.gauges:
-            x = stations_life_intervals[str(gauge)]["start"]
-            y = stations_life_intervals[str(gauge)]["end"]
-            all_dates = self.add_elem(list0=all_dates, date=x)
-            all_dates = self.add_elem(list0=all_dates, date=y)
-        all_dates.sort(key=lambda d: datetime.strptime(d, '%Y-%m-%d'))
-        cut_dates = [date for date in all_dates if self.start_date <= date <= self.end_date]
+
+        cut_dates = FloodWaveHandler.get_dates_in_between(start_date=self.start_date,
+                                                          end_date=self.end_date,
+                                                          intervals=stations_life_intervals,
+                                                          gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
             gauges_copy = self.gauges
@@ -106,13 +103,6 @@ class FloodWaveDetector:
             self.end_date = cut_dates[-1]
 
         GraphBuilder().build_graph(folder_name=self.folder_name)
-
-    @staticmethod
-    def add_elem(list0: list, date: str):
-        if date not in list0:
-            list0.append(date)
-
-        return list0
 
     @measure_time
     def find_vertices(self) -> None:
@@ -170,17 +160,7 @@ class FloodWaveDetector:
         """
 
         vertex_pairs = {}
-        does_big_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
-                                             'vertex_pairs.json'))
-
         for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
-            does_actual_json_exist = os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges',
-                                                    f'{current_gauge}_{next_gauge}.json'))
-
-            # I had to comment this part out because from now on updating existing files is crucial.
-            # if does_actual_json_exist and does_big_json_exist:
-            #     continue
-
             # Read the data from the actual gauge.
             current_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge,
                                                                                  folder_name=self.folder_name)
