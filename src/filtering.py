@@ -141,14 +141,14 @@ class Filtering:
         edges = list(edges)
         for comp in comps_copy:
             comp_list = list(comp)
-            i0_list = []
+            i_zero_list = []
             gauge_in_comp = []
             for i in comp_list:
-                i0_list.append(i[0])
+                i_zero_list.append(i[0])
                 if gauge == i[0]:
                     gauge_in_comp.append(i)
 
-            if not any(gauge == elem for elem in i0_list):
+            if not any(gauge == elem for elem in i_zero_list):
                 comps.remove(comp)
             else:
                 colors_of_gauge = []
