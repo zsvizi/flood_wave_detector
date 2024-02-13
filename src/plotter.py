@@ -293,10 +293,12 @@ class Plotter:
         """
         This function colors and labels the nodes of the graph. The color will be yellow if the water level at the
         node is low, and red if high. The label of the node will be the water level.
+
         :param nx.DiGraph directed_graph: graph to be colored and labelled
         :param str folder_name: name of the generated folder
         :return list: list of node colors
         """
+
         colors = [""] * len(self.positions)
         labels = {}
         for gauge in self.gauges:
