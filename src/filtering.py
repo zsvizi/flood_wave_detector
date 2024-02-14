@@ -1,6 +1,6 @@
 import networkx as nx
 
-from filtering_handler import FilteringHandler
+from src.filtering_handler import FilteringHandler
 
 
 class Filtering:
