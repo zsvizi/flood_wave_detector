@@ -17,18 +17,26 @@ class Dataloader:
         self.data = self.read_data()
 
     def download_data(self):
-        if not os.path.exists(os.path.join(PROJECT_PATH, 'data', self.dataset_name + ".csv")):
-            url = 'https://drive.google.com/uc?id=1jZP1bfGTjoz-f-VzHPmzH6YU6ZaO_JQa'
-            output = os.path.join(PROJECT_PATH, 'data', self.dataset_name + ".csv")
-            gdown.download(url, output, quiet=False)
-        if not os.path.exists(os.path.join(PROJECT_PATH, 'data', 'level_groups_fontos' + '.json')):
-            url = 'https://drive.google.com/uc?id=1kye_jkO1DhOJFZ80cmKfl1XKieFED3Xu'
-            output = os.path.join(PROJECT_PATH, 'data', 'level_groups_fontos' + '.json')
-            gdown.download(url, output, quiet=False)
-        if not os.path.exists(os.path.join(PROJECT_PATH, 'data', 'meta_fontos' + '.csv')):
-            url = 'https://drive.google.com/uc?id=1B5e3Yi2Elow5cRR1vdPVYz4eNuzKOgdP'
-            output = os.path.join(PROJECT_PATH, 'data', 'meta_fontos' + '.csv')
-            gdown.download(url, output, quiet=False)
+        if not self.do_all_files_exist():
+            url = "https://drive.google.com/drive/folders/1gCC5gLKBh8NLWt_ham42EGk_WKQk_c_B"
+            output = os.path.join(PROJECT_PATH, 'data')
+            gdown.download_folder(url=url, output=output)
+
+    @staticmethod
+    def do_all_files_exist() -> bool:
+        """
+        This function checks whether all the files we wish to download already exist
+
+        :return bool: True if all of them exist, False if at least one is missing
+        """
+
+        files = ["adatok_fontos.csv", "existing_stations.json", "level_groups_fontos.json", "meta_fontos.csv"]
+
+        for file in files:
+            if not os.path.exists(os.path.join(PROJECT_PATH, 'data', file)):
+                return False
+
+        return True
 
     @staticmethod
     def get_metadata():
