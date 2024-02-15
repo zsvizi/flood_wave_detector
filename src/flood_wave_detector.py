@@ -1,3 +1,4 @@
+import copy
 import itertools
 import json
 import os
@@ -73,6 +74,8 @@ class FloodWaveDetector:
         """
         self.mkdirs()
 
+        gauges_copy = copy.deepcopy(self.gauges)
+
         stations_life_intervals = JsonHelper.read(filepath=os.path.join(PROJECT_PATH,
                                                                         'data', 'existing_stations.json'))
 
@@ -82,8 +85,6 @@ class FloodWaveDetector:
                                                           gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
-            gauges_copy = self.gauges
-
             self.start_date = cut_dates[i]
             self.end_date = cut_dates[i + 1]
 
@@ -97,10 +98,10 @@ class FloodWaveDetector:
             self.find_vertices()
             self.find_edges()
 
-            # Set original values
-            self.gauges = gauges_copy
-            self.start_date = cut_dates[0]
-            self.end_date = cut_dates[-1]
+        # Set original values
+        self.gauges = gauges_copy
+        self.start_date = cut_dates[0]
+        self.end_date = cut_dates[-1]
 
         GraphBuilder().build_graph(folder_name=self.folder_name)
 
