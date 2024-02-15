@@ -5,8 +5,8 @@ from queue import LifoQueue
 import networkx as nx
 
 from src import PROJECT_PATH
-from src.json_helper import JsonHelper
-from src.measure_time import measure_time
+from src.utils.json_helper import JsonHelper
+from src.utils.measure_time import measure_time
 
 
 class GraphBuilder:

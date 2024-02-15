@@ -3,7 +3,7 @@ from typing import Union, Callable
 
 import networkx as nx
 
-from src.flood_wave_data import FloodWaveData
+from src.data.flood_wave_data import FloodWaveData
 
 
 class Analysis:

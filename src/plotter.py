@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.flood_wave_data import FloodWaveData
-from src.flood_wave_handler import FloodWaveHandler
-from src.json_helper import JsonHelper
+from src.data.flood_wave_data import FloodWaveData
+from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
+from src.utils.json_helper import JsonHelper
 
 
 class Plotter:

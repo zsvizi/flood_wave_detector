@@ -9,12 +9,12 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.flood_wave_data import FloodWaveData
-from src.flood_wave_handler import FloodWaveHandler
-from src.gauge_data import GaugeData
-from src.graph_builder import GraphBuilder
-from src.json_helper import JsonHelper
-from src.measure_time import measure_time
+from src.data.flood_wave_data import FloodWaveData
+from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
+from src.data.gauge_data import GaugeData
+from src.flood_wave_core.graph_builder import GraphBuilder
+from src.utils.json_helper import JsonHelper
+from src.utils.measure_time import measure_time
 
 
 class FloodWaveDetector:
@@ -90,7 +90,7 @@ class FloodWaveDetector:
 
             exist = str(datetime.strptime(cut_dates[i], "%Y-%m-%d") + timedelta(days=1))
             existing_gauges = []
-            for gauge in self.gauges:
+            for gauge in gauges_copy:
                 if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
                     existing_gauges.append(gauge)
             self.gauges = existing_gauges
