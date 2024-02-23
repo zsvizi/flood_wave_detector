@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
 import os
 
+from datetime import datetime, timedelta
 import networkx as nx
 import numpy as np
 import pandas as pd
+from typing import Union
 
 from src import PROJECT_PATH
 from src.utils.json_helper import JsonHelper
@@ -81,7 +82,15 @@ class FloodWaveHandler:
             gauge_pair[actual_date.strftime('%Y-%m-%d')] = (found_next_dates_str, slopes)
 
     @staticmethod
-    def preprocess_for_get_slopes(current_gauge, next_gauge, river_kms, folder_name):
+    def preprocess_for_get_slopes(current_gauge: str, next_gauge: str, river_kms: pd.DataFrame, folder_name: str):
+        """
+        This is a helper function for FloodWaveHandler.get_slopes()
+        :param str current_gauge: gauge number of current gauge as a string
+        :param str next_gauge: gauge number of current gauge as a string
+        :param pd.DataFrame river_kms: dataframe of river kilometers
+        :param str folder_name: name of the data folder as a string
+        :return tuple: current_vertices, next_vertices, current_null, next_null, distance
+        """
         null_points = JsonHelper.read(os.path.join(PROJECT_PATH, 'data', 'nullpontok_fontos.json'))
         current_null = null_points[current_gauge]
         next_null = null_points[next_gauge]
@@ -99,14 +108,25 @@ class FloodWaveHandler:
         return current_vertices, next_vertices, current_null, next_null, distance
 
     @staticmethod
-    def get_slopes(current_date,
+    def get_slopes(current_date: datetime,
                    next_dates: pd.DataFrame,
                    current_vertices: dict,
                    next_vertices: dict,
                    current_null: float,
                    next_null: float,
                    distance: float
-                   ):
+                   ) -> Union[float, list]:
+        """
+        This function calculates the slopes between the current vertex and the next vertices in cm/km
+        :param datetime current_date: the current date as datetime
+        :param pd.DataFrame next_dates: dataframe containing the next dates
+        :param dict current_vertices: dictionary containing all the vertices belonging to the current gauge
+        :param dict next_vertices: dictionary containing all the vertices belonging to the next gauge
+        :param float current_null: null point of the current gauge
+        :param float next_null: null point of the next gauge
+        :param float distance: distance between the current and next gauges in km
+        :return Union[float, list]: the slope as a float if len(next_dates) == 1, or the slopes as a list otherwise
+        """
         current_date = current_date.strftime("%Y-%m-%d")
 
         current_water_level = current_vertices[current_date][0]
