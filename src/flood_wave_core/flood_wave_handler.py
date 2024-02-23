@@ -27,7 +27,8 @@ class FloodWaveHandler:
         """
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{gauge}.json'))
-        gauge_peaks = pd.DataFrame(data=gauge_with_index,
+        list_with_index = [[i, gauge_with_index[i][0], gauge_with_index[i][1]] for i in list(gauge_with_index.keys())]
+        gauge_peaks = pd.DataFrame(data=list_with_index,
                                    columns=['Date', 'Max value', 'Color'])
         gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
         return gauge_peaks
@@ -76,6 +77,11 @@ class FloodWaveHandler:
         if not next_gauge_dates.empty:
             found_next_dates_str = next_gauge_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
             gauge_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
+
+    @staticmethod
+    def get_slopes(current_gauge, next_gauge, current_date, next_dates):
+        pass
+        # for next_date in next_dates:
 
     @staticmethod
     def sort_wave(
@@ -291,25 +297,25 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> list:
+    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> dict:
         """
         Creates a list containing (date, value, color) tuples.
         :param pd.DataFrame peaks: single column DataFrame which to convert
         :param float level_group: level group number of the gauge
-        :return list: Tuple list
+        :return dict: dictionary
         """
         peak_tuples = peaks.to_records(index=True)
         peak_list = [
             tuple(x)
             for x in peak_tuples
         ]
-        peak_list_new = []
+        peak_list_new = {}
         for i in range(len(peak_list)):
             if peak_list[i][1] < level_group:
                 color = "yellow"
             else:
                 color = "red"
-            peak_list_new.append(tuple((peak_list[i][0], peak_list[i][1], color)))
+            peak_list_new[peak_list[i][0]] = [peak_list[i][1], color]
         return peak_list_new
 
     @staticmethod

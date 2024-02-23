@@ -170,11 +170,9 @@ class StatisticalAnalysis:
         gauges_dct = {}
         for gauge in gauges:
             f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
-            elem = json.load(f)
-            lst1 = [item for sublist in elem for item in sublist]
-            levels_dct = {lst1[i]: tuple((lst1[i + 1], lst1[i + 2]))
-                          for i in range(0, len(lst1), 3) if start_date <= lst1[i] <= end_date}
-            node_colors = [levels_dct[i][1] for i in list(levels_dct.keys())]
+            read_dct = json.load(f)
+
+            node_colors = [read_dct[i][1] for i in list(read_dct.keys()) if start_date <= i <= end_date]
             gauges_dct[f"{gauge}"] = node_colors
 
         return gauges_dct

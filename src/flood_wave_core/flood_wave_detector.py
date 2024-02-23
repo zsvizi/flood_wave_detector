@@ -147,10 +147,10 @@ class FloodWaveDetector:
                     candidate_read = JsonHelper.read(
                         filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'))
 
-                    candidate_new = candidate_read + candidate_vertices
+                    candidate_read.update(candidate_vertices)
                     JsonHelper.write(
                         filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                        obj=candidate_new)
+                        obj=candidate_read)
 
     @measure_time
     def find_edges(self) -> None:
@@ -270,14 +270,14 @@ class FloodWaveDetector:
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
             reg_number: str
-            ) -> list:
+            ) -> dict:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
         :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
-        :return list: list of tuple of local max values and the date. (date, value)
+        :return dict: dictionary of tuple of local max values and the date. (date: [value, color])
         """
 
         g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
