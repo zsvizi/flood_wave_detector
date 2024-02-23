@@ -10,9 +10,18 @@ from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
 
 
 class StatisticalAnalysis:
+    """
+    This class contains functions for statistically analysing flood wave graphs
+    """
 
     @staticmethod
-    def calculate_mean_velocity(river_kms: pd.Series, graph: nx.DiGraph) -> list:
+    def calculate_all_velocities(river_kms: pd.Series, graph: nx.DiGraph) -> list:
+        """
+        This function calculates the velocity of all flood waves in the input graph
+        :param pd.Series river_kms: river kilometers of the gauges
+        :param nx.DiGraph graph: the graph
+        :return list: velocities in a list
+        """
         velocities = []
         for comp in list(nx.weakly_connected_components(graph)):
             comp = list(comp)
@@ -50,6 +59,14 @@ class StatisticalAnalysis:
                                    gauge_pairs: list,
                                    folder_name: str,
                                    length: int) -> list:
+        """
+        This function calculates moving average time series of the velocities
+        :param pd.Series river_kms: river kilometers of the gauges
+        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
+        :param str folder_name: name of the generated data folder
+        :param int length: length of one period in years
+        :return list: moving average time series of the velocities
+        """
         mean_velocities = []
         for i in range(1876 + length, 2020):
             args = {"start_date": f'{i - length}-01-01',
@@ -58,7 +75,7 @@ class StatisticalAnalysis:
                     "folder_name": folder_name}
             graph = FloodWaveHandler().create_directed_graph(**args)
 
-            velocities = StatisticalAnalysis.calculate_mean_velocity(river_kms=river_kms, graph=graph)
+            velocities = StatisticalAnalysis.calculate_all_velocities(river_kms=river_kms, graph=graph)
             mean_velocity = np.mean(velocities)
 
             mean_velocities.append(mean_velocity)
@@ -69,12 +86,20 @@ class StatisticalAnalysis:
 
     @staticmethod
     def get_statistics(river_kms: pd.Series, gauges: list, gauge_pairs: list, folder_name: str) -> pd.DataFrame:
-        # Create a dataframe containing some statistics
+        """
+        This function creates a dataframe containing some statistics of the whole graph yearly
+        :param pd.Series river_kms: river kilometers of the gauges
+        :param list gauges: list of gauges
+        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
+        :param str folder_name: name of the generated data folder
+        :return pd.DataFrame: dataframe of the following statistics yearly: number of components,
+        number of low and high water level vertices, minimum and maximum velocities, average of velocities
+        """
         final_table = dict()
         years = []
         components_num = []
-        little = []
-        big = []
+        low = []
+        high = []
         mins = []
         maxs = []
         means = []
@@ -99,13 +124,13 @@ class StatisticalAnalysis:
             for gauge in gauges:
                 node_colors += gauges_dct[str(gauge)]
 
-            little.append(node_colors.count("yellow"))
-            big.append(node_colors.count("red"))
+            low.append(node_colors.count("yellow"))
+            high.append(node_colors.count("red"))
 
             components = list(nx.weakly_connected_components(graph))
             components_num.append(len(components))
 
-            velocities = StatisticalAnalysis.calculate_mean_velocity(river_kms=river_kms, graph=graph)
+            velocities = StatisticalAnalysis.calculate_all_velocities(river_kms=river_kms, graph=graph)
 
             mins.append(np.min(velocities))
             maxs.append(np.max(velocities))
@@ -115,8 +140,8 @@ class StatisticalAnalysis:
 
         final_table["Datum (ev)"] = years
         final_table["Arhullam (db)"] = components_num
-        final_table["Kisviz (db)"] = little
-        final_table["Nagyviz (db)"] = big
+        final_table["Kisviz (db)"] = low
+        final_table["Nagyviz (db)"] = high
         final_table["Min. sebesseg (km/h)"] = mins
         final_table["Max. sebesseg (km/h)"] = maxs
         final_table["Atlagsebesseg (km/h)"] = means
@@ -125,7 +150,13 @@ class StatisticalAnalysis:
 
     @staticmethod
     def low_high_by_gauge_yearly(gauges: list, folder_name: str) -> pd.DataFrame:
-        # Create a dataframe containing the number of low and high water levels
+        """
+        This function creates a dataframe containing the number of low and high water level vertices by gauge yearly
+        (years in the rows and gauges in the columns)
+        :param list gauges: list of gauges
+        :param str folder_name: name of the generated data folder
+        :return pd.DataFrame: dataframe containing the number of low and high water level vertices by gauge yearly
+        """
         years = []
         final_matrix = np.zeros((144, 28))
         for i in range(1876, 2020):
@@ -158,6 +189,11 @@ class StatisticalAnalysis:
 
     @staticmethod
     def print_percentage(i: int, length: int) -> None:
+        """
+        This method displays what percentage of the loop is already done
+        :param int i: loop counter
+        :param int length: length parameter of yearly_mean_moving_average()
+        """
         x = i + 1 - (1876 + length)
         y = len(range(1876 + length, 2020))
         print(f"\r{round(100 * x / y, 1)}% done", end="")
@@ -167,6 +203,15 @@ class StatisticalAnalysis:
                                       folder_name: str,
                                       start_date: str,
                                       end_date: str) -> dict:
+        """
+        This function creates a dictionary with "gauge": colors type key-value pairs where colors is a list containing
+        the colors of the vertices corresponding to gauge
+        :param list gauges: list of gauges
+        :param str folder_name: name of the generated data folder
+        :param str start_date: start date as a string
+        :param str end_date: end date as a string
+        :return dict: the dictionary described above
+        """
         gauges_dct = {}
         for gauge in gauges:
             f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
