@@ -103,6 +103,8 @@ class StatisticalAnalysis:
         mins = []
         maxs = []
         means = []
+        medians = []
+        stds = []
         for i in range(1876, 2020):
             years.append(i)
             start_date = f'{i}-01-01'
@@ -135,6 +137,8 @@ class StatisticalAnalysis:
             mins.append(np.min(velocities))
             maxs.append(np.max(velocities))
             means.append(np.mean(velocities))
+            medians.append(np.median(velocities))
+            stds.append(np.std(velocities))
 
             StatisticalAnalysis.print_percentage(i=i, length=0)
 
@@ -145,6 +149,8 @@ class StatisticalAnalysis:
         final_table["Min. sebesseg (km/h)"] = mins
         final_table["Max. sebesseg (km/h)"] = maxs
         final_table["Atlagsebesseg (km/h)"] = means
+        final_table["Median sebesseg (km/h)"] = medians
+        final_table["Sebessegek szorasa"] = stds
 
         return pd.DataFrame(final_table)
 
