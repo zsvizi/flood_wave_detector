@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Union
 
 from src import PROJECT_PATH
 from src.utils.json_helper import JsonHelper
@@ -115,7 +114,7 @@ class FloodWaveHandler:
                    current_null: float,
                    next_null: float,
                    distance: float
-                   ) -> Union[float, list]:
+                   ) -> list:
         """
         This function calculates the slopes between the current vertex and the next vertices in cm/km
         :param datetime current_date: the current date as datetime
@@ -125,7 +124,7 @@ class FloodWaveHandler:
         :param float current_null: null point of the current gauge
         :param float next_null: null point of the next gauge
         :param float distance: distance between the current and next gauges in km
-        :return Union[float, list]: the slope as a float if len(next_dates) == 1, or the slopes as a list otherwise
+        :return list: slopes
         """
         current_date = current_date.strftime("%Y-%m-%d")
 
@@ -136,14 +135,11 @@ class FloodWaveHandler:
             next_water_levels.append(next_vertices[next_date][0])
         next_water_levels = np.array(next_water_levels)
 
-        level_diff = (next_water_levels - float(next_null)) - (current_water_level - float(current_null))
+        level_diff = (next_water_levels + float(next_null)) - (current_water_level + float(current_null))
 
         slopes = level_diff / distance
 
-        if len(slopes) == 1:
-            return float(slopes)
-        else:
-            return list(slopes)
+        return list(slopes)
 
     @staticmethod
     def sort_wave(
