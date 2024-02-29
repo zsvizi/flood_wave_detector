@@ -1,9 +1,11 @@
+import itertools
 import json
 import os
-from datetime import datetime
 import networkx as nx
 import numpy as np
 import pandas as pd
+from datetime import datetime
+from networkx import NetworkXNoPath
 
 from src import PROJECT_PATH
 from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
@@ -73,7 +75,7 @@ class StatisticalAnalysis:
                     "end_date": f'{i}-12-31',
                     "gauge_pairs": gauge_pairs,
                     "folder_name": folder_name}
-            graph = FloodWaveHandler().create_directed_graph(**args)
+            graph = FloodWaveHandler.create_directed_graph(**args)
 
             velocities = StatisticalAnalysis.calculate_all_velocities(river_kms=river_kms, graph=graph)
             mean_velocity = np.mean(velocities)
@@ -115,12 +117,12 @@ class StatisticalAnalysis:
                 "gauge_pairs": gauge_pairs,
                 "folder_name": folder_name
             }
-            graph = FloodWaveHandler().create_directed_graph(**args_create)
+            graph = FloodWaveHandler.create_directed_graph(**args_create)
 
-            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_year(gauges=gauges,
-                                                                           folder_name=folder_name,
-                                                                           start_date=start_date,
-                                                                           end_date=end_date)
+            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
+                                                                             folder_name=folder_name,
+                                                                             start_date=start_date,
+                                                                             end_date=end_date)
 
             node_colors = []
             for gauge in gauges:
@@ -170,10 +172,10 @@ class StatisticalAnalysis:
             start_date = f'{i}-01-01'
             end_date = f'{i}-12-31'
 
-            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_year(gauges=gauges,
-                                                                           folder_name=folder_name,
-                                                                           start_date=start_date,
-                                                                           end_date=end_date)
+            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
+                                                                             folder_name=folder_name,
+                                                                             start_date=start_date,
+                                                                             end_date=end_date)
 
             k = 1
             for gauge in gauges:
@@ -194,6 +196,107 @@ class StatisticalAnalysis:
         return pd.DataFrame(final_matrix, index=years, columns=columns)
 
     @staticmethod
+    def get_slopes_by_vertex_pairs(folder_name: str, period: int):
+        """
+        This method goes through the vertex pairs and calculates some {period}-year statistics from 1876 to 2019
+        concerning the slopes on the edges between the given vertex pair. It then saves the dataframes into one
+        table with the following statistics: minimums, maximums, means, medians and standard deviations
+        :param str folder_name: name of the generated data folder
+        :param int period: the results are accumulated for this many years
+        """
+        f = open(os.path.join(PROJECT_PATH, folder_name, "find_edges", "vertex_pairs.json"))
+        vertex_pairs = json.load(f)
+
+        years = np.arange(1876, 2020, period)
+        dfs = []
+        for vtx_pair in list(vertex_pairs.keys()):
+            final_table = {}
+            mins = []
+            maxs = []
+            means = []
+            medians = []
+            stds = []
+            indices = []
+            for year in years:
+                if year + period - 1 > 2019:
+                    break
+
+                start_date = f'{year}-01-01'
+                end_date = f'{year + period - 1}-12-31'
+                current_dates = list(vertex_pairs[vtx_pair].keys())
+
+                if all(j < start_date or j > end_date for j in current_dates):
+                    continue
+                else:
+                    indices.append(f'{start_date}_{end_date}')
+                    valid_dates = [x for x in current_dates if start_date <= x <= end_date]
+
+                valid_slopes = [vertex_pairs[vtx_pair][valid_date][1] for valid_date in valid_dates]
+                flattened_slopes = [item for sublist in valid_slopes for item in
+                                    (sublist if isinstance(sublist, list) else [sublist])]
+
+                mins.append(np.min(flattened_slopes))
+                maxs.append(np.max(flattened_slopes))
+                means.append(np.mean(flattened_slopes))
+                medians.append(np.median(flattened_slopes))
+                stds.append(np.std(flattened_slopes))
+
+            final_table["Min. slope (km/h)"] = mins
+            final_table["Max. slope (km/h)"] = maxs
+            final_table["Mean"] = means
+            final_table["Median"] = medians
+            final_table["Standard deviation"] = stds
+
+            df = pd.DataFrame(final_table, index=indices)
+
+            dfs.append(df)
+
+        with pd.ExcelWriter(f'{period}-year_slopes_by_vertex_pairs.xlsx') as writer:
+            for i, df in enumerate(dfs):
+                sheet_name = f'{list(vertex_pairs.keys())[i]}'
+                df.to_excel(writer, sheet_name=sheet_name)
+
+    @staticmethod
+    def red_ratio(gauges: list, folder_name: str, period: int) -> pd.DataFrame:
+        """
+        This function calculates the ratio of high water level nodes and all nodes in every {period}-year period
+        from 1876 to 2019
+        :param list gauges: list of gauges
+        :param str folder_name: name of the generated data folder
+        :param int period: the results are accumulated for this many years
+        :return pd.DataFrame: dataframe containing the ratios
+        """
+        indices = []
+        ratios = []
+        final_table = {}
+        years = np.arange(1876, 2020, period)
+        for year in years:
+            if year + period - 1 > 2019:
+                break
+
+            start_date = f'{year}-01-01'
+            end_date = f'{year + period - 1}-12-31'
+
+            indices.append(f'{start_date}_{end_date}')
+
+            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
+                                                                             folder_name=folder_name,
+                                                                             start_date=start_date,
+                                                                             end_date=end_date)
+
+            all_colors = []
+            for gauge in gauges:
+                all_colors += gauges_dct[str(gauge)]
+
+            reds = all_colors.count("red")
+
+            ratios.append(reds/len(all_colors))
+
+        final_table["ratio"] = ratios
+
+        return pd.DataFrame(final_table, index=indices)
+
+    @staticmethod
     def print_percentage(i: int, length: int) -> None:
         """
         This method displays what percentage of the loop is already done
@@ -205,10 +308,10 @@ class StatisticalAnalysis:
         print(f"\r{round(100 * x / y, 1)}% done", end="")
 
     @staticmethod
-    def get_node_colors_in_given_year(gauges: list,
-                                      folder_name: str,
-                                      start_date: str,
-                                      end_date: str) -> dict:
+    def get_node_colors_in_given_period(gauges: list,
+                                        folder_name: str,
+                                        start_date: str,
+                                        end_date: str) -> dict:
         """
         This function creates a dictionary with "gauge": colors type key-value pairs where colors is a list containing
         the colors of the vertices corresponding to gauge
@@ -224,6 +327,6 @@ class StatisticalAnalysis:
             read_dct = json.load(f)
 
             node_colors = [read_dct[i][1] for i in list(read_dct.keys()) if start_date <= i <= end_date]
-            gauges_dct[f"{gauge}"] = node_colors
+            gauges_dct[str(gauge)] = node_colors
 
         return gauges_dct
