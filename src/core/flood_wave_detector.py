@@ -135,18 +135,7 @@ class FloodWaveDetector:
                 )
 
                 # Save
-                if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json')):
-                    JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                        obj=candidate_vertices)
-                else:
-                    candidate_read = JsonHelper.read(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'))
-
-                    candidate_read.update(candidate_vertices)
-                    JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                        obj=candidate_read)
+                self.save_or_update(obj=candidate_vertices, sub_folder="find_vertices", file=str(gauge))
 
     @measure_time
     def find_edges(self) -> None:
@@ -195,39 +184,14 @@ class FloodWaveDetector:
                 )
 
             # Save to file
-            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
-                                  'find_edges', f'{current_gauge}_{next_gauge}.json')):
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
-                    obj=gauge_pair)
-            else:
-                gauge_pair_read = JsonHelper.read(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'))
-
-                gauge_pair_read.update(gauge_pair)
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
-                    obj=gauge_pair_read)
+            self.save_or_update(obj=gauge_pair, sub_folder="find_edges", file=f"{current_gauge}_{next_gauge}")
 
             # Store result for the all-in-one dict
             vertex_pairs[f'{current_gauge}_{next_gauge}'] = gauge_pair
 
         # Save to file
         if not vertex_pairs == {}:
-            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json')):
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
-                    obj=vertex_pairs)
-            else:
-                vertex_pairs_read = JsonHelper.read(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'))
-                vertex_pairs_read.update(vertex_pairs)
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
-                    obj=vertex_pairs_read)
+            self.save_or_update(obj=vertex_pairs, sub_folder="find_edges", file="vertex_pairs")
 
     @measure_time
     def mkdirs(self) -> None:
@@ -323,3 +287,22 @@ class FloodWaveDetector:
                 existing_gauges.append(gauge)
 
         return existing_gauges
+
+    def save_or_update(self, obj: Union[dict, tuple, list], sub_folder: str, file: str):
+        """
+        This method saves or updates files
+        :param Union[dict, tuple, list] obj: object to be saved
+        :param str sub_folder: name of the sub-folder
+        :param str file: name of the file
+        """
+        if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json')):
+            JsonHelper.write(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'),
+                obj=obj)
+        else:
+            read = JsonHelper.read(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'))
+            read.update(obj)
+            JsonHelper.write(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'),
+                obj=read)
