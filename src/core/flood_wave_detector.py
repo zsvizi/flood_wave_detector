@@ -86,15 +86,10 @@ class FloodWaveDetector:
                                                           gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
-            self.start_date = cut_dates[i]
-            self.end_date = cut_dates[i + 1]
-
-            exist = str(datetime.strptime(cut_dates[i], "%Y-%m-%d") + timedelta(days=1))
-            existing_gauges = []
-            for gauge in gauges_copy:
-                if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
-                    existing_gauges.append(gauge)
-            self.gauges = existing_gauges
+            self.gauges = self.existing_gauges(start=cut_dates[i],
+                                               end=cut_dates[i + 1],
+                                               gauges_copy=gauges_copy,
+                                               stations_life_intervals=stations_life_intervals)
 
             self.find_vertices()
             self.find_edges()
@@ -304,3 +299,27 @@ class FloodWaveDetector:
 
         # Get peak-plateau list
         return FloodWaveHandler.get_peak_list(peaks=peaks, level_group=level_group)
+
+    def existing_gauges(self,
+                        start: str,
+                        end: str,
+                        gauges_copy: list,
+                        stations_life_intervals: dict) -> list:
+        """
+        This function finds the existing gauges in the given time period
+        :param str start: starting date of the time period
+        :param str end: end date of the time period
+        :param list gauges_copy: original list of gauges
+        :param dict stations_life_intervals: existence intervals of the gauges
+        :return list: existing gauges
+        """
+        self.start_date = start
+        self.end_date = end
+
+        exist = str(datetime.strptime(start, "%Y-%m-%d") + timedelta(days=1))
+        existing_gauges = []
+        for gauge in gauges_copy:
+            if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
+                existing_gauges.append(gauge)
+
+        return existing_gauges
