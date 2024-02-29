@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
+from src.core.slope_calculator import SlopeCalculator
 from src.data.flood_wave_data import FloodWaveData
 from src.core.flood_wave_handler import FloodWaveHandler
 from src.data.gauge_data import GaugeData
@@ -171,11 +172,10 @@ class FloodWaveDetector:
             next_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge,
                                                                               folder_name=self.folder_name)
 
-            current_vertices, next_vertices, current_null, next_null, distance = \
-                FloodWaveHandler.preprocess_for_get_slopes(current_gauge=str(current_gauge),
-                                                           next_gauge=str(next_gauge),
-                                                           river_kms=river_kms,
-                                                           folder_name=self.folder_name)
+            slope_calculator = SlopeCalculator(current_gauge=str(current_gauge),
+                                               next_gauge=str(next_gauge),
+                                               river_kms=river_kms,
+                                               folder_name=self.folder_name)
 
             # Create actual_next_pair
             gauge_pair = dict()
@@ -188,13 +188,8 @@ class FloodWaveDetector:
                     forward=self.forward_dict[current_gauge]
                 )
 
-                slopes = FloodWaveHandler.get_slopes(current_date=actual_date,
-                                                     next_dates=next_gauge_dates,
-                                                     current_vertices=current_vertices,
-                                                     next_vertices=next_vertices,
-                                                     current_null=current_null,
-                                                     next_null=next_null,
-                                                     distance=distance)
+                slopes = slope_calculator.get_slopes(current_date=actual_date,
+                                                     next_dates=next_gauge_dates)
 
                 # Convert datetime to string
                 FloodWaveHandler.convert_datetime_to_str(

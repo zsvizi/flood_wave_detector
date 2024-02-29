@@ -81,67 +81,6 @@ class FloodWaveHandler:
             gauge_pair[actual_date.strftime('%Y-%m-%d')] = (found_next_dates_str, slopes)
 
     @staticmethod
-    def preprocess_for_get_slopes(current_gauge: str, next_gauge: str, river_kms: pd.DataFrame, folder_name: str):
-        """
-        This is a helper function for FloodWaveHandler.get_slopes()
-        :param str current_gauge: gauge number of current gauge as a string
-        :param str next_gauge: gauge number of current gauge as a string
-        :param pd.DataFrame river_kms: dataframe of river kilometers
-        :param str folder_name: name of the data folder as a string
-        :return tuple: current_vertices, next_vertices, current_null, next_null, distance
-        """
-        null_points = JsonHelper.read(os.path.join(PROJECT_PATH, 'data', 'nullpontok_fontos.json'))
-        current_null = null_points[current_gauge]
-        next_null = null_points[next_gauge]
-
-        current_vertices = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
-                                                        'find_vertices', f'{current_gauge}.json'))
-        next_vertices = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
-                                                     'find_vertices', f'{next_gauge}.json'))
-
-        current_river_km = river_kms[float(current_gauge)]
-        next_river_km = river_kms[float(next_gauge)]
-
-        distance = float(next_river_km - current_river_km)
-
-        return current_vertices, next_vertices, current_null, next_null, distance
-
-    @staticmethod
-    def get_slopes(current_date: datetime,
-                   next_dates: pd.DataFrame,
-                   current_vertices: dict,
-                   next_vertices: dict,
-                   current_null: float,
-                   next_null: float,
-                   distance: float
-                   ) -> list:
-        """
-        This function calculates the slopes between the current vertex and the next vertices in cm/km
-        :param datetime current_date: the current date as datetime
-        :param pd.DataFrame next_dates: dataframe containing the next dates
-        :param dict current_vertices: dictionary containing all the vertices belonging to the current gauge
-        :param dict next_vertices: dictionary containing all the vertices belonging to the next gauge
-        :param float current_null: null point of the current gauge
-        :param float next_null: null point of the next gauge
-        :param float distance: distance between the current and next gauges in km
-        :return list: slopes
-        """
-        current_date = current_date.strftime("%Y-%m-%d")
-
-        current_water_level = current_vertices[current_date][0]
-        next_water_levels = []
-        next_dates_str = next_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
-        for next_date in next_dates_str:
-            next_water_levels.append(next_vertices[next_date][0])
-        next_water_levels = np.array(next_water_levels)
-
-        level_diff = (next_water_levels + float(next_null)) - (current_water_level + float(current_null))
-
-        slopes = level_diff / distance
-
-        return list(slopes)
-
-    @staticmethod
     def sort_wave(
             filenames: list,
             start: str = '2006-02-01',
