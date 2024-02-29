@@ -1,13 +1,11 @@
-import itertools
 import json
 import os
 import networkx as nx
 import numpy as np
 import pandas as pd
-from datetime import datetime
-from networkx import NetworkXNoPath
 
 from src import PROJECT_PATH
+from src.analysis.graph_analysis import GraphAnalysis
 from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
 
 
@@ -15,46 +13,6 @@ class StatisticalAnalysis:
     """
     This class contains functions for statistically analysing flood wave graphs
     """
-
-    @staticmethod
-    def calculate_all_velocities(river_kms: pd.Series, graph: nx.DiGraph) -> list:
-        """
-        This function calculates the velocity of all flood waves in the input graph
-        :param pd.Series river_kms: river kilometers of the gauges
-        :param nx.DiGraph graph: the graph
-        :return list: velocities in a list
-        """
-        velocities = []
-        for comp in list(nx.weakly_connected_components(graph)):
-            comp = list(comp)
-            regs = []
-            dates = []
-            for node in comp:
-                regs.append(float(node[0]))
-                dates.append(node[1])
-            regs = np.array(regs)
-            date_min = min(dates)
-            date_max = max(dates)
-            date_min_ind = [i for i, x in enumerate(dates) if x == date_min]
-            date_max_ind = [i for i, x in enumerate(dates) if x == date_max]
-
-            regs_min = regs[date_min_ind]
-            regs_max = regs[date_max_ind]
-
-            start = max(river_kms[regs_min])
-            end = min(river_kms[regs_max])
-
-            days = (datetime.strptime(date_max, '%Y-%m-%d') - datetime.strptime(date_min, '%Y-%m-%d')).days
-            distance = start - end
-
-            if days == 0:
-                velocity = distance / 24
-            else:
-                velocity = distance / (days * 24)
-
-            velocities.append(velocity)
-
-        return velocities
 
     @staticmethod
     def yearly_mean_moving_average(river_kms: pd.Series,
@@ -77,7 +35,7 @@ class StatisticalAnalysis:
                     "folder_name": folder_name}
             graph = FloodWaveHandler.create_directed_graph(**args)
 
-            velocities = StatisticalAnalysis.calculate_all_velocities(river_kms=river_kms, graph=graph)
+            velocities = GraphAnalysis.calculate_all_velocities(river_kms=river_kms, joined_graph=graph)
             mean_velocity = np.mean(velocities)
 
             mean_velocities.append(mean_velocity)
@@ -134,7 +92,7 @@ class StatisticalAnalysis:
             components = list(nx.weakly_connected_components(graph))
             components_num.append(len(components))
 
-            velocities = StatisticalAnalysis.calculate_all_velocities(river_kms=river_kms, graph=graph)
+            velocities = GraphAnalysis.calculate_all_velocities(river_kms=river_kms, joined_graph=graph)
 
             mins.append(np.min(velocities))
             maxs.append(np.max(velocities))
