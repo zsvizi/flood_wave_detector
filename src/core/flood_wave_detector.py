@@ -10,9 +10,9 @@ import pandas as pd
 
 from src import PROJECT_PATH
 from src.data.flood_wave_data import FloodWaveData
-from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
+from src.core.flood_wave_handler import FloodWaveHandler
 from src.data.gauge_data import GaugeData
-from src.flood_wave_core.graph_builder import GraphBuilder
+from src.core.graph_builder import GraphBuilder
 from src.utils.json_helper import JsonHelper
 from src.utils.measure_time import measure_time
 

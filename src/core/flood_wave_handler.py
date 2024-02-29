@@ -13,7 +13,7 @@ class FloodWaveHandler:
     """This is a helper class for FloodWaveDetector.
 
     It contains functions which shrink the FloodWaveDetector class.
-    e.g.: file reading, file sorting, date conversion, graph filtering, etc...
+    e.g.: file reading, file sorting, date conversion, graph selection, etc...
     """
 
     @staticmethod

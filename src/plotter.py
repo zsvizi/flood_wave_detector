@@ -10,7 +10,7 @@ import pandas as pd
 
 from src import PROJECT_PATH
 from src.data.flood_wave_data import FloodWaveData
-from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
+from src.core.flood_wave_handler import FloodWaveHandler
 from src.utils.json_helper import JsonHelper
 
 

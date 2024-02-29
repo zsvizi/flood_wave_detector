@@ -6,7 +6,7 @@ import pandas as pd
 
 from src import PROJECT_PATH
 from src.analysis.graph_analysis import GraphAnalysis
-from src.flood_wave_core.flood_wave_handler import FloodWaveHandler
+from src.core.flood_wave_handler import FloodWaveHandler
 
 
 class StatisticalAnalysis:
