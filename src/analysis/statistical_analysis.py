@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
+from src.analysis.analysis_handler import AnalysisHandler
 from src.analysis.graph_analysis import GraphAnalysis
 from src.core.flood_wave_handler import FloodWaveHandler
 
@@ -40,7 +41,7 @@ class StatisticalAnalysis:
 
             mean_velocities.append(mean_velocity)
 
-            StatisticalAnalysis.print_percentage(i=i, length=length)
+            AnalysisHandler.print_percentage(i=i, length=length)
 
         return mean_velocities
 
@@ -77,10 +78,10 @@ class StatisticalAnalysis:
             }
             graph = FloodWaveHandler.create_directed_graph(**args_create)
 
-            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
-                                                                             folder_name=folder_name,
-                                                                             start_date=start_date,
-                                                                             end_date=end_date)
+            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
+                                                                         folder_name=folder_name,
+                                                                         start_date=start_date,
+                                                                         end_date=end_date)
 
             node_colors = []
             for gauge in gauges:
@@ -100,7 +101,7 @@ class StatisticalAnalysis:
             medians.append(np.median(velocities))
             stds.append(np.std(velocities))
 
-            StatisticalAnalysis.print_percentage(i=i, length=0)
+            AnalysisHandler.print_percentage(i=i, length=0)
 
         final_table["Datum (ev)"] = years
         final_table["Arhullam (db)"] = components_num
@@ -130,10 +131,10 @@ class StatisticalAnalysis:
             start_date = f'{i}-01-01'
             end_date = f'{i}-12-31'
 
-            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
-                                                                             folder_name=folder_name,
-                                                                             start_date=start_date,
-                                                                             end_date=end_date)
+            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
+                                                                         folder_name=folder_name,
+                                                                         start_date=start_date,
+                                                                         end_date=end_date)
 
             k = 1
             for gauge in gauges:
@@ -144,7 +145,7 @@ class StatisticalAnalysis:
                 final_matrix[i - 1876, 2 * k - 1] = k_red
                 k += 1
 
-            StatisticalAnalysis.print_percentage(i=i, length=0)
+            AnalysisHandler.print_percentage(i=i, length=0)
 
         columns = []
         for gauge in gauges:
@@ -237,10 +238,10 @@ class StatisticalAnalysis:
 
             indices.append(f'{start_date}_{end_date}')
 
-            gauges_dct = StatisticalAnalysis.get_node_colors_in_given_period(gauges=gauges,
-                                                                             folder_name=folder_name,
-                                                                             start_date=start_date,
-                                                                             end_date=end_date)
+            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
+                                                                         folder_name=folder_name,
+                                                                         start_date=start_date,
+                                                                         end_date=end_date)
 
             all_colors = []
             for gauge in gauges:
@@ -253,38 +254,3 @@ class StatisticalAnalysis:
         final_table["ratio"] = ratios
 
         return pd.DataFrame(final_table, index=indices)
-
-    @staticmethod
-    def print_percentage(i: int, length: int) -> None:
-        """
-        This method displays what percentage of the loop is already done
-        :param int i: loop counter
-        :param int length: length parameter of yearly_mean_moving_average()
-        """
-        x = i + 1 - (1876 + length)
-        y = len(range(1876 + length, 2020))
-        print(f"\r{round(100 * x / y, 1)}% done", end="")
-
-    @staticmethod
-    def get_node_colors_in_given_period(gauges: list,
-                                        folder_name: str,
-                                        start_date: str,
-                                        end_date: str) -> dict:
-        """
-        This function creates a dictionary with "gauge": colors type key-value pairs where colors is a list containing
-        the colors of the vertices corresponding to gauge
-        :param list gauges: list of gauges
-        :param str folder_name: name of the generated data folder
-        :param str start_date: start date as a string
-        :param str end_date: end date as a string
-        :return dict: the dictionary described above
-        """
-        gauges_dct = {}
-        for gauge in gauges:
-            f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
-            read_dct = json.load(f)
-
-            node_colors = [read_dct[i][1] for i in list(read_dct.keys()) if start_date <= i <= end_date]
-            gauges_dct[str(gauge)] = node_colors
-
-        return gauges_dct
