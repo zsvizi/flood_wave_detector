@@ -256,7 +256,14 @@ class StatisticalAnalysis:
         return pd.DataFrame(final_table, index=indices)
 
     @staticmethod
-    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str):
+    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str) -> list:
+        """
+        This function returns only those components that start in the actual year
+        :param int year: the actual year
+        :param list gauge_pairs: list of gauge pairs
+        :param str folder_name: the name of the generated data folder
+        :return list: cleaned components
+        """
         if year == 1876:
             start_date = f'{year}-01-01'
             end_date = f'{year + 1}-02-01'
@@ -284,7 +291,13 @@ class StatisticalAnalysis:
         return cleaned_branches
 
     @staticmethod
-    def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str):
+    def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str) -> list:
+        """
+        This function calculates the number of cleaned flood waves yearly
+        :param list gauge_pairs: list of gauge pairs
+        :param str folder_name: the name of the generated data folder
+        :return list: numbers of cleaned components
+        """
         number_of_flood_waves = []
         for i in range(1876, 2020):
             cleaned_branches = StatisticalAnalysis.get_flood_waves_yearly(year=i,
