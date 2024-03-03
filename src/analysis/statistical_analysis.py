@@ -254,3 +254,44 @@ class StatisticalAnalysis:
         final_table["ratio"] = ratios
 
         return pd.DataFrame(final_table, index=indices)
+
+    @staticmethod
+    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str):
+        if year == 1876:
+            start_date = f'{year}-01-01'
+            end_date = f'{year + 1}-02-01'
+        elif year == 2019:
+            start_date = f'{year - 1}-11-30'
+            end_date = f'{year}-12-31'
+        else:
+            start_date = f'{year - 1}-11-30'
+            end_date = f'{year + 1}-02-01'
+        args = {"start_date": start_date,
+                "end_date": end_date,
+                "gauge_pairs": gauge_pairs,
+                "folder_name": folder_name}
+        graph = FloodWaveHandler.create_directed_graph(**args)
+
+        branches = GraphAnalysis.get_branching(joined_graph=graph)
+
+        cleaned_branches = []
+        for branch in branches:
+            node_dates = [node[1] for node in branch]
+            if not any(str(year - 1) in node_date for node_date in node_dates) \
+                    and not all(str(year + 1) in node_date for node_date in node_dates):
+                cleaned_branches.append(branch)
+
+        return cleaned_branches
+
+    @staticmethod
+    def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str):
+        number_of_flood_waves = []
+        for i in range(1876, 2020):
+            cleaned_branches = StatisticalAnalysis.get_flood_waves_yearly(year=i,
+                                                                          gauge_pairs=gauge_pairs,
+                                                                          folder_name=folder_name)
+            number_of_flood_waves.append(len(cleaned_branches))
+
+            AnalysisHandler.print_percentage(i=i, length=0)
+
+        return number_of_flood_waves
