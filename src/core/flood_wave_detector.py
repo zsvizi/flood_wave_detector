@@ -86,10 +86,10 @@ class FloodWaveDetector:
                                                           gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
-            self.gauges = self.existing_gauges(start=cut_dates[i],
-                                               end=cut_dates[i + 1],
-                                               gauges_copy=gauges_copy,
-                                               stations_life_intervals=stations_life_intervals)
+            self.gauges = self.find_existing_gauges(start=cut_dates[i],
+                                                    end=cut_dates[i + 1],
+                                                    gauges_copy=gauges_copy,
+                                                    stations_life_intervals=stations_life_intervals)
 
             self.find_vertices()
             self.find_edges()
@@ -264,11 +264,11 @@ class FloodWaveDetector:
         # Get peak-plateau list
         return FloodWaveHandler.get_peak_list(peaks=peaks, level_group=level_group)
 
-    def existing_gauges(self,
-                        start: str,
-                        end: str,
-                        gauges_copy: list,
-                        stations_life_intervals: dict) -> list:
+    def find_existing_gauges(self,
+                             start: str,
+                             end: str,
+                             gauges_copy: list,
+                             stations_life_intervals: dict) -> list:
         """
         This function finds the existing gauges in the given time period
         :param str start: starting date of the time period
