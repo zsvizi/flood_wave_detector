@@ -9,12 +9,13 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.flood_wave_data import FloodWaveData
-from src.flood_wave_handler import FloodWaveHandler
-from src.gauge_data import GaugeData
-from src.graph_builder import GraphBuilder
-from src.json_helper import JsonHelper
-from src.measure_time import measure_time
+from src.core.slope_calculator import SlopeCalculator
+from src.data.flood_wave_data import FloodWaveData
+from src.core.flood_wave_handler import FloodWaveHandler
+from src.data.gauge_data import GaugeData
+from src.core.graph_builder import GraphBuilder
+from src.utils.json_helper import JsonHelper
+from src.utils.measure_time import measure_time
 
 
 class FloodWaveDetector:
@@ -85,15 +86,10 @@ class FloodWaveDetector:
                                                           gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
-            self.start_date = cut_dates[i]
-            self.end_date = cut_dates[i + 1]
-
-            exist = str(datetime.strptime(cut_dates[i], "%Y-%m-%d") + timedelta(days=1))
-            existing_gauges = []
-            for gauge in self.gauges:
-                if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
-                    existing_gauges.append(gauge)
-            self.gauges = existing_gauges
+            self.gauges = self.find_existing_gauges(start=cut_dates[i],
+                                                    end=cut_dates[i + 1],
+                                                    gauges_copy=gauges_copy,
+                                                    stations_life_intervals=stations_life_intervals)
 
             self.find_vertices()
             self.find_edges()
@@ -139,18 +135,7 @@ class FloodWaveDetector:
                 )
 
                 # Save
-                if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json')):
-                    JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                        obj=candidate_vertices)
-                else:
-                    candidate_read = JsonHelper.read(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'))
-
-                    candidate_new = candidate_read + candidate_vertices
-                    JsonHelper.write(
-                        filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_vertices', f'{gauge}.json'),
-                        obj=candidate_new)
+                self.save_or_update(obj=candidate_vertices, sub_folder="find_vertices", file=str(gauge))
 
     @measure_time
     def find_edges(self) -> None:
@@ -160,6 +145,7 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
         """
 
+        river_kms = self.data.meta["river_km"]
         vertex_pairs = {}
         for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             # Read the data from the actual gauge.
@@ -169,6 +155,11 @@ class FloodWaveDetector:
             # Read the data from the next gauge.
             next_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge,
                                                                               folder_name=self.folder_name)
+
+            slope_calculator = SlopeCalculator(current_gauge=str(current_gauge),
+                                               next_gauge=str(next_gauge),
+                                               river_kms=river_kms,
+                                               folder_name=self.folder_name)
 
             # Create actual_next_pair
             gauge_pair = dict()
@@ -181,47 +172,26 @@ class FloodWaveDetector:
                     forward=self.forward_dict[current_gauge]
                 )
 
+                slopes = slope_calculator.get_slopes(current_date=actual_date,
+                                                     next_dates=next_gauge_dates)
+
                 # Convert datetime to string
                 FloodWaveHandler.convert_datetime_to_str(
                     actual_date=actual_date,
                     gauge_pair=gauge_pair,
-                    next_gauge_dates=next_gauge_dates
+                    next_gauge_dates=next_gauge_dates,
+                    slopes=slopes
                 )
 
             # Save to file
-            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
-                                  'find_edges', f'{current_gauge}_{next_gauge}.json')):
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
-                    obj=gauge_pair)
-            else:
-                gauge_pair_read = JsonHelper.read(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'))
-
-                gauge_pair_read.update(gauge_pair)
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name,
-                                          'find_edges', f'{current_gauge}_{next_gauge}.json'),
-                    obj=gauge_pair_read)
+            self.save_or_update(obj=gauge_pair, sub_folder="find_edges", file=f"{current_gauge}_{next_gauge}")
 
             # Store result for the all-in-one dict
             vertex_pairs[f'{current_gauge}_{next_gauge}'] = gauge_pair
 
         # Save to file
         if not vertex_pairs == {}:
-            if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json')):
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
-                    obj=vertex_pairs)
-            else:
-                vertex_pairs_read = JsonHelper.read(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'))
-                vertex_pairs_read.update(vertex_pairs)
-                JsonHelper.write(
-                    filepath=os.path.join(PROJECT_PATH, self.folder_name, 'find_edges', 'vertex_pairs.json'),
-                    obj=vertex_pairs_read)
+            self.save_or_update(obj=vertex_pairs, sub_folder="find_edges", file="vertex_pairs")
 
     @measure_time
     def mkdirs(self) -> None:
@@ -270,14 +240,14 @@ class FloodWaveDetector:
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
             reg_number: str
-            ) -> list:
+            ) -> dict:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
 
         :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
-        :return list: list of tuple of local max values and the date. (date, value)
+        :return dict: dictionary of tuple of local max values and the date. (date: [value, color])
         """
 
         g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
@@ -293,3 +263,46 @@ class FloodWaveDetector:
 
         # Get peak-plateau list
         return FloodWaveHandler.get_peak_list(peaks=peaks, level_group=level_group)
+
+    def find_existing_gauges(self,
+                             start: str,
+                             end: str,
+                             gauges_copy: list,
+                             stations_life_intervals: dict) -> list:
+        """
+        This function finds the existing gauges in the given time period
+        :param str start: starting date of the time period
+        :param str end: end date of the time period
+        :param list gauges_copy: original list of gauges
+        :param dict stations_life_intervals: existence intervals of the gauges
+        :return list: existing gauges
+        """
+        self.start_date = start
+        self.end_date = end
+
+        exist = str(datetime.strptime(start, "%Y-%m-%d") + timedelta(days=1))
+        existing_gauges = []
+        for gauge in gauges_copy:
+            if stations_life_intervals[str(gauge)]["start"] <= exist <= stations_life_intervals[str(gauge)]["end"]:
+                existing_gauges.append(gauge)
+
+        return existing_gauges
+
+    def save_or_update(self, obj: Union[dict, tuple, list], sub_folder: str, file: str):
+        """
+        This method saves or updates files
+        :param Union[dict, tuple, list] obj: object to be saved
+        :param str sub_folder: name of the sub-folder
+        :param str file: name of the file
+        """
+        if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json')):
+            JsonHelper.write(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'),
+                obj=obj)
+        else:
+            read = JsonHelper.read(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'))
+            read.update(obj)
+            JsonHelper.write(
+                filepath=os.path.join(PROJECT_PATH, self.folder_name, f'{sub_folder}', f'{file}.json'),
+                obj=read)

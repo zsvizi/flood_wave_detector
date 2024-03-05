@@ -1,6 +1,6 @@
-class FilteringHandler:
+class SelectionHandler:
     """
-    This is a helper class for Filtering
+    This is a helper class for Selection
     """
 
     @staticmethod

@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.flood_wave_data import FloodWaveData
-from src.flood_wave_handler import FloodWaveHandler
-from src.json_helper import JsonHelper
+from src.data.flood_wave_data import FloodWaveData
+from src.core.flood_wave_handler import FloodWaveHandler
+from src.utils.json_helper import JsonHelper
 
 
 class Plotter:
@@ -303,9 +303,7 @@ class Plotter:
         labels = {}
         for gauge in self.gauges:
             f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
-            elem = json.load(f)
-            lst1 = [item for sublist in elem for item in sublist]
-            levels_dct = {lst1[i]: tuple((lst1[i + 1], lst1[i + 2])) for i in range(0, len(lst1), 3)}
+            levels_dct = json.load(f)
 
             for i in range(len(self.positions)):
                 if str(gauge) == list(self.positions.keys())[i][0]:

@@ -1,4 +1,4 @@
-from src.dataloader import Dataloader
+from src.data.dataloader import Dataloader
 
 
 class FloodWaveData:

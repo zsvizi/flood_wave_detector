@@ -5,8 +5,8 @@ from queue import LifoQueue
 import networkx as nx
 
 from src import PROJECT_PATH
-from src.json_helper import JsonHelper
-from src.measure_time import measure_time
+from src.utils.json_helper import JsonHelper
+from src.utils.measure_time import measure_time
 
 
 class GraphBuilder:
@@ -52,7 +52,7 @@ class GraphBuilder:
 
                 self.reset_tree_and_flood_wave()
                 # Go over every date with a wave
-                for next_date in gauge_pair_dates[actual_date]:
+                for next_date in gauge_pair_dates[actual_date][0]:
                     # Empty and reset variables
                     next_g_p_idx = self.reset_gauge_pair_index_and_serial_number()
 
@@ -124,7 +124,7 @@ class GraphBuilder:
         if can_path_be_continued and next_idx < max_index_value:
 
             # Get new date values
-            new_date_value = next_gauge_pair_dates[next_gauge_date]
+            new_date_value = next_gauge_pair_dates[next_gauge_date][0]
             # the recursion continues with the first date
             new_gauge_date = new_date_value[0]
 

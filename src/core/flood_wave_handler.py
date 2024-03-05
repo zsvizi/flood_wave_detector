@@ -1,19 +1,19 @@
-from datetime import datetime, timedelta
 import os
 
+from datetime import datetime, timedelta
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
-from src.json_helper import JsonHelper
+from src.utils.json_helper import JsonHelper
 
 
 class FloodWaveHandler:
     """This is a helper class for FloodWaveDetector.
 
     It contains functions which shrink the FloodWaveDetector class.
-    e.g.: file reading, file sorting, date conversion, graph filtering, etc...
+    e.g.: file reading, file sorting, date conversion, graph selection, etc...
     """
 
     @staticmethod
@@ -27,7 +27,8 @@ class FloodWaveHandler:
         """
         gauge_with_index = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{gauge}.json'))
-        gauge_peaks = pd.DataFrame(data=gauge_with_index,
+        list_with_index = [[i, gauge_with_index[i][0], gauge_with_index[i][1]] for i in list(gauge_with_index.keys())]
+        gauge_peaks = pd.DataFrame(data=list_with_index,
                                    columns=['Date', 'Max value', 'Color'])
         gauge_peaks['Date'] = pd.to_datetime(gauge_peaks['Date'])
         return gauge_peaks
@@ -63,7 +64,8 @@ class FloodWaveHandler:
     def convert_datetime_to_str(
             actual_date: datetime,
             gauge_pair: dict,
-            next_gauge_dates: pd.DataFrame
+            next_gauge_dates: pd.DataFrame,
+            slopes
     ) -> None:
         """
         Converts the date(s) to our desired format string. Then the list of converted strings is stored in a dictionary
@@ -71,11 +73,12 @@ class FloodWaveHandler:
         :param datetime actual_date: The date to be converted
         :param dict gauge_pair: A dictionary to store the converted list of strings
         :param pd.DataFrame next_gauge_dates: A DataFrame containing the found dates to be converted
+        :param slopes: slope or slopes between the two vertices
         """
 
         if not next_gauge_dates.empty:
             found_next_dates_str = next_gauge_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
-            gauge_pair[actual_date.strftime('%Y-%m-%d')] = found_next_dates_str
+            gauge_pair[actual_date.strftime('%Y-%m-%d')] = (found_next_dates_str, slopes)
 
     @staticmethod
     def sort_wave(
@@ -291,25 +294,25 @@ class FloodWaveHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> list:
+    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> dict:
         """
         Creates a list containing (date, value, color) tuples.
         :param pd.DataFrame peaks: single column DataFrame which to convert
         :param float level_group: level group number of the gauge
-        :return list: Tuple list
+        :return dict: dictionary
         """
         peak_tuples = peaks.to_records(index=True)
         peak_list = [
             tuple(x)
             for x in peak_tuples
         ]
-        peak_list_new = []
+        peak_list_new = {}
         for i in range(len(peak_list)):
             if peak_list[i][1] < level_group:
                 color = "yellow"
             else:
                 color = "red"
-            peak_list_new.append(tuple((peak_list[i][0], peak_list[i][1], color)))
+            peak_list_new[peak_list[i][0]] = [peak_list[i][1], color]
         return peak_list_new
 
     @staticmethod
