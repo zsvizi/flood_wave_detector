@@ -346,7 +346,12 @@ class GraphAnalysis:
         return velocities
 
     @staticmethod
-    def get_flood_waves(joined_graph: nx.DiGraph):
+    def get_flood_waves(joined_graph: nx.DiGraph) -> list:
+        """
+        This function returns the actual flood waves in the graph
+        :param nx.DiGraph joined_graph: the graph
+        :return list: list of lists of the flood wave nodes
+        """
         components = list(nx.weakly_connected_components(joined_graph))
 
         waves = []
