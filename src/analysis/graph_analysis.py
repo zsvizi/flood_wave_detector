@@ -72,22 +72,30 @@ class GraphAnalysis:
         :param str start_station: The ID of the desired start station.
         :param str end_station: The ID of the desired end station.
         :return int: The number of flood waves which impacted the start_station and reached the end_station
-        """  
-        def func(j_graph, start_nodes, end_nodes):
-            waves = []
-            for start in start_nodes:
-                for end in end_nodes:
-                    try:
-                        nx.shortest_path(j_graph, start, end)
-                        waves.append((nx.shortest_path(j_graph, start, end)[0],
-                                      nx.shortest_path(j_graph, start, end)[-1]))
-                    except nx.NetworkXNoPath:
-                        continue
-            return waves
-        return len(set(GraphAnalysis.connected_components_iter(joined_graph=joined_graph,
-                                                               start_station=start_station,
-                                                               end_station=end_station,
-                                                               func=func)))
+        """
+
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=joined_graph)
+
+        selected = []
+        for fw in flood_waves:
+            stations = []
+            for node in fw:
+                stations.append(node[0])
+
+            if any(start_station == elem for elem in stations) and any(end_station == elem for elem in stations):
+                selected.append(fw)
+
+        only_one = []
+        for fw in selected:
+            stations = []
+            for node in fw:
+                stations.append(node[0])
+
+            interval = fw[stations.index(start_station):stations.index(end_station)+1]
+            if interval not in only_one:
+                only_one.append(interval)
+
+        return len(only_one)
 
     @staticmethod
     def propagation_time(joined_graph: nx.DiGraph,
@@ -368,13 +376,11 @@ class GraphAnalysis:
 
             cartesian_pairs = list(itertools.product(possible_end_nodes, repeat=2))
 
-            filtered_pairs = [(x, y) for x, y in cartesian_pairs if x != y]
+            final_pairs = [(x, y) for x, y in cartesian_pairs if float(x[0]) > float(y[0])]
 
-            final_pairs = [(x, y) for x, y in filtered_pairs if x[0] > y[0]]
-
-            for pair in final_pairs:
+            for start, end in final_pairs:
                 try:
-                    wave = nx.shortest_path(joined_graph, pair[0], pair[1])
+                    wave = nx.shortest_path(joined_graph, start, end)
                     waves.append(wave)
                 except nx.NetworkXNoPath:
                     continue
