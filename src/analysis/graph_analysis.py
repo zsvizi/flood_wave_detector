@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 from datetime import datetime
 from typing import Callable
@@ -343,3 +344,34 @@ class GraphAnalysis:
             velocities.append(velocity)
 
         return velocities
+
+    @staticmethod
+    def get_flood_waves(joined_graph: nx.DiGraph):
+        components = list(nx.weakly_connected_components(joined_graph))
+
+        waves = []
+        for comp in components:
+            comp = list(comp)
+
+            possible_end_nodes = []
+            for node in comp:
+                in_deg = joined_graph.in_degree(node)
+                out_deg = joined_graph.out_degree(node)
+
+                if in_deg == 0 or out_deg == 0:
+                    possible_end_nodes.append(node)
+
+            cartesian_pairs = list(itertools.product(possible_end_nodes, repeat=2))
+
+            filtered_pairs = [(x, y) for x, y in cartesian_pairs if x != y]
+
+            final_pairs = [(x, y) for x, y in filtered_pairs if x[0] > y[0]]
+
+            for pair in final_pairs:
+                try:
+                    wave = nx.shortest_path(joined_graph, pair[0], pair[1])
+                    waves.append(wave)
+                except nx.NetworkXNoPath:
+                    continue
+
+        return waves
