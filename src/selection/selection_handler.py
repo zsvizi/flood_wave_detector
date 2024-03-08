@@ -19,7 +19,7 @@ class SelectionHandler:
         for node in nodes:
             if node[0] not in gauges:
                 gauges.append(node[0])
-        decreasing_gauges = sorted(gauges, key=lambda x: str(float(x)), reverse=True)
+        decreasing_gauges = sorted(gauges, key=lambda x: float(x), reverse=True)
 
         return decreasing_gauges
 
