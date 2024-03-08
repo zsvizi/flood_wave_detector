@@ -15,6 +15,12 @@ class AnalysisHandler:
 
     @staticmethod
     def get_final_pairs(joined_graph: nx.DiGraph, comp: list) -> list:
+        """
+        Searches for end nodes of flood waves in a connected component
+        :param nx.DiGraph joined_graph: the graph
+        :param list comp: the component
+        :return list: list of start and end nodes of flood waves
+        """
         possible_start_nodes = []
         possible_end_nodes = []
         for node in comp:

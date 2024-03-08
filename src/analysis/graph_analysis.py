@@ -63,6 +63,14 @@ class GraphAnalysis:
 
     @staticmethod
     def get_full_flood_waves(waves: list, start_station: str, end_station: str, equivalence: bool) -> list:
+        """
+        Selects only those flood waves that impacted both the start_station and end_station
+        :param list waves: list of all the flood waves
+        :param str start_station: the start station
+        :param str end_station: the end station
+        :param bool equivalence: True if we only consider one element of the equivalence classes, False otherwise
+        :return list: full flood waves
+        """
         if equivalence:
             final_waves = []
             for path in waves:
@@ -219,6 +227,12 @@ class GraphAnalysis:
 
     @staticmethod
     def create_flood_map(joined_graph: nx.DiGraph, river_section_gauges: list) -> nx.DiGraph:
+        """
+        Creates a flood map of the original graph
+        :param nx.DiGraph joined_graph: the graph
+        :param list river_section_gauges: edge stations of the desired sections
+        :return nx.DiGraph: flood map as a directed graph
+        """
         flood_map = nx.DiGraph()
         river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
 
