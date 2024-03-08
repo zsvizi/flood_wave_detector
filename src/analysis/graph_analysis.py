@@ -1,9 +1,9 @@
-import itertools
 from collections import defaultdict
 from datetime import datetime
 from typing import Callable
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 from src.analysis.analysis_handler import AnalysisHandler
@@ -28,24 +28,35 @@ class GraphAnalysis:
 
         waves = []
         for comp in components:
-            comp = list(comp)
-
-            possible_end_nodes = []
-            for node in comp:
-                in_deg = joined_graph.in_degree(node)
-                out_deg = joined_graph.out_degree(node)
-
-                if in_deg == 0 or out_deg == 0:
-                    possible_end_nodes.append(node)
-
-            cartesian_pairs = list(itertools.product(possible_end_nodes, repeat=2))
-
-            final_pairs = [(x, y) for x, y in cartesian_pairs if float(x[0]) > float(y[0])]
+            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=joined_graph, comp=list(comp))
 
             for start, end in final_pairs:
                 try:
                     wave = nx.shortest_path(joined_graph, start, end)
                     waves.append(wave)
+                except nx.NetworkXNoPath:
+                    continue
+
+        return waves
+
+    @staticmethod
+    def get_flood_waves_without_equivalence(joined_graph: nx.DiGraph) -> list:
+        """
+        This function returns all the 'elements' of the theoretical flood wave equivalence classes (so for given
+        start and end nodes it takes all paths between them)
+        :param nx.DiGraph joined_graph: the graph
+        :return list: paths
+        """
+        components = list(nx.weakly_connected_components(joined_graph))
+
+        waves = []
+        for comp in components:
+            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=joined_graph, comp=list(comp))
+
+            for start, end in final_pairs:
+                try:
+                    wave = nx.all_shortest_paths(joined_graph, start, end)
+                    waves.append(list(wave))
                 except nx.NetworkXNoPath:
                     continue
 
@@ -121,42 +132,35 @@ class GraphAnalysis:
     def propagation_time(joined_graph: nx.DiGraph,
                          start_station: str,
                          end_station: str
-                         ) -> int:
+                         ) -> float:
         """
         Returns the average propagation time of flood waves between the two selected stations unweighted,
         meaning that no matter how many paths are between the same two vertices, the propagation time value
-        will be only counted in once.
+        will be only counted in one.
 
         :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
         :param str start_station: The ID of the desired start station
-        :param str end_station: The ID of the last station, which is not reached by the flood waves
+        :param str end_station: The ID of the last station
         :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
-        def func(j_graph, start_nodes, end_nodes):
-            prop_times = []
+        full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
+                                                                         start_station=start_station,
+                                                                         end_station=end_station)
 
-            for start in start_nodes:
-                start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
-                for end in end_nodes:
-                    try:
-                        nx.shortest_path(j_graph, start, end)
-                        end_date = datetime.strptime(end[1], '%Y-%m-%d').date()
-                        diff = (end_date - start_date).days
-                        prop_times.append(diff)
-                    except nx.NetworkXNoPath:
-                        continue
-            return prop_times
-        
-        prop_times_total = GraphAnalysis.connected_components_iter(joined_graph=joined_graph,
-                                                                   start_station=start_station,
-                                                                   end_station=end_station,
-                                                                   func=func)
-        if sum(prop_times_total):
-            avg_prop_time = sum(prop_times_total) / len(prop_times_total)
-        else:
-            avg_prop_time = 0
-  
-        return avg_prop_time
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
+
+        prop_times = []
+        for wave in flood_waves:
+            start = wave[0][1]
+            end = wave[-1][1]
+
+            d1 = datetime.strptime(start, "%Y-%m-%d")
+            d2 = datetime.strptime(end, "%Y-%m-%d")
+
+            delta = d2 - d1
+            prop_times.append(delta.days)
+
+        return np.average(prop_times)
 
     @staticmethod
     def propagation_time_weighted(joined_graph: nx.DiGraph,
@@ -173,30 +177,32 @@ class GraphAnalysis:
         :return float: The weighted average propagation time of flood waves in joined_graph between
         the two given stations.
         """
-        def func(j_graph, start_nodes, end_nodes):
-            prop_times = []
-            for start in start_nodes:
-                start_date = datetime.strptime(start[1], '%Y-%m-%d').date()
-                for end in end_nodes:
-                    try:
-                        paths = [p for p in nx.all_shortest_paths(j_graph, start, end)]
-                        end_date = datetime.strptime(end[1], '%Y-%m-%d').date()
-                        diff = [(end_date - start_date).days] * len(paths)
-                        prop_times.extend(diff)
-                    except nx.NetworkXNoPath:
-                        continue
-            return prop_times
-            
-        prop_times_total = GraphAnalysis.connected_components_iter(joined_graph=joined_graph,
-                                                                   start_station=start_station,
-                                                                   end_station=end_station,
-                                                                   func=func)
-        if sum(prop_times_total):
-            avg_prop_time = sum(prop_times_total) / len(prop_times_total)
-        else:
-            avg_prop_time = 0
-        
-        return avg_prop_time
+        full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
+                                                                         start_station=start_station,
+                                                                         end_station=end_station)
+
+        classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
+
+        prop_times = []
+        for paths in classes:
+            prop_times_in_classes = []
+            for path in paths:
+                start = path[0][1]
+                end = path[-1][1]
+
+                d1 = datetime.strptime(start, "%Y-%m-%d")
+                d2 = datetime.strptime(end, "%Y-%m-%d")
+
+                delta = d2 - d1
+                prop_times_in_classes.append(delta.days)
+
+            prop_times.append(prop_times_in_classes)
+
+        weighted_prop_times = []
+        for x in prop_times:
+            weighted_prop_times.extend([a / len(x) for a in x])
+
+        return np.average(weighted_prop_times)
 
     @staticmethod
     def count_unfinished_waves(joined_graph: nx.DiGraph,

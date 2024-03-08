@@ -1,6 +1,8 @@
+import itertools
 import json
 import os
 
+import networkx as nx
 import numpy as np
 
 from src import PROJECT_PATH
@@ -10,6 +12,25 @@ class AnalysisHandler:
     """
     This is a helper class for GraphAnalysis and StatisticalAnalysis
     """
+
+    @staticmethod
+    def get_final_pairs(joined_graph: nx.DiGraph, comp: list) -> list:
+        possible_start_nodes = []
+        possible_end_nodes = []
+        for node in comp:
+            in_deg = joined_graph.in_degree(node)
+            out_deg = joined_graph.out_degree(node)
+
+            if in_deg == 0:
+                possible_start_nodes.append(node)
+            if out_deg == 0:
+                possible_end_nodes.append(node)
+
+        cartesian_pairs = list(itertools.product(possible_start_nodes, possible_end_nodes))
+
+        final_pairs = [(x, y) for x, y in cartesian_pairs if float(x[0]) > float(y[0])]
+
+        return final_pairs
 
     @staticmethod
     def print_percentage(i: int, length: int) -> None:
