@@ -63,6 +63,22 @@ class GraphAnalysis:
         return waves
 
     @staticmethod
+    def get_full_flood_waves(waves: list, start_station: str, end_station: str, equivalence: bool) -> list:
+        if equivalence:
+            final_waves = []
+            for path in waves:
+                if start_station == path[0][0] and end_station == path[-1][0]:
+                    final_waves.append(path)
+
+        else:
+            final_waves = []
+            for paths in waves:
+                if start_station == paths[0][0][0] and end_station == paths[0][-1][0]:
+                    final_waves.append(paths)
+
+        return final_waves
+
+    @staticmethod
     def connected_components_iter(
                 joined_graph: nx.DiGraph,
                 start_station: str,
@@ -126,7 +142,10 @@ class GraphAnalysis:
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
 
-        return len(flood_waves)
+        full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
+                                                        end_station=end_station, equivalence=True)
+
+        return len(full_waves)
 
     @staticmethod
     def propagation_time(joined_graph: nx.DiGraph,
@@ -149,8 +168,11 @@ class GraphAnalysis:
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
 
+        full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
+                                                        end_station=end_station, equivalence=True)
+
         prop_times = []
-        for wave in flood_waves:
+        for wave in full_waves:
             start = wave[0][1]
             end = wave[-1][1]
 
@@ -183,8 +205,11 @@ class GraphAnalysis:
 
         classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
 
+        full_waves = GraphAnalysis.get_full_flood_waves(waves=classes, start_station=start_station,
+                                                        end_station=end_station, equivalence=False)
+
         prop_times = []
-        for paths in classes:
+        for paths in full_waves:
             prop_times_in_classes = []
             for path in paths:
                 start = path[0][1]
@@ -223,32 +248,53 @@ class GraphAnalysis:
                                                                    start_station=start_station,
                                                                    end_station=end_station)
 
-        classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=select_all_in_interval)
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=select_all_in_interval)
 
         final_flood_waves = []
-        for paths in classes:
-            for path in paths:
-                stations = []
-                for node in path:
-                    stations.append(node[0])
+        for path in flood_waves:
+            stations = []
+            for node in path:
+                stations.append(node[0])
 
-                if any(start_station == elem for elem in stations) and all(end_station != elem for elem in stations):
-                    final_flood_waves.append(path)
+            if any(start_station == elem for elem in stations) and all(end_station != elem for elem in stations):
+                final_flood_waves.append(path)
 
         return len(final_flood_waves)
 
     @staticmethod
-    def create_flood_map(joined_graph: nx.DiGraph,
+    def create_flood_map(joined_graph: nx.DiGraph, river_section_gauges: list) -> nx.DiGraph:
+        flood_map = nx.DiGraph()
+        river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
+
+        edges = []
+        for section in river_sections:
+            start_station = section[0]
+            end_station = section[1]
+
+            full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
+                                                                             start_station=start_station,
+                                                                             end_station=end_station)
+
+            classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
+
+            full_waves = GraphAnalysis.get_full_flood_waves(waves=classes, start_station=start_station,
+                                                            end_station=end_station, equivalence=False)
+
+            for paths in full_waves:
+                start_node = paths[0][0]
+                end_node = paths[0][-1]
+                amount = len(paths)
+
+                edges.append((start_node, end_node, amount))
+
+        flood_map.add_weighted_edges_from(ebunch_to_add=edges)
+
+        return flood_map
+
+    @staticmethod
+    def create_flood_map_2(joined_graph: nx.DiGraph,
                          river_section_gauges: list
                          ) -> nx.DiGraph:
-        """
-        Returns the number of flood waves which impacted the start_station and reached the end_station as well.
-        If there were branching(s), then all the branches that reach the end_station will be counted.
-
-        :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
-        :param list river_section_gauges:
-        :return int: The number of flood waves which impacted the start_station and reached the end_station
-        """
         flood_map = nx.DiGraph()
         river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
         flood_map_edges = []
