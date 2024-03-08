@@ -226,15 +226,15 @@ class GraphAnalysis:
         return len(final_flood_waves)
 
     @staticmethod
-    def create_flood_map(joined_graph: nx.DiGraph, river_section_gauges: list) -> nx.DiGraph:
+    def create_flood_map(joined_graph: nx.DiGraph, river_section_stations: list) -> nx.DiGraph:
         """
         Creates a flood map of the original graph
         :param nx.DiGraph joined_graph: the graph
-        :param list river_section_gauges: edge stations of the desired sections
+        :param list river_section_stations: edge stations of the desired sections
         :return nx.DiGraph: flood map as a directed graph
         """
         flood_map = nx.DiGraph()
-        river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
+        river_sections = [(x, y) for x, y in zip(river_section_stations, river_section_stations[1:])]
 
         edges = []
         for section in river_sections:
