@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.analysis.analysis_handler import AnalysisHandler
+from src.data.dataloader import Dataloader
 from src.selection.selection import Selection
 
 
@@ -274,19 +275,21 @@ class GraphAnalysis:
         return final_comps
 
     @staticmethod
-    def calculate_all_velocities(joined_graph: nx.DiGraph, river_kms: pd.Series) -> list:
+    def calculate_all_velocities(joined_graph: nx.DiGraph) -> list:
         """
         This function calculates the velocity of all flood waves in the input graph
         :param nx.DiGraph joined_graph: the graph
-        :param pd.Series river_kms: river kilometers of the gauges
         :return list: velocities in a list
         """
-        branching = GraphAnalysis.get_branching(joined_graph=joined_graph)
+        meta = Dataloader.get_metadata()
+        river_kms = meta["river_km"]
+
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=joined_graph)
 
         velocities = []
-        for branch in branching:
-            start_node, end_node = \
-                AnalysisHandler.get_start_and_end_node_of_slowest_and_longest_flood_wave(branch=branch)
+        for wave in flood_waves:
+            start_node = wave[0]
+            end_node = wave[-1]
 
             start = river_kms[float(start_node[0])]
             end = river_kms[float(end_node[0])]
