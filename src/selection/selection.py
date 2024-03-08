@@ -109,7 +109,7 @@ class Selection:
                                           start_station: str,
                                           end_station: str) -> nx.DiGraph:
         """
-        This function selects an interval of gauges. Any component intersecting with the interval will be displayed,
+        This function selects for an interval of gauges. Any component intersecting with the interval will be displayed,
         otherwise deleted.
 
         :param nx.DiGraph joined_graph: graph
