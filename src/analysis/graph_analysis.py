@@ -7,6 +7,7 @@ import networkx as nx
 import pandas as pd
 
 from src.analysis.analysis_handler import AnalysisHandler
+from src.selection.selection import Selection
 
 
 class GraphAnalysis:
@@ -15,6 +16,40 @@ class GraphAnalysis:
     Any method that does calculation or information extraction on the already existing flood wave graph structure
     belongs here.
     """
+
+    @staticmethod
+    def get_flood_waves(joined_graph: nx.DiGraph) -> list:
+        """
+        This function returns the actual flood waves in the graph
+        :param nx.DiGraph joined_graph: the graph
+        :return list: list of lists of the flood wave nodes
+        """
+        components = list(nx.weakly_connected_components(joined_graph))
+
+        waves = []
+        for comp in components:
+            comp = list(comp)
+
+            possible_end_nodes = []
+            for node in comp:
+                in_deg = joined_graph.in_degree(node)
+                out_deg = joined_graph.out_degree(node)
+
+                if in_deg == 0 or out_deg == 0:
+                    possible_end_nodes.append(node)
+
+            cartesian_pairs = list(itertools.product(possible_end_nodes, repeat=2))
+
+            final_pairs = [(x, y) for x, y in cartesian_pairs if float(x[0]) > float(y[0])]
+
+            for start, end in final_pairs:
+                try:
+                    wave = nx.shortest_path(joined_graph, start, end)
+                    waves.append(wave)
+                except nx.NetworkXNoPath:
+                    continue
+
+        return waves
 
     @staticmethod
     def connected_components_iter(
@@ -74,28 +109,13 @@ class GraphAnalysis:
         :return int: The number of flood waves which impacted the start_station and reached the end_station
         """
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=joined_graph)
+        full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
+                                                                         start_station=start_station,
+                                                                         end_station=end_station)
 
-        selected = []
-        for fw in flood_waves:
-            stations = []
-            for node in fw:
-                stations.append(node[0])
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
 
-            if any(start_station == elem for elem in stations) and any(end_station == elem for elem in stations):
-                selected.append(fw)
-
-        only_one = []
-        for fw in selected:
-            stations = []
-            for node in fw:
-                stations.append(node[0])
-
-            interval = fw[stations.index(start_station):stations.index(end_station)+1]
-            if interval not in only_one:
-                only_one.append(interval)
-
-        return len(only_one)
+        return len(flood_waves)
 
     @staticmethod
     def propagation_time(joined_graph: nx.DiGraph,
@@ -352,37 +372,3 @@ class GraphAnalysis:
             velocities.append(velocity)
 
         return velocities
-
-    @staticmethod
-    def get_flood_waves(joined_graph: nx.DiGraph) -> list:
-        """
-        This function returns the actual flood waves in the graph
-        :param nx.DiGraph joined_graph: the graph
-        :return list: list of lists of the flood wave nodes
-        """
-        components = list(nx.weakly_connected_components(joined_graph))
-
-        waves = []
-        for comp in components:
-            comp = list(comp)
-
-            possible_end_nodes = []
-            for node in comp:
-                in_deg = joined_graph.in_degree(node)
-                out_deg = joined_graph.out_degree(node)
-
-                if in_deg == 0 or out_deg == 0:
-                    possible_end_nodes.append(node)
-
-            cartesian_pairs = list(itertools.product(possible_end_nodes, repeat=2))
-
-            final_pairs = [(x, y) for x, y in cartesian_pairs if float(x[0]) > float(y[0])]
-
-            for start, end in final_pairs:
-                try:
-                    wave = nx.shortest_path(joined_graph, start, end)
-                    waves.append(wave)
-                except nx.NetworkXNoPath:
-                    continue
-
-        return waves
