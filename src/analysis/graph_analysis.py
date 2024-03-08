@@ -79,49 +79,6 @@ class GraphAnalysis:
         return final_waves
 
     @staticmethod
-    def connected_components_iter(
-                joined_graph: nx.DiGraph,
-                start_station: str,
-                end_station: str,
-                func: Callable
-                  ) -> list:
-        """
-        Iterates through all the connected components within the input graph joined_graph.
-        It gathers all the start and end nodes that are (weakly)reachable within the same connected component.
-        Within the iteration of each connected component, it executes a callable function which is given as input.
-        (It should be a calculation which could be executed using the same inputs as given for this function)
-        The results are gathered into a list and returned.
-
-        :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
-        :param str start_station: The ID of the station from which you want to get the reachable end nodes.
-        :param str end_station: The ID of the desired end station.
-        :param Callable func:
-        :return list: The results organized into a list.
-        """
-        
-        connected_components = [
-            list(x)
-            for x in nx.weakly_connected_components(joined_graph)
-        ]
-        counted_quantity = []
-        for sub_connected_component in connected_components:
-            start_nodes = [
-                node
-                for node in sub_connected_component
-                if node[0] == start_station
-            ]
-            end_nodes = [
-                node
-                for node in sub_connected_component
-                if node[0] == end_station
-            ]
-            counted_quantity.extend(func(j_graph=joined_graph,
-                                         start_nodes=start_nodes,
-                                         end_nodes=end_nodes))
-            
-        return counted_quantity 
-
-    @staticmethod
     def count_waves(joined_graph: nx.DiGraph,
                     start_station: str,
                     end_station: str
@@ -289,33 +246,6 @@ class GraphAnalysis:
 
         flood_map.add_weighted_edges_from(ebunch_to_add=edges)
 
-        return flood_map
-
-    @staticmethod
-    def create_flood_map_2(joined_graph: nx.DiGraph,
-                         river_section_gauges: list
-                         ) -> nx.DiGraph:
-        flood_map = nx.DiGraph()
-        river_sections = [(x, y) for x, y in zip(river_section_gauges, river_section_gauges[1:])]
-        flood_map_edges = []
-
-        def func(j_graph, start_nodes, end_nodes):
-            edges = []
-            for start in start_nodes:
-                for end in end_nodes:
-                    try:
-                        paths = [p for p in nx.all_shortest_paths(j_graph, start, end)]
-                        edges.append((start, end, len(paths)))
-                    except nx.NetworkXNoPath:
-                        continue
-            return edges
-
-        for section in river_sections:
-            flood_map_edges.extend(GraphAnalysis.connected_components_iter(joined_graph=joined_graph,
-                                                                           start_station=section[0],
-                                                                           end_station=section[1],
-                                                                           func=func))
-        flood_map.add_weighted_edges_from(ebunch_to_add=flood_map_edges)
         return flood_map
 
     @staticmethod
