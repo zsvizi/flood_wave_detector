@@ -1,10 +1,8 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable
 
 import networkx as nx
 import numpy as np
-import pandas as pd
 
 from src.analysis.analysis_handler import AnalysisHandler
 from src.data.dataloader import Dataloader
