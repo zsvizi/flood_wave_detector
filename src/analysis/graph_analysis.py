@@ -88,8 +88,8 @@ class GraphAnalysis:
     @staticmethod
     def count_waves(joined_graph: nx.DiGraph,
                     start_station: str,
-                    end_station: str
-                    ) -> int:
+                    end_station: str,
+                    sorted_stations: list) -> int:
         """
         Returns the number of flood waves which impacted the start_station and reached the end_station as well.
         If there were branching(s), then all the branches that reach the end_station will be counted.
@@ -97,12 +97,14 @@ class GraphAnalysis:
         :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
         :param str start_station: The ID of the desired start station.
         :param str end_station: The ID of the desired end station.
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return int: The number of flood waves which impacted the start_station and reached the end_station
         """
 
         full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
                                                                          start_station=start_station,
-                                                                         end_station=end_station)
+                                                                         end_station=end_station,
+                                                                         sorted_stations=sorted_stations)
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
 
@@ -114,8 +116,8 @@ class GraphAnalysis:
     @staticmethod
     def propagation_time(joined_graph: nx.DiGraph,
                          start_station: str,
-                         end_station: str
-                         ) -> float:
+                         end_station: str,
+                         sorted_stations: list) -> float:
         """
         Returns the average propagation time of flood waves between the two selected stations unweighted,
         meaning that no matter how many paths are between the same two vertices, the propagation time value
@@ -124,11 +126,13 @@ class GraphAnalysis:
         :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
         :param str start_station: The ID of the desired start station
         :param str end_station: The ID of the last station
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
         full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
                                                                          start_station=start_station,
-                                                                         end_station=end_station)
+                                                                         end_station=end_station,
+                                                                         sorted_stations=sorted_stations)
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
 
@@ -151,8 +155,8 @@ class GraphAnalysis:
     @staticmethod
     def propagation_time_weighted(joined_graph: nx.DiGraph,
                                   start_station: str,
-                                  end_station: str
-                                  ) -> int:
+                                  end_station: str,
+                                  sorted_stations: list) -> int:
         """
         Returns the weighted average propagation time of flood waves between the two selected stations. Each time value
         is weighted by the number of paths with that given propagation time.
@@ -160,12 +164,14 @@ class GraphAnalysis:
         :param nx.DiGraph joined_graph: The full composed graph of the desired time interval.
         :param str start_station: The ID of the desired start station
         :param str end_station: The ID of the last station, which is not reached by the flood waves
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return float: The weighted average propagation time of flood waves in joined_graph between
         the two given stations.
         """
         full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
                                                                          start_station=start_station,
-                                                                         end_station=end_station)
+                                                                         end_station=end_station,
+                                                                         sorted_stations=sorted_stations)
 
         classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
 
@@ -196,8 +202,8 @@ class GraphAnalysis:
     @staticmethod
     def count_unfinished_waves(joined_graph: nx.DiGraph,
                                start_station: str,
-                               end_station: str
-                               ) -> int:
+                               end_station: str,
+                               sorted_stations: list) -> int:
         """
         Returns the number of flood waves which impacted the start_station, but did not reach the end_station.
         If there were branching(s), then all the branches will be counted.
@@ -205,12 +211,14 @@ class GraphAnalysis:
         :param nx.DiGraph joined_graph: full composed graph of the desired time interval
         :param str start_station: The ID of the desired start station
         :param str end_station: The ID of the last station, which is not reached by the flood waves
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return int: The number of flood waves which impacted the start_station but did not reach the end_station
         """
 
         select_all_in_interval = Selection.select_only_in_interval(joined_graph=joined_graph,
                                                                    start_station=start_station,
-                                                                   end_station=end_station)
+                                                                   end_station=end_station,
+                                                                   sorted_stations=sorted_stations)
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=select_all_in_interval)
 
@@ -226,11 +234,12 @@ class GraphAnalysis:
         return len(final_flood_waves)
 
     @staticmethod
-    def create_flood_map(joined_graph: nx.DiGraph, river_section_stations: list) -> nx.DiGraph:
+    def create_flood_map(joined_graph: nx.DiGraph, river_section_stations: list, sorted_stations: list) -> nx.DiGraph:
         """
         Creates a flood map of the original graph
         :param nx.DiGraph joined_graph: the graph
         :param list river_section_stations: edge stations of the desired sections
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return nx.DiGraph: flood map as a directed graph
         """
         flood_map = nx.DiGraph()
@@ -243,7 +252,8 @@ class GraphAnalysis:
 
             full_from_start_to_end = Selection.select_full_from_start_to_end(joined_graph=joined_graph,
                                                                              start_station=start_station,
-                                                                             end_station=end_station)
+                                                                             end_station=end_station,
+                                                                             sorted_stations=sorted_stations)
 
             classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
 

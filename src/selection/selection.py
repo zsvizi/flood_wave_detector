@@ -1,3 +1,5 @@
+import copy
+
 import networkx as nx
 
 from src.selection.selection_handler import SelectionHandler
@@ -9,17 +11,22 @@ class Selection:
     """
 
     @staticmethod
-    def select_full_from_start_to_end(joined_graph: nx.DiGraph, start_station: str, end_station: str) -> nx.DiGraph:
+    def select_full_from_start_to_end(joined_graph: nx.DiGraph,
+                                      start_station: str,
+                                      end_station: str,
+                                      sorted_stations: list) -> nx.DiGraph:
         """
         This function selects those components that have nodes at both start_station and end_station
         :param nx.DiGraph joined_graph: the graph
         :param str start_station: the first station in the interval
         :param str end_station: the last station in the interval
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return nx.DiGraph: the selected graph
         """
         select_all_in_interval = Selection.select_only_in_interval(joined_graph=joined_graph,
                                                                    start_station=start_station,
-                                                                   end_station=end_station)
+                                                                   end_station=end_station,
+                                                                   sorted_stations=sorted_stations)
 
         components = nx.weakly_connected_components(select_all_in_interval)
 
@@ -69,7 +76,10 @@ class Selection:
         return g
 
     @staticmethod
-    def select_only_in_interval(joined_graph: nx.DiGraph, start_station: str, end_station: str) -> nx.DiGraph:
+    def select_only_in_interval(joined_graph: nx.DiGraph,
+                                start_station: str,
+                                end_station: str,
+                                sorted_stations: list) -> nx.DiGraph:
         """
         This function selects an interval of gauges. Each component's intersection with the given interval
         will be displayed.
@@ -77,37 +87,34 @@ class Selection:
         :param nx.DiGraph joined_graph: graph
         :param str start_station: first gauge of the interval as a string
         :param str end_station: last gauge of the interval as a string
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return nx.DiGraph: graph that contains only components that intersect with the interval
         """
 
         filtered = Selection.select_intersecting_with_interval(joined_graph=joined_graph,
                                                                start_station=start_station,
-                                                               end_station=end_station)
+                                                               end_station=end_station,
+                                                               sorted_stations=sorted_stations)
 
         comps = list(nx.weakly_connected_components(filtered))
-        edges = filtered.edges()
-        edges = list(edges)
 
         gauges = SelectionHandler.get_gauges(comps=comps)
 
-        gauges_to_delete = gauges[:gauges.index(start_station)]
-        comps = SelectionHandler.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+        filtered_stations = sorted_stations[sorted_stations.index(start_station):sorted_stations.index(end_station) + 1]
 
-        gauges_to_delete = gauges[gauges.index(end_station):]
-        comps = SelectionHandler.remove_nodes(comps=comps, gauges_to_delete=gauges_to_delete)
+        stations_to_delete = [x for x in gauges if x not in filtered_stations]
+        nodes = copy.deepcopy(list(filtered.nodes()))
+        for node in nodes:
+            if any(node[0] == station for station in stations_to_delete):
+                filtered.remove_node(node)
 
-        nodes_filtered, edges_filtered = SelectionHandler.nodes_and_edges(comps=comps, edges=edges)
-
-        g = nx.DiGraph()
-        g.add_nodes_from(nodes_filtered)
-        g.add_edges_from(edges_filtered)
-
-        return g
+        return filtered
 
     @staticmethod
     def select_intersecting_with_interval(joined_graph: nx.DiGraph,
                                           start_station: str,
-                                          end_station: str) -> nx.DiGraph:
+                                          end_station: str,
+                                          sorted_stations: list) -> nx.DiGraph:
         """
         This function selects for an interval of gauges. Any component intersecting with the interval will be displayed,
         otherwise deleted.
@@ -115,6 +122,7 @@ class Selection:
         :param nx.DiGraph joined_graph: graph
         :param str start_station: first gauge of the interval as a string
         :param str end_station: last gauge of the interval as a string
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return nx.DiGraph: graph that contains only components that intersect with the interval
         """
 
@@ -125,13 +133,15 @@ class Selection:
 
         gauges = SelectionHandler.get_gauges(comps=comps)
 
-        filtered_gauges = gauges[gauges.index(start_station):gauges.index(end_station) + 1]
+        filtered_stations = sorted_stations[sorted_stations.index(start_station):sorted_stations.index(end_station) + 1]
+
+        final_stations = list(set(gauges) & set(filtered_stations))
 
         comps_new = []
         for comp in comps_copy:
             list_of_bools = []
-            for fg in filtered_gauges:
-                x = SelectionHandler.is_gauge_in_comp(gauge=fg, comp_list=list(comp))
+            for station in final_stations:
+                x = SelectionHandler.is_gauge_in_comp(gauge=station, comp_list=list(comp))
                 list_of_bools.append(x)
 
             if any(list_of_bools):
