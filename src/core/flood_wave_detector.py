@@ -145,7 +145,6 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
         """
 
-        river_kms = self.data.meta["river_km"]
         vertex_pairs = {}
         for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             # Read the data from the actual gauge.
@@ -158,7 +157,6 @@ class FloodWaveDetector:
 
             slope_calculator = SlopeCalculator(current_gauge=str(current_gauge),
                                                next_gauge=str(next_gauge),
-                                               river_kms=river_kms,
                                                folder_name=self.folder_name)
 
             # Create actual_next_pair
@@ -172,8 +170,8 @@ class FloodWaveDetector:
                     forward=self.forward_dict[current_gauge]
                 )
 
-                slopes = slope_calculator.get_slopes(current_date=actual_date,
-                                                     next_dates=next_gauge_dates)
+                next_dates = next_gauge_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+                slopes = slope_calculator.get_slopes(current_date=actual_date, next_dates=next_dates)
 
                 # Convert datetime to string
                 FloodWaveHandler.convert_datetime_to_str(
