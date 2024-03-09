@@ -1,6 +1,7 @@
 import json
 import os
-import networkx as nx
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -8,6 +9,8 @@ from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
 from src.analysis.graph_analysis import GraphAnalysis
 from src.core.flood_wave_handler import FloodWaveHandler
+from src.core.slope_calculator import SlopeCalculator
+from src.selection.selection import Selection
 
 
 class StatisticalAnalysis:
@@ -16,13 +19,11 @@ class StatisticalAnalysis:
     """
 
     @staticmethod
-    def yearly_mean_moving_average(river_kms: pd.Series,
-                                   gauge_pairs: list,
+    def yearly_mean_moving_average(gauge_pairs: list,
                                    folder_name: str,
                                    length: int) -> list:
         """
         This function calculates moving average time series of the velocities
-        :param pd.Series river_kms: river kilometers of the gauges
         :param list gauge_pairs: list of the gauge pairs for creating the directed graph
         :param str folder_name: name of the generated data folder
         :param int length: length of one period in years
@@ -36,7 +37,7 @@ class StatisticalAnalysis:
                     "folder_name": folder_name}
             graph = FloodWaveHandler.create_directed_graph(**args)
 
-            velocities = GraphAnalysis.calculate_all_velocities(river_kms=river_kms, joined_graph=graph)
+            velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
             mean_velocity = np.mean(velocities)
 
             mean_velocities.append(mean_velocity)
@@ -46,10 +47,9 @@ class StatisticalAnalysis:
         return mean_velocities
 
     @staticmethod
-    def get_statistics(river_kms: pd.Series, gauges: list, gauge_pairs: list, folder_name: str) -> pd.DataFrame:
+    def get_statistics(gauges: list, gauge_pairs: list, folder_name: str) -> pd.DataFrame:
         """
         This function creates a dataframe containing some statistics of the whole graph yearly
-        :param pd.Series river_kms: river kilometers of the gauges
         :param list gauges: list of gauges
         :param list gauge_pairs: list of the gauge pairs for creating the directed graph
         :param str folder_name: name of the generated data folder
@@ -90,10 +90,10 @@ class StatisticalAnalysis:
             low.append(node_colors.count("yellow"))
             high.append(node_colors.count("red"))
 
-            components = list(nx.weakly_connected_components(graph))
-            components_num.append(len(components))
+            flood_waves = GraphAnalysis.get_flood_waves(joined_graph=graph)
+            components_num.append(len(flood_waves))
 
-            velocities = GraphAnalysis.calculate_all_velocities(river_kms=river_kms, joined_graph=graph)
+            velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
 
             mins.append(np.min(velocities))
             maxs.append(np.max(velocities))
@@ -107,10 +107,10 @@ class StatisticalAnalysis:
         final_table["Arhullam (db)"] = components_num
         final_table["Kisviz (db)"] = low
         final_table["Nagyviz (db)"] = high
-        final_table["Min. sebesseg (km/h)"] = mins
-        final_table["Max. sebesseg (km/h)"] = maxs
-        final_table["Atlagsebesseg (km/h)"] = means
-        final_table["Median sebesseg (km/h)"] = medians
+        final_table["Min. sebesseg (km/day)"] = mins
+        final_table["Max. sebesseg (km/day)"] = maxs
+        final_table["Atlagsebesseg (km/day)"] = means
+        final_table["Median sebesseg (km/day)"] = medians
         final_table["Sebessegek szorasa"] = stds
 
         return pd.DataFrame(final_table)
@@ -200,8 +200,8 @@ class StatisticalAnalysis:
                 medians.append(np.median(flattened_slopes))
                 stds.append(np.std(flattened_slopes))
 
-            final_table["Min. slope (km/h)"] = mins
-            final_table["Max. slope (km/h)"] = maxs
+            final_table["Min. slope (cm/km)"] = mins
+            final_table["Max. slope (cm/km)"] = maxs
             final_table["Mean"] = means
             final_table["Median"] = medians
             final_table["Standard deviation"] = stds
@@ -214,6 +214,77 @@ class StatisticalAnalysis:
             for i, df in enumerate(dfs):
                 sheet_name = f'{list(vertex_pairs.keys())[i]}'
                 df.to_excel(writer, sheet_name=sheet_name)
+
+    @staticmethod
+    def get_slopes_in_interval(folder_name: str,
+                               start_station: str,
+                               end_station: str,
+                               period: int,
+                               gauge_pairs: list,
+                               sorted_stations: list):
+        final_table = {}
+        indices = []
+        mins = []
+        maxs = []
+        means = []
+        medians = []
+        stds = []
+
+        years = np.arange(1876, 2020, period)
+        for year in years:
+            if year + period - 1 > 2019:
+                break
+
+            start_date = f'{year}-01-01'
+            end_date = f'{year + period - 1}-12-31'
+
+            indices.append(start_date + '_' + end_date)
+
+            args_create = {
+                "start_date": start_date,
+                "end_date": end_date,
+                "gauge_pairs": gauge_pairs,
+                "folder_name": folder_name
+            }
+            graph = FloodWaveHandler.create_directed_graph(**args_create)
+
+            select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
+                                                                       start_station=start_station,
+                                                                       end_station=end_station,
+                                                                       sorted_stations=sorted_stations)
+
+            flood_waves = GraphAnalysis.get_flood_waves(joined_graph=select_all_in_interval)
+
+            full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
+                                                            end_station=end_station, equivalence=True)
+
+            slopes = []
+            for wave in full_waves:
+                start_node = wave[0]
+                end_node = wave[-1]
+
+                slope_calc = SlopeCalculator(current_gauge=start_node[0],
+                                             next_gauge=end_node[0],
+                                             folder_name=folder_name)
+
+                current_date = datetime.strptime(start_node[1], "%Y-%m-%d")
+                slope = slope_calc.get_slopes(current_date=current_date, next_dates=[end_node[1]])
+
+                slopes.append(slope[0])
+
+            mins.append(np.min(slopes))
+            maxs.append(np.max(slopes))
+            means.append(np.mean(slopes))
+            medians.append(np.median(slopes))
+            stds.append(np.std(slopes))
+
+        final_table["Min. slope (cm/km)"] = mins
+        final_table["Max. slope (cm/km)"] = maxs
+        final_table["Mean"] = means
+        final_table["Median"] = medians
+        final_table["Standard deviation"] = stds
+
+        return pd.DataFrame(final_table, index=indices)
 
     @staticmethod
     def red_ratio(gauges: list, folder_name: str, period: int) -> pd.DataFrame:
@@ -279,16 +350,16 @@ class StatisticalAnalysis:
                 "folder_name": folder_name}
         graph = FloodWaveHandler.create_directed_graph(**args)
 
-        branches = GraphAnalysis.get_branching(joined_graph=graph)
+        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=graph)
 
-        cleaned_branches = []
-        for branch in branches:
-            node_dates = [node[1] for node in branch]
+        cleaned_waves = []
+        for wave in flood_waves:
+            node_dates = [node[1] for node in wave]
             if not any(str(year - 1) in node_date for node_date in node_dates) \
                     and not all(str(year + 1) in node_date for node_date in node_dates):
-                cleaned_branches.append(branch)
+                cleaned_waves.append(wave)
 
-        return cleaned_branches
+        return cleaned_waves
 
     @staticmethod
     def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str) -> list:
@@ -300,10 +371,8 @@ class StatisticalAnalysis:
         """
         number_of_flood_waves = []
         for i in range(1876, 2020):
-            cleaned_branches = StatisticalAnalysis.get_flood_waves_yearly(year=i,
-                                                                          gauge_pairs=gauge_pairs,
-                                                                          folder_name=folder_name)
-            number_of_flood_waves.append(len(cleaned_branches))
+            waves = StatisticalAnalysis.get_flood_waves_yearly(year=i, gauge_pairs=gauge_pairs, folder_name=folder_name)
+            number_of_flood_waves.append(len(waves))
 
             AnalysisHandler.print_percentage(i=i, length=0)
 
