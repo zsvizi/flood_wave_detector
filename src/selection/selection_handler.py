@@ -56,7 +56,7 @@ class SelectionHandler:
     @staticmethod
     def nodes_and_edges(comps: list, edges: list):
         """
-        This function finds and collects the nodes and edges of the filtered graph.
+        This function finds and collects the nodes and edges of the selected graph.
 
         :param list comps: list of the components
         :param list edges: list of the edges
