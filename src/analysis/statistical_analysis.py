@@ -221,7 +221,17 @@ class StatisticalAnalysis:
                                end_station: str,
                                period: int,
                                gauge_pairs: list,
-                               sorted_stations: list):
+                               sorted_stations: list) -> pd.DataFrame:
+        """
+        This function calculates statistics of slopes of paths in flood waves
+        :param str folder_name: name of the generated data folder
+        :param str start_station: string of starting station number
+        :param str end_station: string of ending station number
+        :param int period: the results are accumulated for this many years
+        :param list gauge_pairs: list of gauge pairs
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
+        :return pd.DataFrame: dataframe containing the statistics
+        """
         final_table = {}
         indices = []
         mins = []
