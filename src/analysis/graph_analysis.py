@@ -80,7 +80,7 @@ class GraphAnalysis:
         prop_times = []
         for wave in full_waves:
             start = wave[0][1]
-            end = wave[-1][1]
+            end = wave[1][1]
 
             d1 = datetime.strptime(start, "%Y-%m-%d")
             d2 = datetime.strptime(end, "%Y-%m-%d")
@@ -167,12 +167,8 @@ class GraphAnalysis:
         flood_waves = extractor.flood_waves
 
         final_flood_waves = []
-        for path in flood_waves:
-            stations = []
-            for node in path:
-                stations.append(node[0])
-
-            if any(start_station == elem for elem in stations) and all(end_station != elem for elem in stations):
-                final_flood_waves.append(path)
+        for wave in flood_waves:
+            if start_station == wave[0][0] and end_station != wave[1][0]:
+                final_flood_waves.append(wave)
 
         return len(final_flood_waves)

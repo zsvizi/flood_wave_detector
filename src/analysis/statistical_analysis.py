@@ -279,7 +279,7 @@ class StatisticalAnalysis:
             slopes = []
             for wave in full_waves:
                 start_node = wave[0]
-                end_node = wave[-1]
+                end_node = wave[1]
 
                 slope_calc = SlopeCalculator(current_gauge=start_node[0],
                                              next_gauge=end_node[0],
@@ -415,7 +415,7 @@ class StatisticalAnalysis:
         velocities = []
         for wave in flood_waves:
             start_node = wave[0]
-            end_node = wave[-1]
+            end_node = wave[1]
 
             start = river_kms[float(start_node[0])]
             end = river_kms[float(end_node[0])]

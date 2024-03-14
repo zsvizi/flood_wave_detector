@@ -22,7 +22,7 @@ class FloodWaveExtractor:
             for start, end in final_pairs:
                 try:
                     wave = nx.shortest_path(self.joined_graph, start, end)
-                    waves.append(wave)
+                    waves.append((wave[0], wave[-1]))
                 except nx.NetworkXNoPath:
                     continue
 
@@ -64,9 +64,9 @@ class FloodWaveExtractor:
         """
         if equivalence:
             final_waves = []
-            for path in waves:
-                if start_station == path[0][0] and end_station == path[-1][0]:
-                    final_waves.append(path)
+            for wave in waves:
+                if start_station == wave[0][0] and end_station == wave[1][0]:
+                    final_waves.append(wave)
 
         else:
             final_waves = []
