@@ -18,7 +18,7 @@ from src.utils.json_helper import JsonHelper
 from src.utils.measure_time import measure_time
 
 
-class GraphPreparator:
+class GraphPreparation:
     """This is the class responsible for finding the flood waves.
 
     It has all the necessary functions to find the flood waves and also has a run function which executes all the
