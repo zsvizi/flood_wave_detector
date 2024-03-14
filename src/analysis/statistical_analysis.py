@@ -8,7 +8,7 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
 from src.analysis.graph_analysis import GraphAnalysis
-from src.core.flood_wave_handler import FloodWaveHandler
+from src.core.graph_handler import GraphHandler
 from src.core.slope_calculator import SlopeCalculator
 from src.selection.selection import Selection
 
@@ -35,7 +35,7 @@ class StatisticalAnalysis:
                     "end_date": f'{i}-12-31',
                     "gauge_pairs": gauge_pairs,
                     "folder_name": folder_name}
-            graph = FloodWaveHandler.create_directed_graph(**args)
+            graph = GraphHandler.create_directed_graph(**args)
 
             velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
             mean_velocity = np.mean(velocities)
@@ -76,7 +76,7 @@ class StatisticalAnalysis:
                 "gauge_pairs": gauge_pairs,
                 "folder_name": folder_name
             }
-            graph = FloodWaveHandler.create_directed_graph(**args_create)
+            graph = GraphHandler.create_directed_graph(**args_create)
 
             gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
                                                                          folder_name=folder_name,
@@ -256,7 +256,7 @@ class StatisticalAnalysis:
                 "gauge_pairs": gauge_pairs,
                 "folder_name": folder_name
             }
-            graph = FloodWaveHandler.create_directed_graph(**args_create)
+            graph = GraphHandler.create_directed_graph(**args_create)
 
             select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
                                                                        start_station=start_station,
@@ -358,7 +358,7 @@ class StatisticalAnalysis:
                 "end_date": end_date,
                 "gauge_pairs": gauge_pairs,
                 "folder_name": folder_name}
-        graph = FloodWaveHandler.create_directed_graph(**args)
+        graph = GraphHandler.create_directed_graph(**args)
 
         flood_waves = GraphAnalysis.get_flood_waves(joined_graph=graph)
 

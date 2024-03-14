@@ -9,7 +9,7 @@ from src import PROJECT_PATH
 from src.utils.json_helper import JsonHelper
 
 
-class FloodWaveHandler:
+class GraphHandler:
     """This is a helper class for FloodWaveDetector.
 
     It contains functions which shrink the FloodWaveDetector class.
@@ -52,7 +52,7 @@ class FloodWaveHandler:
         :return pd.DataFrame: A DataFrame containing the found dates
         """
 
-        dates = FloodWaveHandler.filter_for_start_and_length(
+        dates = GraphHandler.filter_for_start_and_length(
             candidate_vertices=next_gauge_candidate_vertices,
             date=actual_date,
             forward_span=forward,
@@ -145,7 +145,7 @@ class FloodWaveHandler:
         low_limit = meta.loc[end_station].river_km
 
         # first filter
-        start_gauges = FloodWaveHandler.select_start_gauges(low_limit=low_limit, meta=meta)
+        start_gauges = GraphHandler.select_start_gauges(low_limit=low_limit, meta=meta)
 
         selected_pairs = [
             x
@@ -155,7 +155,7 @@ class FloodWaveHandler:
 
         joined_graph = nx.DiGraph()
         for gauge_pair in selected_pairs:
-            joined_graph = FloodWaveHandler.compose_graph(
+            joined_graph = GraphHandler.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,
@@ -164,7 +164,7 @@ class FloodWaveHandler:
             )
 
         # second filter
-        FloodWaveHandler.remove_nodes_with_improper_km_data(
+        GraphHandler.remove_nodes_with_improper_km_data(
             joined_graph=joined_graph,
             low_limit=low_limit,
             up_limit=up_limit,
@@ -173,7 +173,7 @@ class FloodWaveHandler:
         )
 
         # third filter
-        FloodWaveHandler.date_filter(
+        GraphHandler.date_filter(
             joined_graph=joined_graph,
             start_date=start_date,
             end_date=end_date
@@ -181,7 +181,7 @@ class FloodWaveHandler:
 
         # fourth filter
         if filter_not_including_start_or_end:
-            FloodWaveHandler.remove_components_not_including_start_or_end_station(
+            GraphHandler.remove_components_not_including_start_or_end_station(
                 start_station=start_station,
                 end_station=end_station,
                 joined_graph=joined_graph
@@ -383,7 +383,7 @@ class FloodWaveHandler:
 
         filenames = next(os.walk(os.path.join(PROJECT_PATH, folder_name, 'build_graph', f'{gauge_pair}')),
                          (None, None, []))[2]
-        sorted_files = FloodWaveHandler.sort_wave(
+        sorted_files = GraphHandler.sort_wave(
             filenames=filenames,
             start=start_date,
             end=end_date
@@ -440,7 +440,7 @@ class FloodWaveHandler:
 
         joined_graph = nx.DiGraph()
         for gauge_pair in gauge_pairs:
-            joined_graph = FloodWaveHandler.compose_graph(
+            joined_graph = GraphHandler.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
                 joined_graph=joined_graph,

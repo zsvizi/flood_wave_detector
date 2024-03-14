@@ -10,7 +10,7 @@ import pandas as pd
 
 from src import PROJECT_PATH
 from src.data.flood_wave_data import FloodWaveData
-from src.core.flood_wave_handler import FloodWaveHandler
+from src.core.graph_handler import GraphHandler
 from src.utils.json_helper import JsonHelper
 
 
@@ -78,9 +78,9 @@ class Plotter:
         max_date = max([node[1] for node in directed_graph.nodes()])
         max_date = datetime.strptime(max_date, '%Y-%m-%d')
 
-        self.positions = FloodWaveHandler.create_positions(joined_graph=directed_graph,
-                                                           start=start,
-                                                           gauges=self.gauges)
+        self.positions = GraphHandler.create_positions(joined_graph=directed_graph,
+                                                       start=start,
+                                                       gauges=self.gauges)
 
         fig, ax = plt.subplots()
 
@@ -102,7 +102,7 @@ class Plotter:
 
         if show_nan:
             nan_graph = self.create_nan_graph(min_date=str(min_date), max_date=str(max_date))
-            nan_positions = FloodWaveHandler.create_positions(
+            nan_positions = GraphHandler.create_positions(
                 joined_graph=nan_graph, start=start,
                 gauges=self.gauges)
         else:
