@@ -8,6 +8,7 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
 from src.analysis.graph_analysis import GraphAnalysis
+from src.core.flood_wave_extractor import FloodWaveExtractor
 from src.core.graph_handler import GraphHandler
 from src.core.slope_calculator import SlopeCalculator
 from src.selection.selection import Selection
@@ -90,7 +91,9 @@ class StatisticalAnalysis:
             low.append(node_colors.count("yellow"))
             high.append(node_colors.count("red"))
 
-            flood_waves = GraphAnalysis.get_flood_waves(joined_graph=graph)
+            extractor = FloodWaveExtractor(joined_graph=graph)
+            extractor.get_flood_waves()
+            flood_waves = extractor.flood_waves
             components_num.append(len(flood_waves))
 
             velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
@@ -263,10 +266,14 @@ class StatisticalAnalysis:
                                                                        end_station=end_station,
                                                                        sorted_stations=sorted_stations)
 
-            flood_waves = GraphAnalysis.get_flood_waves(joined_graph=select_all_in_interval)
+            extractor = FloodWaveExtractor(joined_graph=select_all_in_interval)
+            extractor.get_flood_waves()
+            flood_waves = extractor.flood_waves
 
-            full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
-                                                            end_station=end_station, equivalence=True)
+            full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=flood_waves,
+                                                                              start_station=start_station,
+                                                                              end_station=end_station,
+                                                                              equivalence=True)
 
             slopes = []
             for wave in full_waves:
@@ -360,7 +367,9 @@ class StatisticalAnalysis:
                 "folder_name": folder_name}
         graph = GraphHandler.create_directed_graph(**args)
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=graph)
+        extractor = FloodWaveExtractor(joined_graph=graph)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
         cleaned_waves = []
         for wave in flood_waves:

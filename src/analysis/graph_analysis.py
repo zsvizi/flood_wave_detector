@@ -4,7 +4,7 @@ from datetime import datetime
 import networkx as nx
 import numpy as np
 
-from src.analysis.analysis_handler import AnalysisHandler
+from src.core.flood_wave_extractor import FloodWaveExtractor
 from src.data.dataloader import Dataloader
 from src.selection.selection import Selection
 
@@ -15,75 +15,6 @@ class GraphAnalysis:
     Any method that does calculation or information extraction on the already existing flood wave graph structure
     belongs here.
     """
-
-    @staticmethod
-    def get_flood_waves(joined_graph: nx.DiGraph) -> list:
-        """
-        This function returns the actual flood waves in the graph
-        :param nx.DiGraph joined_graph: the graph
-        :return list: list of lists of the flood wave nodes
-        """
-        components = list(nx.weakly_connected_components(joined_graph))
-
-        waves = []
-        for comp in components:
-            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=joined_graph, comp=list(comp))
-
-            for start, end in final_pairs:
-                try:
-                    wave = nx.shortest_path(joined_graph, start, end)
-                    waves.append(wave)
-                except nx.NetworkXNoPath:
-                    continue
-
-        return waves
-
-    @staticmethod
-    def get_flood_waves_without_equivalence(joined_graph: nx.DiGraph) -> list:
-        """
-        This function returns all the 'elements' of the theoretical flood wave equivalence classes (so for given
-        start and end nodes it takes all paths between them)
-        :param nx.DiGraph joined_graph: the graph
-        :return list: paths
-        """
-        components = list(nx.weakly_connected_components(joined_graph))
-
-        waves = []
-        for comp in components:
-            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=joined_graph, comp=list(comp))
-
-            for start, end in final_pairs:
-                try:
-                    wave = nx.all_shortest_paths(joined_graph, start, end)
-                    waves.append(list(wave))
-                except nx.NetworkXNoPath:
-                    continue
-
-        return waves
-
-    @staticmethod
-    def get_full_flood_waves(waves: list, start_station: str, end_station: str, equivalence: bool) -> list:
-        """
-        Selects only those flood waves that impacted both the start_station and end_station
-        :param list waves: list of all the flood waves
-        :param str start_station: the start station
-        :param str end_station: the end station
-        :param bool equivalence: True if we only consider one element of the equivalence classes, False otherwise
-        :return list: full flood waves
-        """
-        if equivalence:
-            final_waves = []
-            for path in waves:
-                if start_station == path[0][0] and end_station == path[-1][0]:
-                    final_waves.append(path)
-
-        else:
-            final_waves = []
-            for paths in waves:
-                if start_station == paths[0][0][0] and end_station == paths[0][-1][0]:
-                    final_waves.append(paths)
-
-        return final_waves
 
     @staticmethod
     def count_waves(joined_graph: nx.DiGraph,
@@ -106,10 +37,14 @@ class GraphAnalysis:
                                                                          end_station=end_station,
                                                                          sorted_stations=sorted_stations)
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
+        extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
-        full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
-                                                        end_station=end_station, equivalence=True)
+        full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=flood_waves,
+                                                                          start_station=start_station,
+                                                                          end_station=end_station,
+                                                                          equivalence=True)
 
         return len(full_waves)
 
@@ -134,10 +69,14 @@ class GraphAnalysis:
                                                                          end_station=end_station,
                                                                          sorted_stations=sorted_stations)
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=full_from_start_to_end)
+        extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
-        full_waves = GraphAnalysis.get_full_flood_waves(waves=flood_waves, start_station=start_station,
-                                                        end_station=end_station, equivalence=True)
+        full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=flood_waves,
+                                                                          start_station=start_station,
+                                                                          end_station=end_station,
+                                                                          equivalence=True)
 
         prop_times = []
         for wave in full_waves:
@@ -173,10 +112,14 @@ class GraphAnalysis:
                                                                          end_station=end_station,
                                                                          sorted_stations=sorted_stations)
 
-        classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
+        extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
+        extractor.get_flood_waves_without_equivalence()
+        classes = extractor.flood_waves
 
-        full_waves = GraphAnalysis.get_full_flood_waves(waves=classes, start_station=start_station,
-                                                        end_station=end_station, equivalence=False)
+        full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=classes,
+                                                                          start_station=start_station,
+                                                                          end_station=end_station,
+                                                                          equivalence=False)
 
         prop_times = []
         for paths in full_waves:
@@ -220,7 +163,9 @@ class GraphAnalysis:
                                                                    end_station=end_station,
                                                                    sorted_stations=sorted_stations)
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=select_all_in_interval)
+        extractor = FloodWaveExtractor(joined_graph=select_all_in_interval)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
         final_flood_waves = []
         for path in flood_waves:
@@ -255,10 +200,14 @@ class GraphAnalysis:
                                                                              end_station=end_station,
                                                                              sorted_stations=sorted_stations)
 
-            classes = GraphAnalysis.get_flood_waves_without_equivalence(joined_graph=full_from_start_to_end)
+            extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
+            extractor.get_flood_waves_without_equivalence()
+            classes = extractor.flood_waves
 
-            full_waves = GraphAnalysis.get_full_flood_waves(waves=classes, start_station=start_station,
-                                                            end_station=end_station, equivalence=False)
+            full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=classes,
+                                                                              start_station=start_station,
+                                                                              end_station=end_station,
+                                                                              equivalence=False)
 
             for paths in full_waves:
                 start_node = paths[0][0]
@@ -306,7 +255,9 @@ class GraphAnalysis:
         meta = Dataloader.get_metadata()
         river_kms = meta["river_km"]
 
-        flood_waves = GraphAnalysis.get_flood_waves(joined_graph=joined_graph)
+        extractor = FloodWaveExtractor(joined_graph=joined_graph)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
         velocities = []
         for wave in flood_waves:
