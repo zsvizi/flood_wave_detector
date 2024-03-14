@@ -1,6 +1,6 @@
 import networkx as nx
 
-from src.analysis.analysis_handler import AnalysisHandler
+from src.core.flood_wave_handler import FloodWaveHandler
 
 
 class FloodWaveExtractor:
@@ -17,7 +17,7 @@ class FloodWaveExtractor:
 
         waves = []
         for comp in components:
-            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=self.joined_graph, comp=list(comp))
+            final_pairs = FloodWaveHandler.get_final_pairs(joined_graph=self.joined_graph, comp=list(comp))
 
             for start, end in final_pairs:
                 try:
@@ -38,7 +38,7 @@ class FloodWaveExtractor:
 
         waves = []
         for comp in components:
-            final_pairs = AnalysisHandler.get_final_pairs(joined_graph=self.joined_graph, comp=list(comp))
+            final_pairs = FloodWaveHandler.get_final_pairs(joined_graph=self.joined_graph, comp=list(comp))
 
             for start, end in final_pairs:
                 try:
