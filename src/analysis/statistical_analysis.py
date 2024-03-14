@@ -2,15 +2,16 @@ import json
 import os
 from datetime import datetime
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
 from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
-from src.analysis.graph_analysis import GraphAnalysis
 from src.core.flood_wave_extractor import FloodWaveExtractor
 from src.core.graph_handler import GraphHandler
 from src.core.slope_calculator import SlopeCalculator
+from src.data.dataloader import Dataloader
 from src.selection.selection import Selection
 
 
@@ -38,7 +39,7 @@ class StatisticalAnalysis:
                     "folder_name": folder_name}
             graph = GraphHandler.create_directed_graph(**args)
 
-            velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
+            velocities = StatisticalAnalysis.calculate_all_velocities(joined_graph=graph)
             mean_velocity = np.mean(velocities)
 
             mean_velocities.append(mean_velocity)
@@ -96,7 +97,7 @@ class StatisticalAnalysis:
             flood_waves = extractor.flood_waves
             components_num.append(len(flood_waves))
 
-            velocities = GraphAnalysis.calculate_all_velocities(joined_graph=graph)
+            velocities = StatisticalAnalysis.calculate_all_velocities(joined_graph=graph)
 
             mins.append(np.min(velocities))
             maxs.append(np.max(velocities))
@@ -396,3 +397,37 @@ class StatisticalAnalysis:
             AnalysisHandler.print_percentage(i=i, length=0)
 
         return number_of_flood_waves
+
+    @staticmethod
+    def calculate_all_velocities(joined_graph: nx.DiGraph) -> list:
+        """
+        This function calculates the velocity of all flood waves in the input graph
+        :param nx.DiGraph joined_graph: the graph
+        :return list: velocities in a list
+        """
+        meta = Dataloader.get_metadata()
+        river_kms = meta["river_km"]
+
+        extractor = FloodWaveExtractor(joined_graph=joined_graph)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
+
+        velocities = []
+        for wave in flood_waves:
+            start_node = wave[0]
+            end_node = wave[-1]
+
+            start = river_kms[float(start_node[0])]
+            end = river_kms[float(end_node[0])]
+            distance = start - end
+
+            days = (datetime.strptime(end_node[1], '%Y-%m-%d') - datetime.strptime(start_node[1], '%Y-%m-%d')).days
+
+            if days == 0:
+                velocity = distance
+            else:
+                velocity = distance / days
+
+            velocities.append(velocity)
+
+        return velocities

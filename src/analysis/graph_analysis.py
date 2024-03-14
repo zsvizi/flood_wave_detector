@@ -1,11 +1,9 @@
-from collections import defaultdict
 from datetime import datetime
 
 import networkx as nx
 import numpy as np
 
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.data.dataloader import Dataloader
 from src.selection.selection import Selection
 
 
@@ -219,62 +217,3 @@ class GraphAnalysis:
         flood_map.add_weighted_edges_from(ebunch_to_add=edges)
 
         return flood_map
-
-    @staticmethod
-    def get_branching(joined_graph: nx.DiGraph) -> list:
-        """
-        This function returns components in which every node has at most one parent (called a branching)
-        :param nx.DiGraph joined_graph: the graph
-        :return list: the branching
-        """
-        branching = nx.dag_to_branching(joined_graph)
-        sources = defaultdict(set)
-        for v, source in branching.nodes(data="source"):
-            sources[source].add(v)
-        for source, nodes in sources.items():
-            for v in nodes:
-                branching.nodes[v].update(joined_graph.nodes[source])
-
-        final_comps = []
-        for comp in list(nx.weakly_connected_components(branching)):
-            comp = list(comp)
-            temp_list = []
-            for node in comp:
-                temp_list.append(branching.nodes[node]['source'])
-            final_comps.append(temp_list)
-
-        return final_comps
-
-    @staticmethod
-    def calculate_all_velocities(joined_graph: nx.DiGraph) -> list:
-        """
-        This function calculates the velocity of all flood waves in the input graph
-        :param nx.DiGraph joined_graph: the graph
-        :return list: velocities in a list
-        """
-        meta = Dataloader.get_metadata()
-        river_kms = meta["river_km"]
-
-        extractor = FloodWaveExtractor(joined_graph=joined_graph)
-        extractor.get_flood_waves()
-        flood_waves = extractor.flood_waves
-
-        velocities = []
-        for wave in flood_waves:
-            start_node = wave[0]
-            end_node = wave[-1]
-
-            start = river_kms[float(start_node[0])]
-            end = river_kms[float(end_node[0])]
-            distance = start - end
-
-            days = (datetime.strptime(end_node[1], '%Y-%m-%d') - datetime.strptime(start_node[1], '%Y-%m-%d')).days
-
-            if days == 0:
-                velocity = distance
-            else:
-                velocity = distance / days
-
-            velocities.append(velocity)
-
-        return velocities
