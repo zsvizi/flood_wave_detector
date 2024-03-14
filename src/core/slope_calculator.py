@@ -10,7 +10,18 @@ from src.utils.json_helper import JsonHelper
 
 
 class SlopeCalculator:
+    """
+    This class is responsible for calculating the slopes between given nodes that are connected by a directed
+    path in the graph
+    """
     def __init__(self, current_gauge: str, next_gauge: str, folder_name: str):
+        """
+        Constructor for SlopeCalculator class
+
+        :param str current_gauge: station number of the current gauge as a string
+        :param str next_gauge: station number of the next gauge as a string
+        :param str folder_name: name of the generated data folder
+        """
         self.current_vertices = None
         self.next_vertices = None
         self.current_null = None

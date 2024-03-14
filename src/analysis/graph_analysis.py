@@ -9,10 +9,9 @@ from src.selection.selection import Selection
 
 
 class GraphAnalysis:
-    """This is an analysis class for flood waves.
-
-    Any method that does calculation or information extraction on the already existing flood wave graph structure
-    belongs here.
+    """
+    This is an analysis class for the graphs
+    Functions that calculate quantities on paths between two given stations belong here
     """
 
     @staticmethod

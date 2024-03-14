@@ -6,6 +6,9 @@ from src.selection.selection import Selection
 
 
 class FloodWaveHandler:
+    """
+    This is a helper class for FloodWaveExtractor and GraphAnalysis
+    """
 
     @staticmethod
     def get_final_pairs(joined_graph: nx.DiGraph, comp: list) -> list:

@@ -5,7 +5,15 @@ from src.core.flood_wave_handler import FloodWaveHandler
 
 
 class FloodMapCreator:
+    """
+    This class is responsible for creating a flood map of our graph with given input parameters
+    """
     def __init__(self, joined_graph: nx.DiGraph):
+        """
+        Constructor for FloodMapCreator class
+
+        :param nx.DiGraph joined_graph: the graph
+        """
         self.joined_graph = joined_graph
 
     def create_flood_map(self, river_section_stations: list, sorted_stations: list) -> nx.DiGraph:

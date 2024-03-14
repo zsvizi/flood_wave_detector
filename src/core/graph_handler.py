@@ -10,9 +10,8 @@ from src.utils.json_helper import JsonHelper
 
 
 class GraphHandler:
-    """This is a helper class for FloodWaveDetector.
-
-    It contains functions which shrink the FloodWaveDetector class.
+    """
+    This is a helper class for GraphPreparation
     e.g.: file reading, file sorting, date conversion, graph selection, etc...
     """
 
@@ -41,7 +40,7 @@ class GraphHandler:
             forward: int
     ) -> pd.DataFrame:
         """
-        Searches for continuation of a flood wave.
+        Searches for continuation of a component
 
         :param datetime actual_date: The date of the last peak
         :param int backward: The number of days allowed before a node for continuation (at a given gauge).
@@ -195,7 +194,7 @@ class GraphHandler:
             meta: pd.DataFrame
     ) -> list:
         """
-        Selects the possible starting stations for the desired flood waves, the rest is not kept.
+        Selects the possible starting stations for the desired components, the rest is not kept.
 
         :param int low_limit: The river kilometre limit which tells where the lowest possible starting station should be
         :param pd.DataFrame meta: A metadata table
@@ -346,7 +345,7 @@ class GraphHandler:
             backward_span: int
     ) -> pd.DataFrame:
         """
-        Find possible follow-up dates for the flood wave coming from the previous gauge
+        Find possible follow-up dates for the component coming from the previous gauge
 
         :param pd.DataFrame candidate_vertices: Dataframe to crop
         :param datetime date: start date of the crop

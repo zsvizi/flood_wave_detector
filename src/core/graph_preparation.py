@@ -19,9 +19,9 @@ from src.utils.measure_time import measure_time
 
 
 class GraphPreparation:
-    """This is the class responsible for finding the flood waves.
-
-    It has all the necessary functions to find the flood waves and also has a run function which executes all the
+    """
+    This is the class responsible for finding the components
+    It has all the necessary functions to find the components and also has a run function which executes all the
     necessary methods in order.
     """
     def __init__(self,
@@ -33,7 +33,7 @@ class GraphPreparation:
                  start_date: str = None,
                  end_date: str = None) -> None:
         """
-        Constructor for FloodWaveDetector class
+        Constructor for GraphPreparation class
 
         :param str folder_pf: The name of the to be generated folder, which will contain the generated files.
         :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation,
@@ -45,8 +45,8 @@ class GraphPreparation:
                                            as a peak. (I.e.: centered_window_radius=2 means that you need 2 smaller
                                             values before and 2 nom-greater values after)
         :param Union[list, None] gauges: The gauges used for the analysis.
-        :param str start_date: The date to start the flood wave search from.
-        :param str start_date: The date to finish the flood wave search at.
+        :param str start_date: The date to start the component search from.
+        :param str start_date: The date to finish the component search at.
         """
         
         self.data = FloodWaveData()
@@ -71,7 +71,7 @@ class GraphPreparation:
     @measure_time
     def run(self) -> None:
         """
-        Executes the steps needed to find all the flood waves.
+        Executes the steps needed to find all the components.
         """
         self.mkdirs()
 

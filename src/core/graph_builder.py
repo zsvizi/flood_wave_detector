@@ -10,10 +10,10 @@ from src.utils.measure_time import measure_time
 
 
 class GraphBuilder:
-    """This class is responsible for constructing the graph.
-
-    It contains all the related methods whether it's constructing the waves for the graph, read from the files,
-    or adding to an already existing graph.
+    """
+    This class is responsible for constructing the graph
+    It contains all the related methods whether it's constructing the components of the graph, read from the files,
+    or adding to an already existing graph
     """
     def __init__(self) -> None:
         self.vertex_pairs = {}
@@ -23,13 +23,13 @@ class GraphBuilder:
         self.all_paths = {}
         self.wave_serial_number = 0
         self.branches = LifoQueue()
-        self.flood_wave = {}
+        self.component = {}
 
     @measure_time
     def build_graph(self, folder_name: str) -> None:
         """
-        Searching for flood waves and constructing a graph from them. It searches from all the stations, to find all
-        possible flood waves. Branching can occur, so a depth first search is used. The end result is saved out.
+        Searching for components and constructing a graph from them. It searches from all the stations, to find all
+        possible components. Branching can occur, so a depth first search is used. The end result is saved out.
         :param str folder_name: Name of the folder to use for file handling.
         """
 
@@ -50,7 +50,7 @@ class GraphBuilder:
             # Search waves starting from the root
             for actual_date in gauge_pair_dates.keys():
 
-                self.reset_tree_and_flood_wave()
+                self.reset_tree_and_component()
                 # Go over every date with a wave
                 for next_date in gauge_pair_dates[actual_date][0]:
                     # Empty and reset variables
@@ -60,8 +60,8 @@ class GraphBuilder:
                                       gauge_pair=gauge_pair,
                                       next_date=next_date)
 
-                    # Search for flood wave
-                    self.create_flood_wave(
+                    # Search for component
+                    self.create_components(
                         next_gauge_date=next_date,
                         next_idx=next_g_p_idx
                     )
@@ -91,19 +91,19 @@ class GraphBuilder:
             self.path = self.all_paths[path_key]
 
             # Go back to the branch
-            self.create_flood_wave(
+            self.create_components(
                 next_gauge_date=new_date,
                 next_idx=new_g_p_idx
             )
 
-    def create_flood_wave(self,
+    def create_components(self,
                           next_gauge_date: str,
                           next_idx: int
                           ) -> None:
         """
-        Recursive function walking along the paths in the rooted tree representing the flood wave
+        Recursive function walking along the paths in the rooted tree representing the component
         We assume that global variable path contains the complete path up to the current state
-        i.e. all nodes (=gauges) are stored before the call of create_flood_wave
+        i.e. all nodes (=gauges) are stored before the call of create_components
 
         :param str next_gauge_date: The next date, we want to find in the next pair's json.
         A date from the list, not the key. Date after the branch
@@ -151,14 +151,14 @@ class GraphBuilder:
             )
 
             # Keep going, search for the path
-            self.create_flood_wave(
+            self.create_components(
                 next_gauge_date=new_gauge_date,
                 next_idx=next_idx + 1
             )
         else:
 
             # Update the 'map'. (Add the path to the start date)
-            self.flood_wave[f'id{self.wave_serial_number}'] = self.path
+            self.component[f'id{self.wave_serial_number}'] = self.path
 
             # Make possible to have more paths
             self.wave_serial_number += 1
@@ -226,12 +226,12 @@ class GraphBuilder:
         self.path = {}
         self.all_paths = {}
 
-    def reset_tree_and_flood_wave(self) -> None:
+    def reset_tree_and_component(self) -> None:
         """
-        Resetting the graph and flood wave before next search
+        Resetting the graph and component before next search
         """
         self.tree_g = nx.DiGraph()
-        self.flood_wave = {}
+        self.component = {}
 
     def save_info_about_branches(self,
                                  current_gauge: str,

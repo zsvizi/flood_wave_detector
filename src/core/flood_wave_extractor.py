@@ -4,7 +4,15 @@ from src.core.flood_wave_handler import FloodWaveHandler
 
 
 class FloodWaveExtractor:
+    """
+    This class is responsible for extracting the actual flood waves from a given graph
+    """
     def __init__(self, joined_graph: nx.DiGraph):
+        """
+        Constructor for FloodWaveExtractor class
+
+        :param nx.DiGraph joined_graph: the graph
+        """
         self.joined_graph = joined_graph
         self.flood_waves = None
 

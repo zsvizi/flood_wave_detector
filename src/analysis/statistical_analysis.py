@@ -17,7 +17,7 @@ from src.selection.selection import Selection
 
 class StatisticalAnalysis:
     """
-    This class contains functions for statistically analysing flood wave graphs
+    This class contains functions for statistically analysing flood waves
     """
 
     @staticmethod
