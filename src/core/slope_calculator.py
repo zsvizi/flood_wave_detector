@@ -56,7 +56,7 @@ class SlopeCalculator:
         current_river_km = self.river_kms[float(current_gauge)]
         next_river_km = self.river_kms[float(next_gauge)]
 
-        distance = float(next_river_km - current_river_km)
+        distance = float(current_river_km - next_river_km)
         self.current_vertices = current_vertices
         self.next_vertices = next_vertices
         self.current_null = current_null
