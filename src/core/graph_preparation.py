@@ -11,17 +11,17 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.core.slope_calculator import SlopeCalculator
 from src.data.flood_wave_data import FloodWaveData
-from src.core.flood_wave_handler import FloodWaveHandler
+from src.core.graph_handler import GraphHandler
 from src.data.gauge_data import GaugeData
 from src.core.graph_builder import GraphBuilder
 from src.utils.json_helper import JsonHelper
 from src.utils.measure_time import measure_time
 
 
-class FloodWaveDetector:
-    """This is the class responsible for finding the flood waves.
-
-    It has all the necessary functions to find the flood waves and also has a run function which executes all the
+class GraphPreparation:
+    """
+    This is the class responsible for finding the components
+    It has all the necessary functions to find the components and also has a run function which executes all the
     necessary methods in order.
     """
     def __init__(self,
@@ -33,7 +33,7 @@ class FloodWaveDetector:
                  start_date: str = None,
                  end_date: str = None) -> None:
         """
-        Constructor for FloodWaveDetector class
+        Constructor for GraphPreparation class
 
         :param str folder_pf: The name of the to be generated folder, which will contain the generated files.
         :param dict forward_dict: The dictionary containing the number of days allowed after a node for continuation,
@@ -45,8 +45,8 @@ class FloodWaveDetector:
                                            as a peak. (I.e.: centered_window_radius=2 means that you need 2 smaller
                                             values before and 2 nom-greater values after)
         :param Union[list, None] gauges: The gauges used for the analysis.
-        :param str start_date: The date to start the flood wave search from.
-        :param str start_date: The date to finish the flood wave search at.
+        :param str start_date: The date to start the component search from.
+        :param str start_date: The date to finish the component search at.
         """
         
         self.data = FloodWaveData()
@@ -71,7 +71,7 @@ class FloodWaveDetector:
     @measure_time
     def run(self) -> None:
         """
-        Executes the steps needed to find all the flood waves.
+        Executes the steps needed to find all the components.
         """
         self.mkdirs()
 
@@ -80,10 +80,10 @@ class FloodWaveDetector:
         stations_life_intervals = JsonHelper.read(filepath=os.path.join(PROJECT_PATH,
                                                                         'data', 'existing_stations.json'))
 
-        cut_dates = FloodWaveHandler.get_dates_in_between(start_date=self.start_date,
-                                                          end_date=self.end_date,
-                                                          intervals=stations_life_intervals,
-                                                          gauges=self.gauges)
+        cut_dates = GraphHandler.get_dates_in_between(start_date=self.start_date,
+                                                      end_date=self.end_date,
+                                                      intervals=stations_life_intervals,
+                                                      gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
             self.gauges = self.find_existing_gauges(start=cut_dates[i],
@@ -145,38 +145,36 @@ class FloodWaveDetector:
         The end result is saved to 'PROJECT_PATH/generated/find_edges' folder.
         """
 
-        river_kms = self.data.meta["river_km"]
         vertex_pairs = {}
         for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             # Read the data from the actual gauge.
-            current_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=current_gauge,
-                                                                                 folder_name=self.folder_name)
+            current_gauge_candidate_vertices = GraphHandler.read_vertex_file(gauge=current_gauge,
+                                                                             folder_name=self.folder_name)
 
             # Read the data from the next gauge.
-            next_gauge_candidate_vertices = FloodWaveHandler.read_vertex_file(gauge=next_gauge,
-                                                                              folder_name=self.folder_name)
+            next_gauge_candidate_vertices = GraphHandler.read_vertex_file(gauge=next_gauge,
+                                                                          folder_name=self.folder_name)
 
             slope_calculator = SlopeCalculator(current_gauge=str(current_gauge),
                                                next_gauge=str(next_gauge),
-                                               river_kms=river_kms,
                                                folder_name=self.folder_name)
 
             # Create actual_next_pair
             gauge_pair = dict()
             for actual_date in current_gauge_candidate_vertices['Date']:
                 # Find next dates for the following gauge
-                next_gauge_dates = FloodWaveHandler.find_dates_for_next_gauge(
+                next_gauge_dates = GraphHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     backward=self.backward_dict[current_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
                     forward=self.forward_dict[current_gauge]
                 )
 
-                slopes = slope_calculator.get_slopes(current_date=actual_date,
-                                                     next_dates=next_gauge_dates)
+                next_dates = next_gauge_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+                slopes = slope_calculator.get_slopes(current_date=actual_date, next_dates=next_dates)
 
                 # Convert datetime to string
-                FloodWaveHandler.convert_datetime_to_str(
+                GraphHandler.convert_datetime_to_str(
                     actual_date=actual_date,
                     gauge_pair=gauge_pair,
                     next_gauge_dates=next_gauge_dates,
@@ -255,14 +253,14 @@ class FloodWaveDetector:
         level_group = level_groups[reg_number]
 
         # Clean-up dataframe for getting peak-plateau list
-        peaks = FloodWaveHandler.clean_dataframe_for_getting_peak_list(
+        peaks = GraphHandler.clean_dataframe_for_getting_peak_list(
             local_peak_values=local_peak_values,
             gauge_data=gauge_data,
             reg_number=reg_number
         )
 
         # Get peak-plateau list
-        return FloodWaveHandler.get_peak_list(peaks=peaks, level_group=level_group)
+        return GraphHandler.get_peak_list(peaks=peaks, level_group=level_group)
 
     def find_existing_gauges(self,
                              start: str,

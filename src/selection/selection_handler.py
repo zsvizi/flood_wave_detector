@@ -19,7 +19,7 @@ class SelectionHandler:
         for node in nodes:
             if node[0] not in gauges:
                 gauges.append(node[0])
-        decreasing_gauges = sorted(gauges, key=lambda x: str(float(x)), reverse=True)
+        decreasing_gauges = sorted(gauges, key=lambda x: float(x), reverse=True)
 
         return decreasing_gauges
 
@@ -56,7 +56,7 @@ class SelectionHandler:
     @staticmethod
     def nodes_and_edges(comps: list, edges: list):
         """
-        This function finds and collects the nodes and edges of the filtered graph.
+        This function finds and collects the nodes and edges of the selected graph.
 
         :param list comps: list of the components
         :param list edges: list of the edges

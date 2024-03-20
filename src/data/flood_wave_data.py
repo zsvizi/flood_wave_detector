@@ -10,6 +10,7 @@ class FloodWaveData:
         """
         Constructor for FloodWaveData class
 
+        :param str dataset_name: name of the dataset file
         """
 
         self.dataloader = Dataloader(dataset_name=dataset_name)
