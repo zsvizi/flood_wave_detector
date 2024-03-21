@@ -108,8 +108,11 @@ class GraphPreparation:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
+        df = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'mederatmetszesek_fontos_korrigalt.csv'),
+                         index_col=0, sep=";")
 
         for gauge in self.gauges:
+            gauge_limits = df[str(gauge)]
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
@@ -131,7 +134,8 @@ class GraphPreparation:
                 candidate_vertices = self.find_local_maxima(
                     gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
-                    reg_number=str(gauge)
+                    reg_number=str(gauge),
+                    gauge_limits=gauge_limits
                 )
 
                 # Save
@@ -237,7 +241,8 @@ class GraphPreparation:
     def find_local_maxima(
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
-            reg_number: str
+            reg_number: str,
+            gauge_limits: pd.DataFrame
             ) -> dict:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
@@ -245,12 +250,9 @@ class GraphPreparation:
         :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
+        :param pd.DataFrame gauge_limits: date dependent limits of the given gauge
         :return dict: dictionary of tuple of local max values and the date. (date: [value, color])
         """
-
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
-        level_groups = json.load(g)
-        level_group = level_groups[reg_number]
 
         # Clean-up dataframe for getting peak-plateau list
         peaks = GraphHandler.clean_dataframe_for_getting_peak_list(
@@ -260,7 +262,7 @@ class GraphPreparation:
         )
 
         # Get peak-plateau list
-        return GraphHandler.get_peak_list(peaks=peaks, level_group=level_group)
+        return GraphHandler.get_peak_list(peaks=peaks, gauge_limits=gauge_limits)
 
     def find_existing_gauges(self,
                              start: str,

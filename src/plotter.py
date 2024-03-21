@@ -309,7 +309,7 @@ class Plotter:
                 if str(gauge) == list(self.positions.keys())[i][0]:
                     date = list(self.positions.keys())[i][1]
                     water_level = levels_dct[date][0]
-                    labels[list(self.positions.keys())[i]] = int(water_level)
+                    labels[list(self.positions.keys())[i]] = round(water_level/100, 1)
                     colors[i] = levels_dct[date][1]
 
             f.close()

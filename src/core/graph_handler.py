@@ -293,11 +293,11 @@ class GraphHandler:
                 joined_graph.remove_nodes_from(sub_connected_component)
 
     @staticmethod
-    def get_peak_list(peaks: pd.DataFrame, level_group: float) -> dict:
+    def get_peak_list(peaks: pd.DataFrame, gauge_limits: pd.DataFrame) -> dict:
         """
         Creates a list containing (date, value, color) tuples.
         :param pd.DataFrame peaks: single column DataFrame which to convert
-        :param float level_group: level group number of the gauge
+        :param pd.DataFrame gauge_limits: date dependent limits of the given gauge
         :return dict: dictionary
         """
         peak_tuples = peaks.to_records(index=True)
@@ -307,7 +307,7 @@ class GraphHandler:
         ]
         peak_list_new = {}
         for i in range(len(peak_list)):
-            if peak_list[i][1] < level_group:
+            if peak_list[i][1] < gauge_limits[peak_list[i][0]]:
                 color = "yellow"
             else:
                 color = "red"
