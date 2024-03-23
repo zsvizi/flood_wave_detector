@@ -2,6 +2,7 @@ import copy
 
 import networkx as nx
 
+from src.core.flood_wave_extractor import FloodWaveExtractor
 from src.selection.selection_handler import SelectionHandler
 
 
@@ -142,21 +143,27 @@ class Selection:
         else:
             raise Exception("Height can be either high or low.")
 
-        comps = list(nx.weakly_connected_components(joined_graph))
+        fwe = FloodWaveExtractor(joined_graph=joined_graph)
+        fwe.get_flood_waves()
+        start_end = fwe.flood_waves
+
+        waves = []
+        for x, y in start_end:
+            waves.append(nx.shortest_path(G=joined_graph, source=x, target=y))
+
         edges = joined_graph.edges()
-        comps_copy = comps.copy()
+        waves_copy = waves.copy()
         edges = list(edges)
-        for comp in comps_copy:
-            comp_list = list(comp)
+        for wave in waves_copy:
             i_zero_list = []
             gauge_in_comp = []
-            for i in comp_list:
+            for i in wave:
                 i_zero_list.append(i[0])
                 if station == i[0]:
                     gauge_in_comp.append(i)
 
             if not any(station == elem for elem in i_zero_list):
-                comps.remove(comp)
+                waves.remove(wave)
             else:
                 colors_of_gauge = []
                 for elem in gauge_in_comp:
@@ -164,12 +171,49 @@ class Selection:
                     colors_of_gauge.append(node_colors[idx])
 
                 if not any(c == color for color in colors_of_gauge):
-                    comps.remove(comp)
+                    waves.remove(wave)
 
-        nodes_filtered, edges_filtered = SelectionHandler.nodes_and_edges(comps=comps, edges=edges)
+        nodes_filtered, edges_filtered = SelectionHandler.nodes_and_edges(comps=waves, edges=edges)
 
         g = nx.DiGraph()
         g.add_nodes_from(nodes_filtered)
         g.add_edges_from(edges_filtered)
 
         return g
+
+    @staticmethod
+    def select_components_from_start_to_end(joined_graph: nx.DiGraph,
+                                            start_station: str,
+                                            end_station: str,
+                                            sorted_stations: list) -> nx.DiGraph:
+        """
+        This function selects those components that have nodes at both start_station and end_station
+        :param nx.DiGraph joined_graph: the graph
+        :param str start_station: the first station in the interval
+        :param str end_station: the last station in the interval
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
+        :return nx.DiGraph: the selected graph
+        """
+        select_all_in_interval = Selection.select_only_in_interval(joined_graph=joined_graph,
+                                                                   start_station=start_station,
+                                                                   end_station=end_station,
+                                                                   sorted_stations=sorted_stations)
+
+        components = nx.weakly_connected_components(select_all_in_interval)
+
+        selected = []
+        for comp in components:
+            stations = []
+            for node in comp:
+                stations.append(node[0])
+
+            if any(start_station == elem for elem in stations) and any(end_station == elem for elem in stations):
+                selected.append(comp)
+
+        nodes = []
+        for comp in selected:
+            nodes += comp
+
+        selected_graph = joined_graph.subgraph(nodes=nodes)
+
+        return selected_graph
