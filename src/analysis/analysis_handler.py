@@ -88,6 +88,13 @@ class AnalysisHandler:
 
     @staticmethod
     def get_slopes_list(vertex_pairs: dict, vtx_pair: str, valid_dates: list) -> list:
+        """
+        This function collects the slopes on edges between adjacent stations (vtx_pair)
+        :param dict vertex_pairs: dictionary of vertex pairs
+        :param str vtx_pair: given vertex pair
+        :param list valid_dates: dates of nodes at the starting station
+        :return list: slopes
+        """
         valid_slopes = [vertex_pairs[vtx_pair][valid_date][1] for valid_date in valid_dates]
         flattened_slopes = [item for sublist in valid_slopes for item in
                             (sublist if isinstance(sublist, list) else [sublist])]
@@ -101,7 +108,19 @@ class AnalysisHandler:
                                  end_date: str,
                                  gauge_pairs: list,
                                  sorted_stations: list,
-                                 folder_name: str):
+                                 folder_name: str) -> list:
+        """
+        This function collects the slopes on edges between start_station and end_station (space), and start_date and
+        end_date (time)
+        :param str start_station: starting station
+        :param str end_station: end station
+        :param str start_date: starting date
+        :param str end_date: end date
+        :param str folder_name: name of the generated data folder
+        :param list gauge_pairs: list of gauge pairs
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
+        :return list: slopes
+        """
         args_create = {
             "start_date": start_date,
             "end_date": end_date,

@@ -282,7 +282,19 @@ class StatisticalAnalysis:
                        end_date: str,
                        folder_name: str,
                        gauge_pairs: list,
-                       sorted_stations: list):
+                       sorted_stations: list) -> list:
+        """
+        This function collects the slopes on edges between start_station and end_station (space), and start_date and
+        end_date (time)
+        :param str start_station: starting station
+        :param str end_station: end station
+        :param str start_date: starting date
+        :param str end_date: end date
+        :param str folder_name: name of the generated data folder
+        :param list gauge_pairs: list of gauge pairs
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
+        :return list: slopes
+        """
         pair = str(start_station) + '_' + str(end_station)
 
         f = open(os.path.join(PROJECT_PATH, folder_name, "find_edges", "vertex_pairs.json"))
