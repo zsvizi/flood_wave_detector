@@ -1,15 +1,55 @@
 import json
 import os
-
-import numpy as np
+from datetime import datetime
 
 from src import PROJECT_PATH
+from src.core.flood_wave_extractor import FloodWaveExtractor
+from src.core.graph_handler import GraphHandler
+from src.core.slope_calculator import SlopeCalculator
+from src.selection.selection import Selection
 
 
 class AnalysisHandler:
     """
     This is a helper class for GraphAnalysis and StatisticalAnalysis
     """
+
+    @staticmethod
+    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str) -> list:
+        """
+        This function returns only those components that start in the actual year
+        :param int year: the actual year
+        :param list gauge_pairs: list of gauge pairs
+        :param str folder_name: the name of the generated data folder
+        :return list: cleaned components
+        """
+        if year == 1876:
+            start_date = f'{year}-01-01'
+            end_date = f'{year + 1}-02-01'
+        elif year == 2019:
+            start_date = f'{year - 1}-11-30'
+            end_date = f'{year}-12-31'
+        else:
+            start_date = f'{year - 1}-11-30'
+            end_date = f'{year + 1}-02-01'
+        args = {"start_date": start_date,
+                "end_date": end_date,
+                "gauge_pairs": gauge_pairs,
+                "folder_name": folder_name}
+        graph = GraphHandler.create_directed_graph(**args)
+
+        extractor = FloodWaveExtractor(joined_graph=graph)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
+
+        cleaned_waves = []
+        for wave in flood_waves:
+            node_dates = [node[1] for node in wave]
+            if not any(str(year - 1) in node_date for node_date in node_dates) \
+                    and not all(str(year + 1) in node_date for node_date in node_dates):
+                cleaned_waves.append(wave)
+
+        return cleaned_waves
 
     @staticmethod
     def print_percentage(i: int, length: int) -> None:
@@ -47,32 +87,54 @@ class AnalysisHandler:
         return gauges_dct
 
     @staticmethod
-    def get_start_and_end_node_of_slowest_and_longest_flood_wave(branch: list) -> tuple:
-        """
-        This function returns the start and end nodes of a branch. There is only one start node but there can be
-        multiple end nodes. Out of the possible end nodes the one with the latest date will be returned
-        :param list branch: the given branch
-        :return tuple: start node and end node
-        """
-        regs = []
-        for node in branch:
-            regs.append(float(node[0]))
+    def get_slopes_list(vertex_pairs: dict, vtx_pair: str, valid_dates: list) -> list:
+        valid_slopes = [vertex_pairs[vtx_pair][valid_date][1] for valid_date in valid_dates]
+        flattened_slopes = [item for sublist in valid_slopes for item in
+                            (sublist if isinstance(sublist, list) else [sublist])]
 
-        max_reg = np.max(regs)
-        min_reg = np.min(regs)
-        max_reg_idx = regs.index(max_reg)
-        min_reg_idx = [i for i, x in enumerate(regs) if x == min_reg]
+        return flattened_slopes
 
-        start_node = branch[max_reg_idx]
+    @staticmethod
+    def get_slopes_interval_list(start_station: str,
+                                 end_station: str,
+                                 start_date: str,
+                                 end_date: str,
+                                 gauge_pairs: list,
+                                 sorted_stations: list,
+                                 folder_name: str):
+        args_create = {
+            "start_date": start_date,
+            "end_date": end_date,
+            "gauge_pairs": gauge_pairs,
+            "folder_name": folder_name
+        }
+        graph = GraphHandler.create_directed_graph(**args_create)
 
-        possible_end_nodes = [branch[idx] for idx in min_reg_idx]
+        select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
+                                                                   start_station=start_station,
+                                                                   end_station=end_station,
+                                                                   sorted_stations=sorted_stations)
 
-        possible_end_dates = []
-        for pen in possible_end_nodes:
-            possible_end_dates.append(pen[1])
-        end_date = max(possible_end_dates)
-        end_date_idx = possible_end_dates.index(end_date)
+        extractor = FloodWaveExtractor(joined_graph=select_all_in_interval)
+        extractor.get_flood_waves()
+        flood_waves = extractor.flood_waves
 
-        end_node = possible_end_nodes[end_date_idx]
+        full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=flood_waves,
+                                                                          start_station=start_station,
+                                                                          end_station=end_station,
+                                                                          equivalence=True)
+        slopes = []
+        for wave in full_waves:
+            start_node = wave[0]
+            end_node = wave[1]
 
-        return start_node, end_node
+            slope_calc = SlopeCalculator(current_gauge=start_node[0],
+                                         next_gauge=end_node[0],
+                                         folder_name=folder_name)
+
+            current_date = datetime.strptime(start_node[1], "%Y-%m-%d")
+            slope = slope_calc.get_slopes(current_date=current_date, next_dates=[end_node[1]])
+
+            slopes.append(slope[0])
+
+        return slopes
