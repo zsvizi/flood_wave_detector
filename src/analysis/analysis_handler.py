@@ -4,7 +4,7 @@ from datetime import datetime
 
 from src import PROJECT_PATH
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.graph_handler import GraphHandler
+from src.core.graph_manipulation import GraphManipulation
 from src.core.slope_calculator import SlopeCalculator
 from src.selection.selection import Selection
 
@@ -36,7 +36,7 @@ class AnalysisHandler:
                 "end_date": end_date,
                 "gauge_pairs": gauge_pairs,
                 "folder_name": folder_name}
-        graph = GraphHandler.create_directed_graph(**args)
+        graph = GraphManipulation.create_directed_graph(**args)
 
         extractor = FloodWaveExtractor(joined_graph=graph)
         extractor.get_flood_waves()
@@ -127,7 +127,7 @@ class AnalysisHandler:
             "gauge_pairs": gauge_pairs,
             "folder_name": folder_name
         }
-        graph = GraphHandler.create_directed_graph(**args_create)
+        graph = GraphManipulation.create_directed_graph(**args_create)
 
         select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
                                                                    start_station=start_station,
