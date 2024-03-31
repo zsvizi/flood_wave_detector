@@ -11,7 +11,7 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.core.slope_calculator import SlopeCalculator
 from src.data.flood_wave_data import FloodWaveData
-from src.core.graph_handler import GraphHandler
+from src.core.preparation_handler import PreparationHandler
 from src.data.gauge_data import GaugeData
 from src.core.graph_builder import GraphBuilder
 from src.utils.json_helper import JsonHelper
@@ -80,10 +80,10 @@ class GraphPreparation:
         stations_life_intervals = JsonHelper.read(filepath=os.path.join(PROJECT_PATH,
                                                                         'data', 'existing_stations.json'))
 
-        cut_dates = GraphHandler.get_dates_in_between(start_date=self.start_date,
-                                                      end_date=self.end_date,
-                                                      intervals=stations_life_intervals,
-                                                      gauges=self.gauges)
+        cut_dates = PreparationHandler.get_dates_in_between(start_date=self.start_date,
+                                                            end_date=self.end_date,
+                                                            intervals=stations_life_intervals,
+                                                            gauges=self.gauges)
 
         for i in range(len(cut_dates) - 1):
             self.gauges = self.find_existing_gauges(start=cut_dates[i],
@@ -108,11 +108,8 @@ class GraphPreparation:
         The end result is saved to 'PROJECT_PATH/generated/find_vertices' folder.
         :return:
         """
-        df = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'mederatmetszesek_fontos_korrigalt.csv'),
-                         index_col=0, sep=";")
 
         for gauge in self.gauges:
-            gauge_limits = df[str(gauge)]
             if not os.path.exists(os.path.join(PROJECT_PATH, self.folder_name,
                                                'find_vertices', str(gauge), '.json')):
                 # Get gauge data and drop missing data and make it an array.
@@ -134,8 +131,7 @@ class GraphPreparation:
                 candidate_vertices = self.find_local_maxima(
                     gauge_data=gauge_data,
                     local_peak_values=local_peak_values,
-                    reg_number=str(gauge),
-                    gauge_limits=gauge_limits
+                    reg_number=str(gauge)
                 )
 
                 # Save
@@ -152,12 +148,12 @@ class GraphPreparation:
         vertex_pairs = {}
         for current_gauge, next_gauge in itertools.zip_longest(self.gauges[:-1], self.gauges[1:]):
             # Read the data from the actual gauge.
-            current_gauge_candidate_vertices = GraphHandler.read_vertex_file(gauge=current_gauge,
-                                                                             folder_name=self.folder_name)
+            current_gauge_candidate_vertices = PreparationHandler.read_vertex_file(gauge=current_gauge,
+                                                                                   folder_name=self.folder_name)
 
             # Read the data from the next gauge.
-            next_gauge_candidate_vertices = GraphHandler.read_vertex_file(gauge=next_gauge,
-                                                                          folder_name=self.folder_name)
+            next_gauge_candidate_vertices = PreparationHandler.read_vertex_file(gauge=next_gauge,
+                                                                                folder_name=self.folder_name)
 
             slope_calculator = SlopeCalculator(current_gauge=str(current_gauge),
                                                next_gauge=str(next_gauge),
@@ -167,7 +163,7 @@ class GraphPreparation:
             gauge_pair = dict()
             for actual_date in current_gauge_candidate_vertices['Date']:
                 # Find next dates for the following gauge
-                next_gauge_dates = GraphHandler.find_dates_for_next_gauge(
+                next_gauge_dates = PreparationHandler.find_dates_for_next_gauge(
                     actual_date=actual_date,
                     backward=self.backward_dict[current_gauge],
                     next_gauge_candidate_vertices=next_gauge_candidate_vertices,
@@ -178,7 +174,7 @@ class GraphPreparation:
                 slopes = slope_calculator.get_slopes(current_date=actual_date, next_dates=next_dates)
 
                 # Convert datetime to string
-                GraphHandler.convert_datetime_to_str(
+                PreparationHandler.convert_datetime_to_str(
                     actual_date=actual_date,
                     gauge_pair=gauge_pair,
                     next_gauge_dates=next_gauge_dates,
@@ -241,8 +237,7 @@ class GraphPreparation:
     def find_local_maxima(
             gauge_data: pd.DataFrame,
             local_peak_values: np.array,
-            reg_number: str,
-            gauge_limits: pd.DataFrame
+            reg_number: str
             ) -> dict:
         """
         Returns with the list of found (date, peak/plateau value) tuples for a single gauge
@@ -250,19 +245,22 @@ class GraphPreparation:
         :param pd.DataFrame gauge_data: One gauge column, one date column, date index
         :param np.array local_peak_values: Array for local peak/plateau values.
         :param str reg_number: The gauge id
-        :param pd.DataFrame gauge_limits: date dependent limits of the given gauge
         :return dict: dictionary of tuple of local max values and the date. (date: [value, color])
         """
 
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
+        level_groups = json.load(g)
+        level_group = level_groups[reg_number]
+
         # Clean-up dataframe for getting peak-plateau list
-        peaks = GraphHandler.clean_dataframe_for_getting_peak_list(
+        peaks = PreparationHandler.clean_dataframe_for_getting_peak_list(
             local_peak_values=local_peak_values,
             gauge_data=gauge_data,
             reg_number=reg_number
         )
 
         # Get peak-plateau list
-        return GraphHandler.get_peak_list(peaks=peaks, gauge_limits=gauge_limits)
+        return PreparationHandler.get_peak_list(peaks=peaks, level_group=level_group)
 
     def find_existing_gauges(self,
                              start: str,

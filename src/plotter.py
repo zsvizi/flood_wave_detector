@@ -10,7 +10,6 @@ import pandas as pd
 
 from src import PROJECT_PATH
 from src.data.flood_wave_data import FloodWaveData
-from src.core.graph_handler import GraphHandler
 from src.utils.json_helper import JsonHelper
 
 
@@ -78,9 +77,9 @@ class Plotter:
         max_date = max([node[1] for node in directed_graph.nodes()])
         max_date = datetime.strptime(max_date, '%Y-%m-%d')
 
-        self.positions = GraphHandler.create_positions(joined_graph=directed_graph,
-                                                       start=start,
-                                                       gauges=self.gauges)
+        self.positions = self.create_positions(joined_graph=directed_graph,
+                                               start=start,
+                                               gauges=self.gauges)
 
         fig, ax = plt.subplots()
 
@@ -102,7 +101,7 @@ class Plotter:
 
         if show_nan:
             nan_graph = self.create_nan_graph(min_date=str(min_date), max_date=str(max_date))
-            nan_positions = GraphHandler.create_positions(
+            nan_positions = self.create_positions(
                 joined_graph=nan_graph, start=start,
                 gauges=self.gauges)
         else:
@@ -127,6 +126,29 @@ class Plotter:
 
         plt.savefig(os.path.join(PROJECT_PATH, folder_name, file_name + ".pdf"), bbox_inches='tight')
         plt.show()
+
+    @staticmethod
+    def create_positions(
+            joined_graph: nx.DiGraph,
+            start: datetime.strptime,
+            gauges: list
+    ) -> dict:
+        """
+        Creates coordinates for a given graph in order to be able to plot it on a grid
+
+        :param nx.DiGraph joined_graph: The graph which to give coordinates for
+        :param datetime.strptime start: Starting date of the plot
+        :param list gauges: The list of stations
+        :return: A dictionary containing 'node: (x, y)' pairs
+        """
+
+        positions = dict()
+
+        for node in joined_graph.nodes():
+            x_coord = (datetime.strptime(node[1], '%Y-%m-%d') - start).days - 1
+            y_coord = len(gauges) - gauges.index(float(node[0]))
+            positions[node] = (x_coord, y_coord)
+        return positions
 
     @staticmethod
     def save_plot_graph(joined_graph: nx.DiGraph, folder_name: str) -> None:
