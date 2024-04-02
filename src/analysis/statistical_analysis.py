@@ -9,8 +9,8 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.graph_manipulation import GraphManipulation
 from src.data.dataloader import Dataloader
+from src.selection.selection import Selection
 
 
 class StatisticalAnalysis:
@@ -19,23 +19,20 @@ class StatisticalAnalysis:
     """
 
     @staticmethod
-    def yearly_mean_moving_average(gauge_pairs: list,
-                                   folder_name: str,
+    def yearly_mean_moving_average(folder_name: str,
                                    length: int) -> list:
         """
         This function calculates moving average time series of the velocities
-        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
         :param str folder_name: name of the generated data folder
         :param int length: length of one period in years
         :return list: moving average time series of the velocities
         """
         mean_velocities = []
+        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
         for i in range(1876 + length, 2020):
-            args = {"start_date": f'{i - length}-01-01',
-                    "end_date": f'{i}-12-31',
-                    "gauge_pairs": gauge_pairs,
-                    "folder_name": folder_name}
-            graph = GraphManipulation.create_directed_graph(**args)
+            start_date = f'{i - length}-01-01'
+            end_date = f'{i}-12-31'
+            graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
 
             velocities = StatisticalAnalysis.calculate_all_velocities(joined_graph=graph)
             mean_velocity = np.mean(velocities)
@@ -47,11 +44,10 @@ class StatisticalAnalysis:
         return mean_velocities
 
     @staticmethod
-    def get_statistics(gauges: list, gauge_pairs: list, folder_name: str) -> pd.DataFrame:
+    def get_statistics(gauges: list, folder_name: str) -> pd.DataFrame:
         """
         This function creates a dataframe containing some statistics of the whole graph yearly
         :param list gauges: list of gauges
-        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
         :param str folder_name: name of the generated data folder
         :return pd.DataFrame: dataframe of the following statistics yearly: number of components,
         number of low and high water level vertices, minimum and maximum velocities, average of velocities
@@ -66,17 +62,12 @@ class StatisticalAnalysis:
         means = []
         medians = []
         stds = []
+        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
         for i in range(1876, 2020):
             years.append(i)
             start_date = f'{i}-01-01'
             end_date = f'{i}-12-31'
-            args_create = {
-                "start_date": start_date,
-                "end_date": end_date,
-                "gauge_pairs": gauge_pairs,
-                "folder_name": folder_name
-            }
-            graph = GraphManipulation.create_directed_graph(**args_create)
+            graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
 
             gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
                                                                          folder_name=folder_name,
@@ -222,7 +213,6 @@ class StatisticalAnalysis:
                                    start_station: str,
                                    end_station: str,
                                    period: int,
-                                   gauge_pairs: list,
                                    sorted_stations: list) -> pd.DataFrame:
         """
         This function calculates statistics of slopes of paths in flood waves
@@ -230,7 +220,6 @@ class StatisticalAnalysis:
         :param str start_station: string of starting station number
         :param str end_station: string of ending station number
         :param int period: the results are accumulated for this many years
-        :param list gauge_pairs: list of gauge pairs
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return pd.DataFrame: dataframe containing the statistics
         """
@@ -256,7 +245,6 @@ class StatisticalAnalysis:
                                                               end_station=end_station,
                                                               start_date=start_date,
                                                               end_date=end_date,
-                                                              gauge_pairs=gauge_pairs,
                                                               sorted_stations=sorted_stations,
                                                               folder_name=folder_name)
 
@@ -280,7 +268,6 @@ class StatisticalAnalysis:
                        start_date: str,
                        end_date: str,
                        folder_name: str,
-                       gauge_pairs: list,
                        sorted_stations: list) -> list:
         """
         This function collects the slopes on edges between start_station and end_station (space), and start_date and
@@ -290,7 +277,6 @@ class StatisticalAnalysis:
         :param str start_date: starting date
         :param str end_date: end date
         :param str folder_name: name of the generated data folder
-        :param list gauge_pairs: list of gauge pairs
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return list: slopes
         """
@@ -310,7 +296,6 @@ class StatisticalAnalysis:
                                                               end_station=end_station,
                                                               start_date=start_date,
                                                               end_date=end_date,
-                                                              gauge_pairs=gauge_pairs,
                                                               sorted_stations=sorted_stations,
                                                               folder_name=folder_name)
 
@@ -357,16 +342,15 @@ class StatisticalAnalysis:
         return pd.DataFrame(final_table, index=indices)
 
     @staticmethod
-    def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str) -> list:
+    def get_number_of_flood_waves_yearly(folder_name: str) -> list:
         """
         This function calculates the number of cleaned flood waves yearly
-        :param list gauge_pairs: list of gauge pairs
         :param str folder_name: the name of the generated data folder
         :return list: numbers of cleaned components
         """
         number_of_flood_waves = []
         for i in range(1876, 2020):
-            waves = AnalysisHandler.get_flood_waves_yearly(year=i, gauge_pairs=gauge_pairs, folder_name=folder_name)
+            waves = AnalysisHandler.get_flood_waves_yearly(year=i, folder_name=folder_name)
             number_of_flood_waves.append(len(waves))
 
             AnalysisHandler.print_percentage(i=i, length=0)

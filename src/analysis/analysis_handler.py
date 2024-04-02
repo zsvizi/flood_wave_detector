@@ -2,6 +2,8 @@ import json
 import os
 from datetime import datetime
 
+import networkx as nx
+
 from src import PROJECT_PATH
 from src.core.flood_wave_extractor import FloodWaveExtractor
 from src.core.graph_manipulation import GraphManipulation
@@ -15,11 +17,10 @@ class AnalysisHandler:
     """
 
     @staticmethod
-    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str) -> list:
+    def get_flood_waves_yearly(year: int, folder_name: str) -> list:
         """
         This function returns only those components that start in the actual year
         :param int year: the actual year
-        :param list gauge_pairs: list of gauge pairs
         :param str folder_name: the name of the generated data folder
         :return list: cleaned components
         """
@@ -32,11 +33,8 @@ class AnalysisHandler:
         else:
             start_date = f'{year - 1}-11-30'
             end_date = f'{year + 1}-02-01'
-        args = {"start_date": start_date,
-                "end_date": end_date,
-                "gauge_pairs": gauge_pairs,
-                "folder_name": folder_name}
-        graph = GraphManipulation.create_directed_graph(**args)
+        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
+        graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
 
         extractor = FloodWaveExtractor(joined_graph=graph)
         extractor.get_flood_waves()
@@ -106,7 +104,6 @@ class AnalysisHandler:
                                  end_station: str,
                                  start_date: str,
                                  end_date: str,
-                                 gauge_pairs: list,
                                  sorted_stations: list,
                                  folder_name: str) -> list:
         """
@@ -117,17 +114,11 @@ class AnalysisHandler:
         :param str start_date: starting date
         :param str end_date: end date
         :param str folder_name: name of the generated data folder
-        :param list gauge_pairs: list of gauge pairs
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return list: slopes
         """
-        args_create = {
-            "start_date": start_date,
-            "end_date": end_date,
-            "gauge_pairs": gauge_pairs,
-            "folder_name": folder_name
-        }
-        graph = GraphManipulation.create_directed_graph(**args_create)
+        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
+        graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
 
         select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
                                                                    start_station=start_station,
