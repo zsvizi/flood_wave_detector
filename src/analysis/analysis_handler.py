@@ -6,7 +6,6 @@ import networkx as nx
 
 from src import PROJECT_PATH
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.graph_manipulation import GraphManipulation
 from src.core.slope_calculator import SlopeCalculator
 from src.selection.selection import Selection
 
