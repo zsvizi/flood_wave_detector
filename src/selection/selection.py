@@ -12,32 +12,25 @@ class Selection:
     """
 
     @staticmethod
-    def select_by_station(joined_graph: nx.DiGraph, station: str) -> nx.DiGraph:
+    def select_time_interval(joined_graph: nx.DiGraph, start_date: str, end_date: str) -> nx.DiGraph:
         """
-        This function selects weakly connected components that have the given gauge as a node.
-
-        :param nx.DiGraph joined_graph: graph
-        :param str station: gauge number to be selected as a string
-        :return nx.DiGraph: graph that contains only components which have gauge as a node
+        This function keeps the largest subgraph between the two dates
+        :param nx.DiGraph joined_graph: the graph
+        :param str start_date: the starting date
+        :param str end_date: the end date
+        :return nx.DiGraph: the selected subgraph
         """
 
-        comps = list(nx.weakly_connected_components(joined_graph))
-        edges = joined_graph.edges()
-        comps_copy = comps.copy()
-        edges = list(edges)
+        graph_copy = copy.deepcopy(joined_graph)
+        nodes = graph_copy.nodes()
+        nodes_to_drop = []
+        for node in nodes:
+            if not start_date <= node[1] <= end_date:
+                nodes_to_drop.append(node)
 
-        comps_new = []
-        for comp in comps_copy:
-            if SelectionHandler.is_gauge_in_comp(gauge=station, comp_list=list(comp)):
-                comps_new.append(comp)
+        graph_copy.remove_nodes_from(nodes_to_drop)
 
-        nodes_filtered, edges_filtered = SelectionHandler.nodes_and_edges(comps=comps_new, edges=edges)
-
-        g = nx.DiGraph()
-        g.add_nodes_from(nodes_filtered)
-        g.add_edges_from(edges_filtered)
-
-        return g
+        return graph_copy
 
     @staticmethod
     def select_only_in_interval(joined_graph: nx.DiGraph,
