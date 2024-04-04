@@ -14,13 +14,17 @@ class AnalysisHandler:
     """
     This is a helper class for GraphAnalysis and StatisticalAnalysis
     """
+    def __init__(self, graph_whole: None, folder_name: str):
+        self.folder_name = folder_name
+        if graph_whole is None:
+            self.graph_whole = nx.read_gpickle(f"../{self.folder_name}/joined_graph.gpickle")
+        else:
+            self.graph_whole = graph_whole
 
-    @staticmethod
-    def get_flood_waves_yearly(year: int, folder_name: str) -> list:
+    def get_flood_waves_yearly(self, year: int) -> list:
         """
         This function returns only those components that start in the actual year
         :param int year: the actual year
-        :param str folder_name: the name of the generated data folder
         :return list: cleaned components
         """
         if year == 1876:
@@ -32,8 +36,7 @@ class AnalysisHandler:
         else:
             start_date = f'{year - 1}-11-30'
             end_date = f'{year + 1}-02-01'
-        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
-        graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
+        graph = Selection.select_time_interval(joined_graph=self.graph_whole, start_date=start_date, end_date=end_date)
 
         extractor = FloodWaveExtractor(joined_graph=graph)
         extractor.get_flood_waves()
@@ -59,23 +62,21 @@ class AnalysisHandler:
         y = len(range(1876 + length, 2020))
         print(f"\r{round(100 * x / y, 1)}% done", end="")
 
-    @staticmethod
-    def get_node_colors_in_given_period(gauges: list,
-                                        folder_name: str,
+    def get_node_colors_in_given_period(self,
+                                        gauges: list,
                                         start_date: str,
                                         end_date: str) -> dict:
         """
         This function creates a dictionary with "gauge": colors type key-value pairs where colors is a list containing
         the colors of the vertices corresponding to gauge
         :param list gauges: list of gauges
-        :param str folder_name: name of the generated data folder
         :param str start_date: start date as a string
         :param str end_date: end date as a string
         :return dict: the dictionary described above
         """
         gauges_dct = {}
         for gauge in gauges:
-            f = open(os.path.join(PROJECT_PATH, folder_name, "find_vertices", str(gauge) + ".json"))
+            f = open(os.path.join(PROJECT_PATH, self.folder_name, "find_vertices", str(gauge) + ".json"))
             read_dct = json.load(f)
 
             node_colors = [read_dct[i][1] for i in list(read_dct.keys()) if start_date <= i <= end_date]
@@ -98,13 +99,12 @@ class AnalysisHandler:
 
         return flattened_slopes
 
-    @staticmethod
-    def get_slopes_interval_list(start_station: str,
+    def get_slopes_interval_list(self,
+                                 start_station: str,
                                  end_station: str,
                                  start_date: str,
                                  end_date: str,
-                                 sorted_stations: list,
-                                 folder_name: str) -> list:
+                                 sorted_stations: list) -> list:
         """
         This function collects the slopes on edges between start_station and end_station (space), and start_date and
         end_date (time)
@@ -112,12 +112,10 @@ class AnalysisHandler:
         :param str end_station: end station
         :param str start_date: starting date
         :param str end_date: end date
-        :param str folder_name: name of the generated data folder
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return list: slopes
         """
-        graph_whole = nx.read_gpickle(f"../{folder_name}/joined_graph.gpickle")
-        graph = Selection.select_time_interval(joined_graph=graph_whole, start_date=start_date, end_date=end_date)
+        graph = Selection.select_time_interval(joined_graph=self.graph_whole, start_date=start_date, end_date=end_date)
 
         select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
                                                                    start_station=start_station,
@@ -139,7 +137,7 @@ class AnalysisHandler:
 
             slope_calc = SlopeCalculator(current_gauge=start_node[0],
                                          next_gauge=end_node[0],
-                                         folder_name=folder_name)
+                                         folder_name=self.folder_name)
 
             current_date = datetime.strptime(start_node[1], "%Y-%m-%d")
             slope = slope_calc.get_slopes(current_date=current_date, next_dates=[end_node[1]])
