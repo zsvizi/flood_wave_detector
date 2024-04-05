@@ -19,7 +19,7 @@ class StatisticalAnalysis:
     """
     def __init__(self, folder_name: str):
         self.folder_name = folder_name
-        self.graph_whole = nx.read_gpickle(f"../{self.folder_name}/joined_graph.gpickle")
+        self.graph_whole = nx.read_gpickle(f"../whole_graph/joined_graph.gpickle")
 
     def yearly_mean_moving_average(self, length: int) -> list:
         """
