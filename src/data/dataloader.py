@@ -15,12 +15,22 @@ class Dataloader:
         self.download_data()
         self.meta = self.get_metadata()
         self.data = self.read_data()
+        self.get_pickle_if_not_downloaded()
 
     def download_data(self):
         if not self.do_all_files_exist():
             url = "https://drive.google.com/drive/folders/1gCC5gLKBh8NLWt_ham42EGk_WKQk_c_B"
             output = os.path.join(PROJECT_PATH, 'data')
             gdown.download_folder(url=url, output=output)
+
+    @staticmethod
+    def get_pickle_if_not_downloaded():
+        if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph')):
+            os.makedirs(os.path.join(PROJECT_PATH, 'whole_graph'), exist_ok=True)
+
+        if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle')):
+            gdown.download(url="https://drive.google.com/uc?id=1GgorclNaFDazyF_gHAPnHysklKANBIan",
+                           output=os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle'))
 
     @staticmethod
     def do_all_files_exist() -> bool:
