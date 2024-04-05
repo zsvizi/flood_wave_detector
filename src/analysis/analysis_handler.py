@@ -17,7 +17,7 @@ class AnalysisHandler:
     def __init__(self, graph_whole: None, folder_name: str):
         self.folder_name = folder_name
         if graph_whole is None:
-            self.graph_whole = nx.read_gpickle(f"../whole_graph/joined_graph.gpickle")
+            self.graph_whole = nx.read_gpickle("../whole_graph/joined_graph.gpickle")
         else:
             self.graph_whole = graph_whole
 
