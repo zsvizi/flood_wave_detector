@@ -24,8 +24,6 @@ class SlopeCalculator:
         """
         self.current_vertices = None
         self.next_vertices = None
-        self.current_null = None
-        self.next_null = None
         self.distance = None
         meta = Dataloader.get_metadata()
         self.river_kms = meta["river_km"]
@@ -44,10 +42,6 @@ class SlopeCalculator:
         :param str next_gauge: gauge number of current gauge as a string
         :param str folder_name: name of the data folder as a string
         """
-        null_points = JsonHelper.read(os.path.join(PROJECT_PATH, 'data', 'nullpontok_fontos.json'))
-        current_null = null_points[current_gauge]
-        next_null = null_points[next_gauge]
-
         current_vertices = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
                                                         'find_vertices', f'{current_gauge}.json'))
         next_vertices = JsonHelper.read(os.path.join(PROJECT_PATH, folder_name,
@@ -59,8 +53,6 @@ class SlopeCalculator:
         distance = float(current_river_km - next_river_km)
         self.current_vertices = current_vertices
         self.next_vertices = next_vertices
-        self.current_null = current_null
-        self.next_null = next_null
         self.distance = distance
 
     def get_slopes(self,
@@ -80,7 +72,7 @@ class SlopeCalculator:
             next_water_levels.append(self.next_vertices[next_date][0])
         next_water_levels = np.array(next_water_levels)
 
-        level_diff = (next_water_levels + float(self.next_null)) - (current_water_level + float(self.current_null))
+        level_diff = next_water_levels - current_water_level
 
         slopes = level_diff / self.distance
 

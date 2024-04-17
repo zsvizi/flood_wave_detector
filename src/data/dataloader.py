@@ -9,7 +9,7 @@ class Dataloader:
     def __init__(self, dataset_name: str = None):
         os.makedirs(os.path.join(PROJECT_PATH, 'data'), exist_ok=True)
         if dataset_name is None:
-            self.dataset_name = 'adatok_fontos'
+            self.dataset_name = 'adatok_fontos_korrigalt'
         else:
             self.dataset_name = dataset_name
         self.download_data()
@@ -31,7 +31,7 @@ class Dataloader:
         """
 
         files = ["adatok_fontos.csv", "existing_stations.json", "level_groups_fontos.json", "meta_fontos.csv",
-                 "nullpontok_fontos.json"]
+                 "nullpontok_fontos.json", "adatok_fontos_korrigalt.csv", "mederatmetszesek_fontos_korrigalt.csv"]
 
         for file in files:
             if not os.path.exists(os.path.join(PROJECT_PATH, 'data', file)):
