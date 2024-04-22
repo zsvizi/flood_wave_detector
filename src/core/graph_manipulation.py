@@ -32,6 +32,7 @@ class GraphManipulation:
 
         joined_graph = nx.DiGraph()
         for gauge_pair in gauge_pairs:
+            print(gauge_pair)
             joined_graph = GraphManipulation.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,

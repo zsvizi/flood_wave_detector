@@ -15,7 +15,7 @@ class Dataloader:
         self.download_data()
         self.meta = self.get_metadata()
         self.data = self.read_data()
-        self.get_pickle_if_not_downloaded()
+        # self.get_pickle_if_not_downloaded()
 
     def download_data(self):
         if not self.do_all_files_exist():
