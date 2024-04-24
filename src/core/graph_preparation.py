@@ -248,7 +248,7 @@ class GraphPreparation:
         :return dict: dictionary of tuple of local max values and the date. (date: [value, color])
         """
 
-        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_fontos.json"))
+        g = open(os.path.join(PROJECT_PATH, "data", "level_groups_vegleges.json"))
         level_groups = json.load(g)
         level_group = level_groups[reg_number]
 

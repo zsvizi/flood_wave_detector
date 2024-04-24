@@ -40,8 +40,8 @@ class Dataloader:
         :return bool: True if all of them exist, False if at least one is missing
         """
 
-        files = ["adatok_fontos.csv", "existing_stations.json", "level_groups_fontos.json", "meta_fontos.csv",
-                 "nullpontok_fontos.json"]
+        files = ["adatok_vegleges.csv", "existing_stations.json", "level_groups_vegleges.json", "meta_vegleges.csv",
+                 "nullpontok_vegleges.json"]
 
         for file in files:
             if not os.path.exists(os.path.join(PROJECT_PATH, 'data', file)):
@@ -51,7 +51,7 @@ class Dataloader:
 
     @staticmethod
     def get_metadata():
-        meta = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'meta_fontos.csv'), index_col=0, sep=";") \
+        meta = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'meta_vegleges.csv'), index_col=0, sep=";") \
             .groupby(["river"]) \
             .get_group("Tisza") \
             .sort_values(by='river_km', ascending=False)
