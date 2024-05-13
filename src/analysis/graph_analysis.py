@@ -4,7 +4,6 @@ import networkx as nx
 import numpy as np
 
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.flood_wave_handler import FloodWaveHandler
 from src.selection.selection import Selection
 
 
@@ -30,10 +29,10 @@ class GraphAnalysis:
         :return int: The number of flood waves which impacted the start_station and reached the end_station
         """
 
-        full_from_start_to_end = FloodWaveHandler.select_components_from_start_to_end(joined_graph=joined_graph,
-                                                                                      start_station=start_station,
-                                                                                      end_station=end_station,
-                                                                                      sorted_stations=sorted_stations)
+        full_from_start_to_end = Selection.select_components_from_start_to_end(joined_graph=joined_graph,
+                                                                               start_station=start_station,
+                                                                               end_station=end_station,
+                                                                               sorted_stations=sorted_stations)
 
         extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
         extractor.get_flood_waves()
@@ -62,10 +61,10 @@ class GraphAnalysis:
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return float: The average propagation time of flood waves in joined_graph between the two given stations.
         """
-        full_from_start_to_end = FloodWaveHandler.select_components_from_start_to_end(joined_graph=joined_graph,
-                                                                                      start_station=start_station,
-                                                                                      end_station=end_station,
-                                                                                      sorted_stations=sorted_stations)
+        full_from_start_to_end = Selection.select_components_from_start_to_end(joined_graph=joined_graph,
+                                                                               start_station=start_station,
+                                                                               end_station=end_station,
+                                                                               sorted_stations=sorted_stations)
 
         extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
         extractor.get_flood_waves()
@@ -105,10 +104,10 @@ class GraphAnalysis:
         :return float: The weighted average propagation time of flood waves in joined_graph between
         the two given stations.
         """
-        full_from_start_to_end = FloodWaveHandler.select_components_from_start_to_end(joined_graph=joined_graph,
-                                                                                      start_station=start_station,
-                                                                                      end_station=end_station,
-                                                                                      sorted_stations=sorted_stations)
+        full_from_start_to_end = Selection.select_components_from_start_to_end(joined_graph=joined_graph,
+                                                                               start_station=start_station,
+                                                                               end_station=end_station,
+                                                                               sorted_stations=sorted_stations)
 
         extractor = FloodWaveExtractor(joined_graph=full_from_start_to_end)
         extractor.get_flood_waves_without_equivalence()

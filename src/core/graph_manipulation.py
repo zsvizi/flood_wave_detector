@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 import networkx as nx
+import pickle
 
 from src import PROJECT_PATH
 from src.utils.json_helper import JsonHelper
@@ -18,7 +19,7 @@ class GraphManipulation:
             end_date: str,
             gauge_pairs: list,
             folder_name: str
-    ) -> nx.DiGraph:
+    ):
         """
         Creates a directed graph by composing directed graphs
 
@@ -31,6 +32,7 @@ class GraphManipulation:
 
         joined_graph = nx.DiGraph()
         for gauge_pair in gauge_pairs:
+            print(gauge_pair)
             joined_graph = GraphManipulation.compose_graph(
                 end_date=end_date,
                 gauge_pair=gauge_pair,
@@ -38,7 +40,9 @@ class GraphManipulation:
                 start_date=start_date,
                 folder_name=folder_name
             )
-        return joined_graph
+
+        with open("../whole_graph/joined_graph.gpickle", "wb") as f:
+            pickle.dump(joined_graph, f)
 
     @staticmethod
     def compose_graph(
