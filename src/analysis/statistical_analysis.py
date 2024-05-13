@@ -9,8 +9,6 @@ import pandas as pd
 from src import PROJECT_PATH
 from src.analysis.analysis_handler import AnalysisHandler
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.graph_manipulation import GraphManipulation
-from src.core.slope_calculator import SlopeCalculator
 from src.data.dataloader import Dataloader
 from src.selection.selection import Selection
 
@@ -19,25 +17,22 @@ class StatisticalAnalysis:
     """
     This class contains functions for statistically analysing flood waves
     """
+    def __init__(self, folder_name: str):
+        self.folder_name = folder_name
+        self.graph_whole = nx.read_gpickle("../whole_graph/joined_graph.gpickle")
 
-    @staticmethod
-    def yearly_mean_moving_average(gauge_pairs: list,
-                                   folder_name: str,
-                                   length: int) -> list:
+    def yearly_mean_moving_average(self, length: int) -> list:
         """
         This function calculates moving average time series of the velocities
-        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
-        :param str folder_name: name of the generated data folder
         :param int length: length of one period in years
         :return list: moving average time series of the velocities
         """
         mean_velocities = []
         for i in range(1876 + length, 2020):
-            args = {"start_date": f'{i - length}-01-01',
-                    "end_date": f'{i}-12-31',
-                    "gauge_pairs": gauge_pairs,
-                    "folder_name": folder_name}
-            graph = GraphManipulation.create_directed_graph(**args)
+            start_date = f'{i - length}-01-01'
+            end_date = f'{i}-12-31'
+            graph = \
+                Selection.select_time_interval(joined_graph=self.graph_whole, start_date=start_date, end_date=end_date)
 
             velocities = StatisticalAnalysis.calculate_all_velocities(joined_graph=graph)
             mean_velocity = np.mean(velocities)
@@ -48,13 +43,10 @@ class StatisticalAnalysis:
 
         return mean_velocities
 
-    @staticmethod
-    def get_statistics(gauges: list, gauge_pairs: list, folder_name: str) -> pd.DataFrame:
+    def get_statistics(self, gauges: list) -> pd.DataFrame:
         """
         This function creates a dataframe containing some statistics of the whole graph yearly
         :param list gauges: list of gauges
-        :param list gauge_pairs: list of the gauge pairs for creating the directed graph
-        :param str folder_name: name of the generated data folder
         :return pd.DataFrame: dataframe of the following statistics yearly: number of components,
         number of low and high water level vertices, minimum and maximum velocities, average of velocities
         """
@@ -68,22 +60,17 @@ class StatisticalAnalysis:
         means = []
         medians = []
         stds = []
+        a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
         for i in range(1876, 2020):
             years.append(i)
             start_date = f'{i}-01-01'
             end_date = f'{i}-12-31'
-            args_create = {
-                "start_date": start_date,
-                "end_date": end_date,
-                "gauge_pairs": gauge_pairs,
-                "folder_name": folder_name
-            }
-            graph = GraphManipulation.create_directed_graph(**args_create)
+            graph = \
+                Selection.select_time_interval(joined_graph=self.graph_whole, start_date=start_date, end_date=end_date)
 
-            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
-                                                                         folder_name=folder_name,
-                                                                         start_date=start_date,
-                                                                         end_date=end_date)
+            gauges_dct = a_handler.get_node_colors_in_given_period(gauges=gauges,
+                                                                   start_date=start_date,
+                                                                   end_date=end_date)
 
             node_colors = []
             for gauge in gauges:
@@ -119,26 +106,24 @@ class StatisticalAnalysis:
 
         return pd.DataFrame(final_table)
 
-    @staticmethod
-    def low_high_by_gauge_yearly(gauges: list, folder_name: str) -> pd.DataFrame:
+    def low_high_by_gauge_yearly(self, gauges: list) -> pd.DataFrame:
         """
         This function creates a dataframe containing the number of low and high water level vertices by gauge yearly
         (years in the rows and gauges in the columns)
         :param list gauges: list of gauges
-        :param str folder_name: name of the generated data folder
         :return pd.DataFrame: dataframe containing the number of low and high water level vertices by gauge yearly
         """
         years = []
         final_matrix = np.zeros((144, 28))
+        a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
         for i in range(1876, 2020):
             years.append(i)
             start_date = f'{i}-01-01'
             end_date = f'{i}-12-31'
 
-            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
-                                                                         folder_name=folder_name,
-                                                                         start_date=start_date,
-                                                                         end_date=end_date)
+            gauges_dct = a_handler.get_node_colors_in_given_period(gauges=gauges,
+                                                                   start_date=start_date,
+                                                                   end_date=end_date)
 
             k = 1
             for gauge in gauges:
@@ -158,16 +143,14 @@ class StatisticalAnalysis:
 
         return pd.DataFrame(final_matrix, index=years, columns=columns)
 
-    @staticmethod
-    def get_slopes_by_vertex_pairs(folder_name: str, period: int):
+    def analyse_slopes_by_vertex_pairs(self, period: int):
         """
         This method goes through the vertex pairs and calculates some {period}-year statistics from 1876 to 2019
         concerning the slopes on the edges between the given vertex pair. It then saves the dataframes into one
         table with the following statistics: minimums, maximums, means, medians and standard deviations
-        :param str folder_name: name of the generated data folder
         :param int period: the results are accumulated for this many years
         """
-        f = open(os.path.join(PROJECT_PATH, folder_name, "find_edges", "vertex_pairs.json"))
+        f = open(os.path.join(PROJECT_PATH, self.folder_name, "find_edges", "vertex_pairs.json"))
         vertex_pairs = json.load(f)
 
         years = np.arange(1876, 2020, period)
@@ -194,9 +177,9 @@ class StatisticalAnalysis:
                     indices.append(f'{start_date}_{end_date}')
                     valid_dates = [x for x in current_dates if start_date <= x <= end_date]
 
-                valid_slopes = [vertex_pairs[vtx_pair][valid_date][1] for valid_date in valid_dates]
-                flattened_slopes = [item for sublist in valid_slopes for item in
-                                    (sublist if isinstance(sublist, list) else [sublist])]
+                flattened_slopes = AnalysisHandler.get_slopes_list(vertex_pairs=vertex_pairs,
+                                                                   vtx_pair=vtx_pair,
+                                                                   valid_dates=valid_dates)
 
                 mins.append(np.min(flattened_slopes))
                 maxs.append(np.max(flattened_slopes))
@@ -219,20 +202,16 @@ class StatisticalAnalysis:
                 sheet_name = f'{list(vertex_pairs.keys())[i]}'
                 df.to_excel(writer, sheet_name=sheet_name)
 
-    @staticmethod
-    def get_slopes_in_interval(folder_name: str,
-                               start_station: str,
-                               end_station: str,
-                               period: int,
-                               gauge_pairs: list,
-                               sorted_stations: list) -> pd.DataFrame:
+    def analyse_slopes_in_interval(self,
+                                   start_station: str,
+                                   end_station: str,
+                                   period: int,
+                                   sorted_stations: list) -> pd.DataFrame:
         """
         This function calculates statistics of slopes of paths in flood waves
-        :param str folder_name: name of the generated data folder
         :param str start_station: string of starting station number
         :param str end_station: string of ending station number
         :param int period: the results are accumulated for this many years
-        :param list gauge_pairs: list of gauge pairs
         :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
         :return pd.DataFrame: dataframe containing the statistics
         """
@@ -245,6 +224,7 @@ class StatisticalAnalysis:
         stds = []
 
         years = np.arange(1876, 2020, period)
+        a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
         for year in years:
             if year + period - 1 > 2019:
                 break
@@ -254,41 +234,11 @@ class StatisticalAnalysis:
 
             indices.append(start_date + '_' + end_date)
 
-            args_create = {
-                "start_date": start_date,
-                "end_date": end_date,
-                "gauge_pairs": gauge_pairs,
-                "folder_name": folder_name
-            }
-            graph = GraphManipulation.create_directed_graph(**args_create)
-
-            select_all_in_interval = Selection.select_only_in_interval(joined_graph=graph,
-                                                                       start_station=start_station,
-                                                                       end_station=end_station,
-                                                                       sorted_stations=sorted_stations)
-
-            extractor = FloodWaveExtractor(joined_graph=select_all_in_interval)
-            extractor.get_flood_waves()
-            flood_waves = extractor.flood_waves
-
-            full_waves = FloodWaveExtractor.get_flood_waves_from_start_to_end(waves=flood_waves,
-                                                                              start_station=start_station,
-                                                                              end_station=end_station,
-                                                                              equivalence=True)
-
-            slopes = []
-            for wave in full_waves:
-                start_node = wave[0]
-                end_node = wave[1]
-
-                slope_calc = SlopeCalculator(current_gauge=start_node[0],
-                                             next_gauge=end_node[0],
-                                             folder_name=folder_name)
-
-                current_date = datetime.strptime(start_node[1], "%Y-%m-%d")
-                slope = slope_calc.get_slopes(current_date=current_date, next_dates=[end_node[1]])
-
-                slopes.append(slope[0])
+            slopes = a_handler.get_slopes_interval_list(start_station=start_station,
+                                                        end_station=end_station,
+                                                        start_date=start_date,
+                                                        end_date=end_date,
+                                                        sorted_stations=sorted_stations)
 
             mins.append(np.min(slopes))
             maxs.append(np.max(slopes))
@@ -304,13 +254,48 @@ class StatisticalAnalysis:
 
         return pd.DataFrame(final_table, index=indices)
 
-    @staticmethod
-    def red_ratio(gauges: list, folder_name: str, period: int) -> pd.DataFrame:
+    def collect_slopes(self,
+                       start_station: str,
+                       end_station: str,
+                       start_date: str,
+                       end_date: str,
+                       sorted_stations: list) -> list:
+        """
+        This function collects the slopes on edges between start_station and end_station (space), and start_date and
+        end_date (time)
+        :param str start_station: starting station
+        :param str end_station: end station
+        :param str start_date: starting date
+        :param str end_date: end date
+        :param list sorted_stations: list of strings all station numbers in (numerically) decreasing order
+        :return list: slopes
+        """
+        pair = str(start_station) + '_' + str(end_station)
+
+        f = open(os.path.join(PROJECT_PATH, self.folder_name, "find_edges", "vertex_pairs.json"))
+        vertex_pairs = json.load(f)
+
+        if pair in list(vertex_pairs.keys()):
+            current_dates = list(vertex_pairs[pair].keys())
+            valid_dates = [x for x in current_dates if start_date <= x <= end_date]
+            slopes = AnalysisHandler.get_slopes_list(vertex_pairs=vertex_pairs,
+                                                     vtx_pair=pair,
+                                                     valid_dates=valid_dates)
+        else:
+            a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
+            slopes = a_handler.get_slopes_interval_list(start_station=start_station,
+                                                        end_station=end_station,
+                                                        start_date=start_date,
+                                                        end_date=end_date,
+                                                        sorted_stations=sorted_stations)
+
+        return slopes
+
+    def red_ratio(self, gauges: list, period: int) -> pd.DataFrame:
         """
         This function calculates the ratio of high water level nodes and all nodes in every {period}-year period
         from 1876 to 2019
         :param list gauges: list of gauges
-        :param str folder_name: name of the generated data folder
         :param int period: the results are accumulated for this many years
         :return pd.DataFrame: dataframe containing the ratios
         """
@@ -318,6 +303,7 @@ class StatisticalAnalysis:
         ratios = []
         final_table = {}
         years = np.arange(1876, 2020, period)
+        a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
         for year in years:
             if year + period - 1 > 2019:
                 break
@@ -327,10 +313,9 @@ class StatisticalAnalysis:
 
             indices.append(f'{start_date}_{end_date}')
 
-            gauges_dct = AnalysisHandler.get_node_colors_in_given_period(gauges=gauges,
-                                                                         folder_name=folder_name,
-                                                                         start_date=start_date,
-                                                                         end_date=end_date)
+            gauges_dct = a_handler.get_node_colors_in_given_period(gauges=gauges,
+                                                                   start_date=start_date,
+                                                                   end_date=end_date)
 
             all_colors = []
             for gauge in gauges:
@@ -344,54 +329,15 @@ class StatisticalAnalysis:
 
         return pd.DataFrame(final_table, index=indices)
 
-    @staticmethod
-    def get_flood_waves_yearly(year: int, gauge_pairs: list, folder_name: str) -> list:
-        """
-        This function returns only those components that start in the actual year
-        :param int year: the actual year
-        :param list gauge_pairs: list of gauge pairs
-        :param str folder_name: the name of the generated data folder
-        :return list: cleaned components
-        """
-        if year == 1876:
-            start_date = f'{year}-01-01'
-            end_date = f'{year + 1}-02-01'
-        elif year == 2019:
-            start_date = f'{year - 1}-11-30'
-            end_date = f'{year}-12-31'
-        else:
-            start_date = f'{year - 1}-11-30'
-            end_date = f'{year + 1}-02-01'
-        args = {"start_date": start_date,
-                "end_date": end_date,
-                "gauge_pairs": gauge_pairs,
-                "folder_name": folder_name}
-        graph = GraphManipulation.create_directed_graph(**args)
-
-        extractor = FloodWaveExtractor(joined_graph=graph)
-        extractor.get_flood_waves()
-        flood_waves = extractor.flood_waves
-
-        cleaned_waves = []
-        for wave in flood_waves:
-            node_dates = [node[1] for node in wave]
-            if not any(str(year - 1) in node_date for node_date in node_dates) \
-                    and not all(str(year + 1) in node_date for node_date in node_dates):
-                cleaned_waves.append(wave)
-
-        return cleaned_waves
-
-    @staticmethod
-    def get_number_of_flood_waves_yearly(gauge_pairs: list, folder_name: str) -> list:
+    def get_number_of_flood_waves_yearly(self) -> list:
         """
         This function calculates the number of cleaned flood waves yearly
-        :param list gauge_pairs: list of gauge pairs
-        :param str folder_name: the name of the generated data folder
         :return list: numbers of cleaned components
         """
         number_of_flood_waves = []
+        a_handler = AnalysisHandler(graph_whole=self.graph_whole, folder_name=self.folder_name)
         for i in range(1876, 2020):
-            waves = StatisticalAnalysis.get_flood_waves_yearly(year=i, gauge_pairs=gauge_pairs, folder_name=folder_name)
+            waves = a_handler.get_flood_waves_yearly(year=i)
             number_of_flood_waves.append(len(waves))
 
             AnalysisHandler.print_percentage(i=i, length=0)

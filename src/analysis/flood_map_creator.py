@@ -1,7 +1,7 @@
 import networkx as nx
 
 from src.core.flood_wave_extractor import FloodWaveExtractor
-from src.core.flood_wave_handler import FloodWaveHandler
+from src.selection.selection import Selection
 
 
 class FloodMapCreator:
@@ -31,7 +31,7 @@ class FloodMapCreator:
             start_station = section[0]
             end_station = section[1]
 
-            full_from_start_to_end = FloodWaveHandler.select_components_from_start_to_end(
+            full_from_start_to_end = Selection.select_components_from_start_to_end(
                 joined_graph=self.joined_graph,
                 start_station=start_station,
                 end_station=end_station,

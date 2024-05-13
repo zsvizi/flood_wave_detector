@@ -15,12 +15,22 @@ class Dataloader:
         self.download_data()
         self.meta = self.get_metadata()
         self.data = self.read_data()
+        # self.get_pickle_if_not_downloaded()
 
     def download_data(self):
         if not self.do_all_files_exist():
             url = "https://drive.google.com/drive/folders/1gCC5gLKBh8NLWt_ham42EGk_WKQk_c_B"
             output = os.path.join(PROJECT_PATH, 'data')
             gdown.download_folder(url=url, output=output)
+
+    @staticmethod
+    def get_pickle_if_not_downloaded():
+        if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph')):
+            os.makedirs(os.path.join(PROJECT_PATH, 'whole_graph'), exist_ok=True)
+
+        if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle')):
+            gdown.download(url="https://drive.google.com/uc?id=1GgorclNaFDazyF_gHAPnHysklKANBIan",
+                           output=os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle'))
 
     @staticmethod
     def do_all_files_exist() -> bool:
@@ -30,8 +40,8 @@ class Dataloader:
         :return bool: True if all of them exist, False if at least one is missing
         """
 
-        files = ["adatok_fontos.csv", "existing_stations.json", "level_groups_fontos.json", "meta_fontos.csv",
-                 "nullpontok_fontos.json"]
+        files = ["adatok_vegleges.csv", "existing_stations.json", "level_groups_vegleges.json", "meta_vegleges.csv",
+                 "nullpontok_vegleges.json"]
 
         for file in files:
             if not os.path.exists(os.path.join(PROJECT_PATH, 'data', file)):
@@ -41,7 +51,7 @@ class Dataloader:
 
     @staticmethod
     def get_metadata():
-        meta = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'meta_fontos.csv'), index_col=0, sep=";") \
+        meta = pd.read_csv(os.path.join(PROJECT_PATH, 'data', 'meta_vegleges.csv'), index_col=0, sep=";") \
             .groupby(["river"]) \
             .get_group("Tisza") \
             .sort_values(by='river_km', ascending=False)
