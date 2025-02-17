@@ -9,7 +9,7 @@ class Dataloader:
     def __init__(self, dataset_name: str = None):
         os.makedirs(os.path.join(PROJECT_PATH, 'data'), exist_ok=True)
         if dataset_name is None:
-            self.dataset_name = 'adatok_fontos'
+            self.dataset_name = 'adatok_vegleges'
         else:
             self.dataset_name = dataset_name
         self.download_data()
@@ -59,6 +59,7 @@ class Dataloader:
 
     def read_data(self):
         data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=";")
+        data['Date'] = data['Date'].apply(lambda x: str(x).replace('.', '-'))
         date = pd.to_datetime(data['Date']).dt.strftime('%Y-%m-%d')
 
         def isnumber(x):
