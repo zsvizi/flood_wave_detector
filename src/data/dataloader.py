@@ -59,6 +59,7 @@ class Dataloader:
 
     def read_data(self):
         data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=";")
+        data['Date'] = data['Date'].appy(lambda x: float(str(x).replace('.', '-')))
         date = pd.to_datetime(data['Date']).dt.strftime('%Y-%m-%d')
 
         def isnumber(x):
