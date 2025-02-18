@@ -44,7 +44,7 @@ class SlopeCalculator:
         :param str next_gauge: gauge number of current gauge as a string
         :param str folder_name: name of the data folder as a string
         """
-        null_points = JsonHelper.read(os.path.join(PROJECT_PATH, 'data', 'nullpontok_fontos.json'))
+        null_points = JsonHelper.read(os.path.join(PROJECT_PATH, 'data', 'nullpontok_vegleges.json'))
         current_null = null_points[current_gauge]
         next_null = null_points[next_gauge]
 
