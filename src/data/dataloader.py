@@ -58,7 +58,7 @@ class Dataloader:
         return meta
 
     def read_data(self):
-        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=";")
+        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=",")
         data['Date'] = data['Date'].apply(lambda x: str(x).replace('.', '-'))
         date = pd.to_datetime(data['Date']).dt.strftime('%Y-%m-%d')
 
