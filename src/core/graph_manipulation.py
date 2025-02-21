@@ -41,7 +41,7 @@ class GraphManipulation:
                 folder_name=folder_name
             )
 
-        with open("../whole_graph/joined_graph.gpickle", "wb") as f:
+        with open(f"{PROJECT_PATH}/whole_graph/joined_graph.gpickle", "wb") as f:
             pickle.dump(joined_graph, f)
 
     @staticmethod
