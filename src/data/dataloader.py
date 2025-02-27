@@ -29,7 +29,7 @@ class Dataloader:
             os.makedirs(os.path.join(PROJECT_PATH, 'whole_graph'), exist_ok=True)
 
         if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle')):
-            gdown.download(url="https://drive.google.com/uc?id=1GgorclNaFDazyF_gHAPnHysklKANBIan",
+            gdown.download(url="https://drive.google.com/uc?id=1F_hUpU_9sqFUJdr8OXI-SlHj-Te-FhZF",
                            output=os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle'))
 
     @staticmethod
