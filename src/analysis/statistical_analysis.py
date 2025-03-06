@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 from datetime import datetime
 
 import networkx as nx
@@ -19,7 +20,10 @@ class StatisticalAnalysis:
     """
     def __init__(self, folder_name: str):
         self.folder_name = folder_name
-        self.graph_whole = nx.read_gpickle("../whole_graph/joined_graph.gpickle")
+        with open(os.path.join(
+                PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle'
+        ), 'rb') as f:
+            self.graph_whole = pickle.load(f)
 
     def yearly_mean_moving_average(self, length: int) -> list:
         """

@@ -15,7 +15,7 @@ class Dataloader:
         self.download_data()
         self.meta = self.get_metadata()
         self.data = self.read_data()
-        # self.get_pickle_if_not_downloaded()
+        self.get_pickle_if_not_downloaded()
 
     def download_data(self):
         if not self.do_all_files_exist():
@@ -29,7 +29,7 @@ class Dataloader:
             os.makedirs(os.path.join(PROJECT_PATH, 'whole_graph'), exist_ok=True)
 
         if not os.path.exists(os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle')):
-            gdown.download(url="https://drive.google.com/uc?id=1GgorclNaFDazyF_gHAPnHysklKANBIan",
+            gdown.download(url="https://drive.google.com/uc?id=1F_hUpU_9sqFUJdr8OXI-SlHj-Te-FhZF",
                            output=os.path.join(PROJECT_PATH, 'whole_graph', 'joined_graph.gpickle'))
 
     @staticmethod
@@ -58,7 +58,7 @@ class Dataloader:
         return meta
 
     def read_data(self):
-        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=";")
+        data = pd.read_csv(os.path.join(PROJECT_PATH, 'data', self.dataset_name + '.csv'), index_col=0, sep=",")
         data['Date'] = data['Date'].apply(lambda x: str(x).replace('.', '-'))
         date = pd.to_datetime(data['Date']).dt.strftime('%Y-%m-%d')
 
